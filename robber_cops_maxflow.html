@@ -1,11 +1,11 @@
+<!-- START OF FILE robber_cops_maxflow.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robber Blockade: Math Edition</title>
+    <title>Robber Blockade: Min-Cut</title>
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
-    <!-- MathJax for nice formulas -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
@@ -14,138 +14,102 @@
             --pencil-gray: #5f6368;
             --ink-blue: #1a73e8;
             --marker-red: #ea4335;
-            --marker-red-hover: #ff6b5b;
-            --asphalt: #3c4043;
+            --asphalt: #37474f;
+            --road-yellow: #fbc02d;
             --math-purple: #9334e6;
+            --success-green: #34a853;
         }
 
         body {
-            margin: 0; overflow: hidden;
-            background-color: var(--paper-bg);
-            font-family: 'Architects Daughter', cursive;
-            color: #202124; user-select: none;
+            margin: 0; overflow: hidden; background-color: var(--paper-bg);
+            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 30px 30px; 
+            font-family: 'Architects Daughter', cursive; color: #202124; user-select: none;
         }
 
-        /* --- UI ELEMENTS --- */
         .ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            padding: 20px; box-sizing: border-box;
-            display: flex; justify-content: space-between;
+            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
         }
 
-        /* LEFT & RIGHT PANELS */
         .notebook-panel {
-            background: #fff; transform: rotate(-1deg);
-            padding: 25px 35px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
-            border: 1px solid #ddd; border-radius: 4px;
-            pointer-events: auto; width: 220px; 
-            display: flex; flex-direction: column; z-index: 10;
+            background: #fff; transform: rotate(-1deg); padding: 25px 30px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
         }
 
-        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--marker-red); text-decoration: underline; }
-        
-        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
-        .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--asphalt); }
+        h1 { margin: 0 0 15px 0; font-size: 1.6rem; color: var(--marker-red); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.2rem; }
+        .cost-display { font-size: 2.2rem; font-weight: bold; color: var(--asphalt); }
         
         button {
-            font-family: 'Architects Daughter', cursive;
-            border: 3px solid var(--asphalt);
-            padding: 12px 20px; font-size: 1.2rem; font-weight: bold;
-            cursor: pointer;
-            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; 
-            transition: all 0.2s; margin-top: 10px; width: 100%;
+            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
+            padding: 12px 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%; background: #fff;
         }
+        button:hover { background: #eee; transform: translateY(-2px); }
 
         .btn-check { background: var(--marker-red); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
-        .btn-check:hover { background: var(--marker-red-hover); transform: scale(1.02) rotate(1deg); }
-        .btn-check:active { transform: scale(0.98); }
+        .btn-check:hover { background: #d93025; }
 
-        .btn-reset { background: #fff; color: var(--asphalt); margin-top: 10px; }
-        .btn-reset:hover { background: #f0f0f0; }
-
-        /* RIGHT INSTRUCTIONS */
-        .intel-box {
-            transform: rotate(1deg); right: 20px; height: fit-content;
-        }
-        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px; }
+        .intel-list { padding-left: 20px; font-size: 1rem; line-height: 1.5; margin: 0; }
         .intel-list li { margin-bottom: 8px; }
 
-        /* INFO BUTTON (Bottom Left Sidebar) */
-        .info-container {
-            margin-top: auto; /* Pushes to bottom of flex container if height set, or use wrapper */
-            padding-top: 20px; border-top: 1px dashed #ccc;
-        }
-        .info-btn {
-            background: var(--math-purple); color: white; border: none;
-            box-shadow: 3px 3px 0 var(--asphalt); width: 100%;
-        }
+        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; display: flex; gap: 10px; align-items: center; }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
         .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
+        
+        .btn-circle {
+            width: 48px; height: 45px; border-radius: 50%; background: var(--ink-blue); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+        }
+        .btn-circle:hover { transform: scale(1.08) rotate(5deg); background: #1557b0; }
 
-        /* MODALS */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px);
         }
         .clipboard {
-            background: #fff; width: 600px; padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            text-align: center; position: relative; transform: rotate(1deg);
-            border-radius: 5px; max-height: 90vh; overflow-y: auto;
-            animation: popIn 0.3s ease-out;
+            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center; position: relative; transform: rotate(-1deg); border: 1px solid #ddd;
         }
-        @keyframes popIn { from { transform: scale(0.8) rotate(1deg); opacity: 0; } to { transform: scale(1) rotate(1deg); opacity: 1; } }
-
-        .clipboard.math-mode {
-            width: 750px; text-align: left; font-family: 'Roboto', sans-serif;
-        }
-        
-        .math-section {
-            background: #f8f9fa; border-left: 5px solid var(--math-purple);
-            padding: 15px; margin: 15px 0; font-size: 1rem;
-            font-family: 'Roboto', sans-serif; line-height: 1.5;
-        }
+        .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
         .math-section h3 { margin-top: 0; color: var(--math-purple); }
-
         .stamp-result {
-            font-size: 3.5rem; font-weight: bold;
-            transform: rotate(-12deg);
-            border: 6px solid; padding: 10px 30px; border-radius: 15px;
-            display: inline-block; margin: 20px 0; opacity: 0.9;
+            font-size: 3rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; transform: rotate(-15deg);
+            border: 5px solid; padding: 10px 20px; border-radius: 10px; display: inline-block; margin: 20px 0; opacity: 0.8;
         }
 
-        .viz-toggle {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            background: #eee; padding: 10px; border-radius: 8px; margin-top: 20px;
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .ui-layer { flex-direction: column; padding: 10px; }
+            .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
+            .intel-box { display: none; }
         }
-
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
 </head>
 <body>
-
     <canvas id="gameCanvas"></canvas>
 
     <div class="ui-layer">
-        <!-- LEFT CONTROL PANEL -->
-        <div class="notebook-panel">
+        <div class="notebook-panel" id="leftPanel">
             <h1>Operation: Lockdown</h1>
             <div class="stat-row"><span>Budget Used:</span></div>
             <div class="stat-row"><span class="cost-display" id="userCut">0</span></div>
             <hr style="border: 1px dashed #ccc; margin: 15px 0;">
             <button class="btn-check" onclick="game.checkWin()">DEPLOY BLOCKADE</button>
-            <button class="btn-reset" onclick="game.reset()">Clear Map</button>
-            <button class="btn-reset" onclick="game.newLevel()">New City</button>
-            
-            <div class="info-container">
+            <button onclick="game.reset()">Clear Map</button>
+            <button onclick="game.newLevel()">New City</button>
+            <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
             </div>
         </div>
         
-        <!-- RIGHT INSTRUCTIONS PANEL -->
-        <div class="notebook-panel intel-box">
+        <div class="notebook-panel intel-box" id="rightPanel">
             <h1>Field Intel</h1>
             <ul class="intel-list">
                 <li><b>Mission:</b> Stop the robbers traveling from <span style="color:#1a73e8">BANK</span> to <span style="color:#ea4335">ESCAPE</span>.</li>
@@ -160,47 +124,37 @@
         </div>
     </div>
 
-    <!-- WIN/LOSS MODAL -->
     <div class="modal-overlay" id="modal">
         <div class="clipboard">
-            <h2 id="modalTitle" style="font-size: 2rem; margin:0;">Mission Report</h2>
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Mission Report</h2>
             <div id="stamp" class="stamp-result">BUSTED</div>
-            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px;">Sample text.</p>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Sample text.</p>
             <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px;">
                 <div>Your Cost: <b id="endUserCost">0</b></div>
                 <div>Optimal Cost: <b id="endOptCost">0</b></div>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="btn-check" onclick="game.newLevel()">Next City</button>
-                <button class="btn-reset" onclick="document.getElementById('modal').style.display='none'">Retry</button>
+                <button onclick="document.getElementById('modal').style.display='none'">Retry</button>
             </div>
         </div>
     </div>
 
-    <!-- MATH EXPLANATION MODAL -->
     <div class="modal-overlay" id="mathModal">
         <div class="clipboard math-mode">
             <h2 style="font-family:'Architects Daughter'; text-align:center;">The Mathematics of Blockades</h2>
-            
             <div class="math-section">
                 <h3>Problem Statement</h3>
                 <p>We model the city as a flow network \( G = (V, E) \), where road capacities are \( c(u,v) \).</p>
                 <p><strong>Goal:</strong> Find a partition of nodes (a cut) separating the Source (\(s\)) from the Sink (\(t\)) such that the capacity of the cut is minimized.</p>
                 <p>$$ \text{minimize } c(S,T) = \sum_{u \in S, v \in T} c(u,v) $$</p>
             </div>
-
             <div class="math-section">
                 <h3>Max-Flow Min-Cut Theorem</h3>
                 <p>The theorem states that the maximum amount of traffic (flow) possible from Source to Sink is equal to the capacity of the minimum bottleneck (cut).</p>
                 <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">Max Flow = Min Cut = <span id="mathOptVal" style="color:var(--math-purple)">0</span></p>
             </div>
-
-            <div class="viz-toggle">
-                <input type="checkbox" id="vizCheck" onchange="game.toggleMathViz(this.checked)" style="width:20px; height:20px;">
-                <label for="vizCheck" style="font-family:'Architects Daughter'; font-size:1.2rem; cursor:pointer;">Visualize Flow & Min-Cut on Map</label>
-            </div>
-
-            <button class="btn-reset" onclick="document.getElementById('mathModal').style.display='none'">Return to Game</button>
+            <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Map</button>
         </div>
     </div>
 
@@ -209,170 +163,113 @@ class FlowGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
-        this.nodes = [];
-        this.edges = []; 
+        this.nodes = []; this.edges =[]; 
         this.maxFlowValue = 0;
-        
-        // Solution Data
-        this.solutionFlows = {}; // Key: edge index, Value: flow amount
-        this.minCutEdges = new Set(); // Set of edge indices
+        this.solutionFlows = {}; this.minCutEdges = new Set(); 
         this.showSolution = false;
-
-        this.nodeRadius = 35;
-        this.hoverEdge = null;
-        this.frame = 0;
+        this.nodeRadius = 30; this.hoverEdge = null; this.frame = 0;
+        this.safeBounds = {minX:0, maxX:0, minY:0, maxY:0};
         
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', () => { this.resize(); this.updateSafeBounds(); });
         this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
 
         this.resize();
-        this.newLevel();
+        setTimeout(() => this.newLevel(), 50);
         this.loop();
     }
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+
+    updateSafeBounds() {
+        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
+        const isMobile = window.innerWidth <= 768;
+        if(isMobile) {
+            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+        } else {
+            let minX = lRect.right + 60; let maxX = rRect.left - 60;
+            if(maxX <= minX) maxX = minX + 200;
+            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+        }
     }
 
     newLevel() {
-        this.nodes = [];
-        this.edges = [];
-        this.frame = 0;
-        this.showSolution = false;
-        document.getElementById('vizCheck').checked = false;
+        this.nodes =[]; this.edges =[]; this.frame = 0; this.showSolution = false;
         document.getElementById('modal').style.display = 'none';
-        document.getElementById('mathModal').style.display = 'none';
+        this.updateSafeBounds();
         
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        const margin = 350; 
+        const sb = this.safeBounds;
+        const cy = (sb.minY + sb.maxY) / 2;
         
-        // --- 1. Nodes (Layered Layout) ---
-        // Left: Source
-        this.nodes.push({id: 0, x: margin, y: h/2, label: "BANK", type: 'source'});
-        
-        const layers = 3; 
-        const nodesPerLayer = 3;
-        let idCounter = 1;
+        // Source & Sink
+        this.nodes.push({id: 0, x: sb.minX, y: cy, label: "BANK", type: 'source'});
+        const layers = 3; const nodesPerLayer = 3; let idCounter = 1;
         
         for(let l=0; l<layers; l++) {
-            const layerX = margin + ((w - 2*margin) * (l+1)) / (layers + 1);
+            const layerX = sb.minX + ((sb.maxX - sb.minX) * (l+1)) / (layers + 1);
             for(let i=0; i<nodesPerLayer; i++) {
-                // Add some vertical randomness
-                const layerY = (h * (i+1)) / (nodesPerLayer + 1) + (Math.random()-0.5)*60;
+                const layerY = sb.minY + ((sb.maxY - sb.minY) * (i+1)) / (nodesPerLayer + 1) + (Math.random()-0.5)*40;
                 this.nodes.push({id: idCounter++, x: layerX, y: layerY, label: "", type: 'node'});
             }
         }
-        
         const sinkId = idCounter;
-        // Right: Sink
-        this.nodes.push({id: sinkId, x: w - margin, y: h/2, label: "ESCAPE", type: 'sink'});
+        this.nodes.push({id: sinkId, x: sb.maxX, y: cy, label: "ESCAPE", type: 'sink'});
 
-        // --- 2. Edges (Connectivity) ---
-        // Connect Source to Layer 1
+        // Edges
         for(let i=1; i<=nodesPerLayer; i++) this.addEdge(0, i);
-
-        // Connect Inter-layers
         for(let l=0; l<layers-1; l++) {
             const startNode = 1 + l*nodesPerLayer;
             for(let i=0; i<nodesPerLayer; i++) {
                 let u = startNode + i;
                 const nextStart = startNode + nodesPerLayer;
                 for(let j=0; j<nodesPerLayer; j++) {
-                     // 50% chance to connect, or if straight ahead (j===i)
-                     if(Math.random() > 0.5 || j===i) {
-                         this.addEdge(u, nextStart + j);
-                     }
+                     if(Math.random() > 0.5 || j===i) this.addEdge(u, nextStart + j);
                 }
             }
         }
-
-        // Connect Last Layer to Sink
         const lastLayerStart = 1 + (layers-1)*nodesPerLayer;
-        for(let i=0; i<nodesPerLayer; i++) {
-            this.addEdge(lastLayerStart + i, sinkId);
-        }
+        for(let i=0; i<nodesPerLayer; i++) this.addEdge(lastLayerStart + i, sinkId);
 
-        // --- 3. Calculations ---
-        this.updateEdgeCurves();
-        this.resolveLabelOverlaps(); 
-        this.solveSystem(); // Run Edmonds-Karp
-        this.updateUI();
+        this.updateEdgeCurves(); this.resolveLabelOverlaps(); this.solveSystem(); this.updateUI();
     }
 
     addEdge(u, v) {
         if(this.edges.some(e => e.u===u && e.v===v)) return;
         const capacity = Math.floor(Math.random() * 8) + 2; 
-        
-        this.edges.push({ 
-            id: this.edges.length,
-            u, v, 
-            capacity, 
-            blocked: false, 
-            cpX: 0, cpY: 0,
-            labelX: 0, labelY: 0,
-            t: 0.5 
-        });
+        this.edges.push({ id: this.edges.length, u, v, capacity, blocked: false, cpX: 0, cpY: 0, labelX: 0, labelY: 0, t: 0.5 });
     }
 
     updateEdgeCurves() {
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u];
-            const p2 = this.nodes[e.v];
-            
-            const midX = (p1.x + p2.x) / 2;
-            const midY = (p1.y + p2.y) / 2;
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
+            const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            
-            // Generate a slight curve based on node IDs to keep it deterministic but organic
             const r = ((e.u * 17 + e.v * 31) % 100) / 100; 
             const offset = (r - 0.5) * 50; 
-            
-            e.cpX = midX - (dy/dist) * offset;
-            e.cpY = midY + (dx/dist) * offset;
+            e.cpX = midX - (dy/dist) * offset; e.cpY = midY + (dx/dist) * offset;
             this.updateLabelPos(e);
         });
     }
 
     updateLabelPos(e) {
-        const p1 = this.nodes[e.u];
-        const p2 = this.nodes[e.v];
-        const t = e.t;
+        const p1 = this.nodes[e.u], p2 = this.nodes[e.v], t = e.t;
         e.labelX = (1-t)*(1-t)*p1.x + 2*(1-t)*t*e.cpX + t*t*p2.x;
         e.labelY = (1-t)*(1-t)*p1.y + 2*(1-t)*t*e.cpY + t*t*p2.y;
     }
 
     resolveLabelOverlaps() {
-        const iterations = 50;
-        const minDistance = 35; // Pixel radius
-
-        for (let iter = 0; iter < iterations; iter++) {
+        for (let iter = 0; iter < 50; iter++) {
             let moved = false;
             for (let i = 0; i < this.edges.length; i++) {
                 for (let j = i + 1; j < this.edges.length; j++) {
-                    let e1 = this.edges[i];
-                    let e2 = this.edges[j];
-                    let dx = e1.labelX - e2.labelX;
-                    let dy = e1.labelY - e2.labelY;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-
-                    if (dist < minDistance) {
-                        const slideSpeed = 0.02;
+                    let e1 = this.edges[i], e2 = this.edges[j];
+                    if (Math.hypot(e1.labelX - e2.labelX, e1.labelY - e2.labelY) < 35) {
                         let dir = (e1.t < e2.t) ? -1 : 1;
-
-                        e1.t += dir * slideSpeed;
-                        e2.t -= dir * slideSpeed;
-                        // Clamp
-                        e1.t = Math.max(0.25, Math.min(0.75, e1.t));
-                        e2.t = Math.max(0.25, Math.min(0.75, e2.t));
-                        
-                        this.updateLabelPos(e1);
-                        this.updateLabelPos(e2);
+                        e1.t = Math.max(0.25, Math.min(0.75, e1.t + dir * 0.02));
+                        e2.t = Math.max(0.25, Math.min(0.75, e2.t - dir * 0.02));
+                        this.updateLabelPos(e1); this.updateLabelPos(e2);
                         moved = true;
                     }
                 }
@@ -381,91 +278,39 @@ class FlowGame {
         }
     }
 
-    // --- ALGORITHM: EDMONDS-KARP ---
     solveSystem() {
-        const source = 0;
-        const sink = this.nodes.length - 1;
-        const n = this.nodes.length;
-        
-        let capacity = Array(n).fill().map(() => Array(n).fill(0));
-        let originalCapacity = Array(n).fill().map(() => Array(n).fill(0));
-        
-        this.edges.forEach(e => {
-            capacity[e.u][e.v] += e.capacity;
-            originalCapacity[e.u][e.v] += e.capacity;
-        });
+        const source = 0, sink = this.nodes.length - 1, n = this.nodes.length;
+        let capacity = Array(n).fill().map(()=>Array(n).fill(0));
+        let originalCapacity = Array(n).fill().map(()=>Array(n).fill(0));
+        this.edges.forEach(e => { capacity[e.u][e.v] += e.capacity; originalCapacity[e.u][e.v] += e.capacity; });
 
-        // 1. Calculate Max Flow
         let flow = 0;
         while(true) {
-            let parent = Array(n).fill(-1);
-            let queue = [source];
-            parent[source] = source;
-
+            let parent = Array(n).fill(-1), queue = [source]; parent[source] = source;
             while(queue.length > 0 && parent[sink] === -1) {
                 let u = queue.shift();
-                for(let v = 0; v < n; v++) {
-                    if(parent[v] === -1 && capacity[u][v] > 0) {
-                        parent[v] = u;
-                        queue.push(v);
-                    }
-                }
+                for(let v = 0; v < n; v++) if(parent[v] === -1 && capacity[u][v] > 0) { parent[v] = u; queue.push(v); }
             }
-
             if(parent[sink] === -1) break;
-
-            let pathFlow = Infinity;
-            let s = sink;
-            while(s !== source) {
-                let prev = parent[s];
-                pathFlow = Math.min(pathFlow, capacity[prev][s]);
-                s = prev;
-            }
-
-            flow += pathFlow;
-            let v = sink;
-            while(v !== source) {
-                let u = parent[v];
-                capacity[u][v] -= pathFlow;
-                capacity[v][u] += pathFlow;
-                v = u;
-            }
+            let pathFlow = Infinity, s = sink;
+            while(s !== source) { pathFlow = Math.min(pathFlow, capacity[parent[s]][s]); s = parent[s]; }
+            flow += pathFlow; let v = sink;
+            while(v !== source) { let u = parent[v]; capacity[u][v] -= pathFlow; capacity[v][u] += pathFlow; v = u; }
         }
-        
         this.maxFlowValue = flow;
 
-        // 2. Extract Visualization Data
-        this.solutionFlows = {};
-        this.minCutEdges.clear();
-
-        // Flow on each edge
+        this.solutionFlows = {}; this.minCutEdges.clear();
         this.edges.forEach(e => {
-            const residual = capacity[e.u][e.v];
-            const original = originalCapacity[e.u][e.v];
-            const actualFlow = original - residual;
+            const actualFlow = originalCapacity[e.u][e.v] - capacity[e.u][e.v];
             if(actualFlow > 0) this.solutionFlows[e.id] = actualFlow;
         });
 
-        // Min-Cut: Reachable nodes in residual graph
-        let visited = new Set();
-        let q = [source];
-        visited.add(source);
+        let visited = new Set([source]), q = [source];
         while(q.length) {
             let u = q.shift();
-            for(let v=0; v<n; v++) {
-                if(!visited.has(v) && capacity[u][v] > 0) {
-                    visited.add(v);
-                    q.push(v);
-                }
-            }
+            for(let v=0; v<n; v++) if(!visited.has(v) && capacity[u][v] > 0) { visited.add(v); q.push(v); }
         }
-
-        // Edges crossing from Reachable -> Unreachable
-        this.edges.forEach(e => {
-            if(visited.has(e.u) && !visited.has(e.v)) {
-                this.minCutEdges.add(e.id);
-            }
-        });
+        this.edges.forEach(e => { if(visited.has(e.u) && !visited.has(e.v)) this.minCutEdges.add(e.id); });
     }
 
     openMathModal() {
@@ -473,26 +318,23 @@ class FlowGame {
         document.getElementById('mathModal').style.display = 'flex';
     }
 
-    toggleMathViz(show) {
-        this.showSolution = show;
-        document.getElementById('mathModal').style.display = 'none';
-        // Force a redraw
-        this.loop();
+    animateSolution() {
+        this.showSolution = !this.showSolution;
+        if(this.showSolution) {
+            this.edges.forEach(e => e.blocked = this.minCutEdges.has(e.id));
+        } else {
+            this.reset();
+        }
+        this.updateUI();
     }
 
     isPathExisting() {
-        const source = 0;
-        const sink = this.nodes.length - 1;
-        let q = [source];
-        let visited = new Set([source]);
+        let q = [0], visited = new Set([0]);
         while(q.length) {
             let u = q.shift();
-            if(u === sink) return true;
+            if(u === this.nodes.length - 1) return true;
             this.edges.forEach(e => {
-                if(e.u === u && !e.blocked && !visited.has(e.v)) {
-                    visited.add(e.v);
-                    q.push(e.v);
-                }
+                if(e.u === u && !e.blocked && !visited.has(e.v)) { visited.add(e.v); q.push(e.v); }
             });
         }
         return false;
@@ -500,11 +342,8 @@ class FlowGame {
 
     handleHover(e) {
         if(this.showSolution) return; 
-        const rect = this.canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        let nearest = null;
-        let minD = 40;
+        const mx = e.clientX, my = e.clientY;
+        let nearest = null, minD = 40;
         this.edges.forEach(e => {
             const dist = Math.hypot(mx - e.labelX, my - e.labelY);
             if(dist < minD) { minD = dist; nearest = e; }
@@ -515,220 +354,99 @@ class FlowGame {
 
     handleClick(e) {
         if(this.showSolution) return;
-        if(this.hoverEdge) {
-            this.hoverEdge.blocked = !this.hoverEdge.blocked;
-            this.updateUI();
-        }
+        if(this.hoverEdge) { this.hoverEdge.blocked = !this.hoverEdge.blocked; this.updateUI(); }
     }
 
-    reset() {
-        this.edges.forEach(e => e.blocked = false);
-        this.updateUI();
-    }
+    reset() { this.edges.forEach(e => e.blocked = false); this.showSolution = false; this.updateUI(); }
 
     checkWin() {
-        const currentBlockCost = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0);
-        const escaped = this.isPathExisting();
-
-        const stamp = document.getElementById('stamp');
-        const title = document.getElementById('modalTitle');
-        const msg = document.getElementById('modalMsg');
+        const cost = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0);
+        const stamp = document.getElementById('stamp'), title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
         
-        if(escaped) {
-            stamp.innerText = "FAILED";
-            stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
-            title.innerText = "Robbers Escaped!";
-            msg.innerText = "There is still an open path. The bank was looted!";
-        } else if (currentBlockCost > this.maxFlowValue) {
-            stamp.innerText = "OVERKILL";
-            stamp.style.color = "#fbbc04"; stamp.style.borderColor = "#fbbc04";
-            title.innerText = "Budget Exceeded";
-            msg.innerText = "You stopped them, but it was too expensive. Find the more efficient bottleneck.";
+        if(this.isPathExisting()) {
+            stamp.innerText = "FAILED"; stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
+            title.innerText = "Robbers Escaped!"; msg.innerText = "There is still an open path. The bank was looted!";
+        } else if (cost > this.maxFlowValue) {
+            stamp.innerText = "OVERKILL"; stamp.style.color = "#f9a825"; stamp.style.borderColor = "#f9a825";
+            title.innerText = "Budget Exceeded"; msg.innerText = "You stopped them, but it was too expensive. Find the bottleneck.";
         } else {
-            stamp.innerText = "BUSTED";
-            stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
-            title.innerText = "Perfect Containment";
-            msg.innerText = "Excellent work, Detective. You found the Min-Cut!";
+            stamp.innerText = "BUSTED"; stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
+            title.innerText = "Perfect Containment"; msg.innerText = "Excellent work, Detective. You found the Min-Cut!";
         }
-
-        document.getElementById('endUserCost').innerText = currentBlockCost;
+        document.getElementById('endUserCost').innerText = cost;
         document.getElementById('endOptCost').innerText = this.maxFlowValue;
         document.getElementById('modal').style.display = 'flex';
     }
 
-    updateUI() {
-        const cost = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0);
-        document.getElementById('userCut').innerText = cost;
-    }
+    updateUI() { document.getElementById('userCut').innerText = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0); }
 
     loop() {
-        this.frame++;
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.frame++; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // --- DRAW EDGES ---
+        // Edges
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u];
-            const p2 = this.nodes[e.v];
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
             const isHover = (this.hoverEdge === e);
-
             this.ctx.lineCap = "round";
 
             if(this.showSolution) {
-                // --- VISUALIZATION MODE (Math Vision) ---
-                
-                // 1. Draw Background Pipe (Capacity)
-                this.ctx.beginPath();
-                this.ctx.moveTo(p1.x, p1.y);
-                this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                this.ctx.strokeStyle = "#e0e0e0";
-                this.ctx.lineWidth = e.capacity * 2.5; 
-                this.ctx.setLineDash([]);
-                this.ctx.stroke();
+                // Flow visualization
+                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                this.ctx.strokeStyle = "#e0e0e0"; this.ctx.lineWidth = Math.max(6, e.capacity * 2.5); this.ctx.setLineDash([]); this.ctx.stroke();
 
-                // 2. Draw Inner Flow (Blue Fluid)
                 const flow = this.solutionFlows[e.id] || 0;
                 if(flow > 0) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(p1.x, p1.y);
-                    this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                    this.ctx.strokeStyle = "#4285f4"; // Flow Blue
-                    this.ctx.lineWidth = flow * 2.5;
-                    this.ctx.stroke();
+                    this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                    this.ctx.strokeStyle = "#4285f4"; this.ctx.lineWidth = flow * 2.5; this.ctx.stroke();
                 }
-
-                // 3. Highlight Min-Cut Edges (The Solution)
-                if(this.minCutEdges.has(e.id)) {
-                    // Draw Red Dashed Cut Line
-                    this.ctx.save();
-                    this.ctx.translate(e.labelX, e.labelY);
-                    this.ctx.rotate(Math.PI/4); 
-                    
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(0, -25); this.ctx.lineTo(0, 25);
-                    this.ctx.strokeStyle = "#ea4335";
-                    this.ctx.lineWidth = 4;
-                    this.ctx.setLineDash([5, 5]);
-                    this.ctx.stroke();
-                    
-                    // Label "CUT"
-                    this.ctx.rotate(-Math.PI/4);
-                    this.ctx.fillStyle = "#ea4335";
-                    this.ctx.font = "bold 14px Arial";
-                    this.ctx.fillText("CUT", 0, -25);
-                    this.ctx.restore();
-                }
-
             } else {
-                // --- GAME MODE (Standard) ---
-                this.ctx.beginPath();
-                this.ctx.moveTo(p1.x, p1.y);
-                this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                // Road styling
+                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                this.ctx.strokeStyle = "#37474f"; this.ctx.lineWidth = Math.max(8, e.capacity * 1.5); this.ctx.setLineDash([]); this.ctx.stroke();
                 
-                if (e.blocked) {
-                    // Blocked appearance
-                    this.ctx.strokeStyle = "#eee";
-                    this.ctx.lineWidth = 6;
-                    this.ctx.setLineDash([]);
-                    this.ctx.stroke();
-
-                    // Draw X
-                    this.ctx.save();
-                    this.ctx.translate(e.labelX, e.labelY);
-                    this.ctx.rotate(Math.PI/4);
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(-15, 0); this.ctx.lineTo(15, 0);
-                    this.ctx.moveTo(0, -15); this.ctx.lineTo(0, 15);
-                    this.ctx.strokeStyle = "#ea4335";
-                    this.ctx.lineWidth = 5;
-                    this.ctx.stroke();
-                    this.ctx.restore();
-                } else {
-                    // Normal appearance
-                    this.ctx.strokeStyle = isHover ? "#1a73e8" : "#9aa0a6";
-                    this.ctx.lineWidth = isHover ? 6 : 4;
-                    this.ctx.setLineDash([10, 5]); 
-                    this.ctx.stroke();
-                    this.drawArrow(p1, p2, e.cpX, e.cpY, isHover);
-                }
+                this.ctx.strokeStyle = "#fbc02d"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 10]); this.ctx.stroke();
             }
 
-            // Draw Capacity Label (Always visible)
-            if (!e.blocked || this.showSolution) {
-                this.ctx.beginPath();
-                this.ctx.arc(e.labelX, e.labelY, 14, 0, Math.PI*2);
-                this.ctx.fillStyle = "#fff";
-                this.ctx.fill();
-                this.ctx.strokeStyle = (isHover && !this.showSolution) ? "#1a73e8" : "#5f6368";
-                this.ctx.lineWidth = 2;
-                this.ctx.setLineDash([]);
-                this.ctx.stroke();
+            // Blocked X / Cut
+            if (e.blocked || (this.showSolution && this.minCutEdges.has(e.id))) {
+                this.ctx.save(); this.ctx.translate(e.labelX, e.labelY); this.ctx.rotate(Math.PI/4);
+                this.ctx.beginPath(); this.ctx.moveTo(-15, 0); this.ctx.lineTo(15, 0); this.ctx.moveTo(0, -15); this.ctx.lineTo(0, 15);
+                this.ctx.strokeStyle = "#ea4335"; this.ctx.lineWidth = 5; this.ctx.setLineDash([]); this.ctx.stroke();
+                if(this.showSolution) { this.ctx.rotate(-Math.PI/4); this.ctx.fillStyle = "#ea4335"; this.ctx.font = "bold 14px Arial"; this.ctx.fillText("CUT", 0, -25); }
+                this.ctx.restore();
+            }
 
-                this.ctx.fillStyle = "#000";
-                this.ctx.font = "bold 14px 'Architects Daughter'";
-                this.ctx.textAlign = "center";
-                this.ctx.textBaseline = "middle";
-                this.ctx.fillText(e.capacity, e.labelX, e.labelY);
+            // Capacity Label
+            if (!e.blocked || this.showSolution) {
+                this.ctx.beginPath(); this.ctx.arc(e.labelX, e.labelY, 14, 0, Math.PI*2);
+                this.ctx.fillStyle = "#fff"; this.ctx.fill();
+                this.ctx.strokeStyle = (isHover && !this.showSolution) ? "#1a73e8" : "#5f6368";
+                this.ctx.lineWidth = 2; this.ctx.setLineDash([]); this.ctx.stroke();
+                this.ctx.fillStyle = "#000"; this.ctx.font = "bold 14px 'Architects Daughter'";
+                this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle"; this.ctx.fillText(e.capacity, e.labelX, e.labelY);
             }
         });
 
-        // --- DRAW NODES ---
+        // Nodes
         this.nodes.forEach(n => {
-            // Pulse Effect
             const pulse = Math.sin(this.frame * 0.05 + n.id) * 2;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
+            this.ctx.beginPath(); this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
             if (n.type === 'source') this.ctx.fillStyle = "#e8f0fe";
             else if (n.type === 'sink') this.ctx.fillStyle = "#fce8e6";
             else this.ctx.fillStyle = "#fff";
-            this.ctx.fill();
-            this.ctx.strokeStyle = "#5f6368"; 
-            this.ctx.lineWidth = 3;
-            this.ctx.setLineDash([]);
-            this.ctx.stroke();
+            this.ctx.fill(); this.ctx.strokeStyle = "#5f6368"; this.ctx.lineWidth = 3; this.ctx.setLineDash([]); this.ctx.stroke();
 
             this.ctx.fillStyle = "#202124";
             if (n.label) {
-                this.ctx.font = "bold 16px 'Architects Daughter'";
-                this.ctx.fillText(n.label, n.x, n.y + 5);
-                this.ctx.font = "24px Arial";
-                const icon = n.type === 'source' ? "🏦" : "🚓";
-                this.ctx.fillText(icon, n.x, n.y - 18);
+                this.ctx.font = "bold 16px 'Architects Daughter'"; this.ctx.fillText(n.label, n.x, n.y + 5);
+                this.ctx.font = "24px Arial"; this.ctx.fillText(n.type === 'source' ? "🏦" : "🚓", n.x, n.y - 18);
             } else {
-                this.ctx.beginPath();
-                this.ctx.arc(n.x, n.y, 4, 0, Math.PI*2);
-                this.ctx.fillStyle = "#ccc";
-                this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(n.x, n.y, 4, 0, Math.PI*2); this.ctx.fillStyle = "#ccc"; this.ctx.fill();
             }
         });
-
         requestAnimationFrame(() => this.loop());
     }
-
-    drawArrow(p1, p2, cpX, cpY, isHover) {
-        const t = 0.8; 
-        const ax = (1-t)*(1-t)*p1.x + 2*(1-t)*t*cpX + t*t*p2.x;
-        const ay = (1-t)*(1-t)*p1.y + 2*(1-t)*t*cpY + t*t*p2.y;
-        
-        const dx = 2*(1-t)*(cpX - p1.x) + 2*t*(p2.x - cpX);
-        const dy = 2*(1-t)*(cpY - p1.y) + 2*t*(p2.y - cpY);
-        const angle = Math.atan2(dy, dx);
-
-        this.ctx.save();
-        this.ctx.translate(ax, ay);
-        this.ctx.rotate(angle);
-        
-        this.ctx.beginPath();
-        this.ctx.moveTo(-10, -6);
-        this.ctx.lineTo(0, 0);
-        this.ctx.lineTo(-10, 6);
-        this.ctx.strokeStyle = isHover ? "#1a73e8" : "#9aa0a6";
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
-        this.ctx.restore();
-    }
 }
-
 const game = new FlowGame();
 </script>
 </body>

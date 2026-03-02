@@ -1,3 +1,4 @@
+<!-- START OF FILE road_repair_mst.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gridlock: Civil Engineer</title>
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
-    <!-- MathJax -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
@@ -22,126 +22,96 @@
         }
 
         body {
-            margin: 0; overflow: hidden;
-            background-color: var(--paper-bg);
-            font-family: 'Architects Daughter', cursive;
-            color: #202124; user-select: none;
+            margin: 0; overflow: hidden; background-color: var(--paper-bg);
+            font-family: 'Architects Daughter', cursive; color: #202124; user-select: none;
+            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 30px 30px; 
         }
 
-        /* --- UI LAYOUT --- */
         .ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            padding: 20px; box-sizing: border-box;
-            display: flex; justify-content: space-between;
+            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
         }
 
         .notebook-panel {
-            background: #fff; transform: rotate(-1deg);
-            padding: 25px 35px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
-            border: 1px solid #ddd; border-radius: 4px;
-            pointer-events: auto; width: 260px; 
-            display: flex; flex-direction: column; z-index: 10;
+            background: #fff; transform: rotate(-1deg); padding: 25px 30px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
         }
 
-        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--blueprint-blue); text-decoration: underline; }
-        
-        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
-        .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--asphalt); }
+        h1 { margin: 0 0 15px 0; font-size: 1.6rem; color: var(--blueprint-blue); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.2rem; }
+        .cost-display { font-size: 2.2rem; font-weight: bold; color: var(--asphalt); }
 
-        /* BUTTONS */
         button {
-            font-family: 'Architects Daughter', cursive;
-            border: 3px solid var(--asphalt);
-            padding: 12px 20px; font-size: 1.2rem; font-weight: bold;
-            cursor: pointer;
-            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; 
-            transition: all 0.2s; margin-top: 10px; width: 100%;
+            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
+            padding: 12px 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%; background: #fff;
         }
+        button:hover { background: #eee; transform: translateY(-2px); }
 
         .btn-check { background: var(--construction-yellow); color: var(--asphalt); border: 3px solid var(--asphalt); box-shadow: 3px 3px 0 var(--asphalt); }
-        .btn-check:hover { background: var(--construction-orange); transform: scale(1.02) rotate(1deg); }
-        .btn-check:active { transform: scale(0.98); }
+        .btn-check:hover { background: var(--construction-orange); }
 
-        .btn-reset { background: #fff; color: var(--asphalt); margin-top: 10px; }
-        .btn-reset:hover { background: #f0f0f0; }
-
-        /* RIGHT INSTRUCTIONS */
-        .intel-box {
-            transform: rotate(1deg); right: 20px; height: fit-content;
-        }
-        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px; }
+        .intel-list { padding-left: 20px; font-size: 1rem; line-height: 1.5; margin: 0; }
         .intel-list li { margin-bottom: 8px; }
 
-        /* MATH BTN */
-        .info-container { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; }
-        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; display: flex; gap: 10px; align-items: center; }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
         .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
+        
+        .btn-circle {
+            width: 48px; height: 45px; border-radius: 50%; background: var(--blueprint-blue); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+        }
+        .btn-circle:hover { transform: scale(1.08) rotate(5deg); background: #114c9c; }
 
-        /* MODALS */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px);
         }
         .clipboard {
-            background: #fff; width: 600px; padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            text-align: center; position: relative; transform: rotate(1deg);
-            border-radius: 5px; max-height: 90vh; overflow-y: auto;
-            animation: popIn 0.3s ease-out;
+            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center; position: relative; transform: rotate(1deg); border-radius: 5px;
         }
-        @keyframes popIn { from { transform: scale(0.8) rotate(1deg); opacity: 0; } to { transform: scale(1) rotate(1deg); opacity: 1; } }
-
         .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
-        
-        .math-section {
-            background: #f8f9fa; border-left: 5px solid var(--math-purple);
-            padding: 15px; margin: 15px 0; font-size: 1rem;
-            font-family: 'Roboto', sans-serif; line-height: 1.5;
-        }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
         .math-section h3 { margin-top: 0; color: var(--math-purple); }
-
         .stamp-result {
-            font-size: 3.5rem; font-weight: bold;
-            transform: rotate(-12deg);
-            border: 6px solid; padding: 10px 30px; border-radius: 15px;
-            display: inline-block; margin: 20px 0; opacity: 0.9;
+            font-size: 3rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; transform: rotate(-12deg);
+            border: 5px solid; padding: 10px 30px; border-radius: 10px; display: inline-block; margin: 20px 0; opacity: 0.9;
         }
         .stamp-pass { color: var(--success-green); border-color: var(--success-green); }
         .stamp-fail { color: var(--fail-red); border-color: var(--fail-red); }
 
-        .viz-toggle {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            background: #eee; padding: 10px; border-radius: 8px; margin-top: 20px;
+        @media (max-width: 768px) {
+            .ui-layer { flex-direction: column; padding: 10px; }
+            .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
+            .intel-box { display: none; }
         }
-
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
 </head>
 <body>
-
     <canvas id="gameCanvas"></canvas>
 
     <div class="ui-layer">
-        <!-- LEFT PANEL -->
-        <div class="notebook-panel">
+        <div class="notebook-panel" id="leftPanel">
             <h1>Budget Tracker</h1>
             <div class="stat-row"><span>Total Cost:</span></div>
             <div class="stat-row"><span class="cost-display" id="userCost">$0</span></div>
             <hr style="border: 1px dashed #ccc; margin: 15px 0;">
             <button class="btn-check" onclick="game.checkWin()">SUBMIT PLAN</button>
-            <button class="btn-reset" onclick="game.reset()">Reset Roads</button>
-            <button class="btn-reset" onclick="game.newLevel()">New Region</button>
-
-            <div class="info-container">
+            <button onclick="game.reset()">Reset Roads</button>
+            <button onclick="game.newLevel()">New Region</button>
+            <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
             </div>
         </div>
 
-        <!-- RIGHT PANEL -->
-        <div class="notebook-panel intel-box">
+        <div class="notebook-panel intel-box" id="rightPanel">
             <h1>Work Order</h1>
             <ul class="intel-list">
                 <li><b>Goal:</b> Connect <b>ALL</b> cities to the power grid.</li>
@@ -157,35 +127,31 @@
         </div>
     </div>
 
-    <!-- WIN/LOSS MODAL -->
     <div class="modal-overlay" id="modal">
         <div class="clipboard">
-            <h2 id="modalTitle" style="font-size: 2rem; margin:0;">Inspection Report</h2>
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Inspection Report</h2>
             <div id="stamp" class="stamp-result stamp-pass">APPROVED</div>
-            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px;">Sample text.</p>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Sample text.</p>
             <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px;">
                 <div>Your Cost: <b id="endUserCost">$0</b></div>
                 <div>Optimal Cost: <b id="endOptCost">$0</b></div>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="btn-check" onclick="game.newLevel()">Next Job</button>
-                <button class="btn-reset" onclick="document.getElementById('modal').style.display='none'">Refine Plan</button>
+                <button onclick="document.getElementById('modal').style.display='none'">Refine Plan</button>
             </div>
         </div>
     </div>
 
-    <!-- MATH EXPLANATION MODAL -->
     <div class="modal-overlay" id="mathModal">
         <div class="clipboard math-mode">
             <h2 style="font-family:'Architects Daughter'; text-align:center;">Minimum Spanning Trees (MST)</h2>
-            
             <div class="math-section">
                 <h3>Problem Statement</h3>
                 <p>Given a connected, undirected graph \( G = (V, E) \) with edge weights \( w(e) \), find a subset of edges \( T \subseteq E \) that connects all vertices and minimizes total weight.</p>
                 <p>$$ \text{minimize } \sum_{e \in T} w(e) $$</p>
                 <p>This subset \( T \) is always a tree (no cycles) and spans the graph.</p>
             </div>
-
             <div class="math-section">
                 <h3>Kruskal's Algorithm</h3>
                 <p>The optimal strategy (Greedy) to solve this is:</p>
@@ -196,13 +162,7 @@
                 </ol>
                 <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">MST Cost: <span id="mathOptVal" style="color:var(--math-purple)">$0</span></p>
             </div>
-
-            <div class="viz-toggle">
-                <input type="checkbox" id="vizCheck" onchange="game.toggleMathViz(this.checked)" style="width:20px; height:20px;">
-                <label for="vizCheck" style="font-family:'Architects Daughter'; font-size:1.2rem; cursor:pointer;">Visualize Optimal Tree on Map</label>
-            </div>
-
-            <button class="btn-reset" onclick="document.getElementById('mathModal').style.display='none'">Return to Site</button>
+            <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Site</button>
         </div>
     </div>
 
@@ -211,12 +171,10 @@ class UnionFind {
     constructor(n) { this.parent = Array.from({length: n}, (_, i) => i); }
     find(i) {
         if (this.parent[i] === i) return i;
-        this.parent[i] = this.find(this.parent[i]);
-        return this.parent[i];
+        this.parent[i] = this.find(this.parent[i]); return this.parent[i];
     }
     union(i, j) {
-        const rootI = this.find(i);
-        const rootJ = this.find(j);
+        const rootI = this.find(i), rootJ = this.find(j);
         if (rootI !== rootJ) { this.parent[rootI] = rootJ; return true; }
         return false;
     }
@@ -226,200 +184,118 @@ class RoadGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
-        this.nodes = [];
-        this.edges = [];
-        this.optimalEdges = new Set(); // Stores IDs of MST edges
-        this.optimalCost = 0;
-        this.showSolution = false;
-        
-        // Settings
-        this.nodeRadius = 35; 
-        this.hoverEdge = null;
-        this.frame = 0;
+        this.nodes = []; this.edges =[]; this.optimalEdges = new Set(); 
+        this.optimalCost = 0; this.showSolution = false;
+        this.nodeRadius = 35; this.hoverEdge = null; this.frame = 0;
+        this.safeBounds = {minX:0, maxX:0, minY:0, maxY:0};
 
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', () => { this.resize(); this.updateSafeBounds(); });
         this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
 
         this.resize();
-        this.newLevel();
+        setTimeout(() => this.newLevel(), 50);
         this.loop();
     }
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+
+    updateSafeBounds() {
+        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
+        const isMobile = window.innerWidth <= 768;
+        if(isMobile) {
+            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+        } else {
+            let minX = lRect.right + 60; let maxX = rRect.left - 60;
+            if(maxX <= minX) maxX = minX + 200;
+            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+        }
     }
 
     newLevel() {
-        this.nodes = [];
-        this.edges = [];
-        this.frame = 0;
-        this.showSolution = false;
-        document.getElementById('vizCheck').checked = false;
+        this.nodes = []; this.edges =[]; this.frame = 0; this.showSolution = false;
         document.getElementById('modal').style.display = 'none';
-        document.getElementById('mathModal').style.display = 'none';
+        this.updateSafeBounds();
         
-        // --- 1. Generate Nodes (Force Directed Initial Scatter) ---
-        const count = Math.floor(Math.random() * 3) + 6; // 6 to 8 cities
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
-        const spreadW = this.canvas.width * 0.5;
-        const spreadH = this.canvas.height * 0.5;
+        const count = Math.floor(Math.random() * 3) + 6; 
+        const sb = this.safeBounds;
+        const centerX = (sb.minX + sb.maxX) / 2, centerY = (sb.minY + sb.maxY) / 2;
+        const spreadW = (sb.maxX - sb.minX) * 0.8, spreadH = (sb.maxY - sb.minY) * 0.8;
 
         for(let i=0; i<count; i++) {
-            this.nodes.push({ 
-                id: i, 
-                x: centerX + (Math.random()-0.5) * spreadW, 
-                y: centerY + (Math.random()-0.5) * spreadH,
-                vx: 0, vy: 0, 
-                label: String.fromCharCode(65 + i) 
-            });
+            this.nodes.push({ id: i, x: centerX + (Math.random()-0.5)*spreadW, y: centerY + (Math.random()-0.5)*spreadH, vx: 0, vy: 0, label: String.fromCharCode(65 + i) });
         }
 
-        // --- 2. Generate Connectivity ---
-        // Ensure path graph first (guarantee connectivity)
         let indices = Array.from({length: count}, (_, i) => i);
-        // Shuffle
         indices.sort(() => Math.random() - 0.5);
         for(let i=0; i<count-1; i++) this.addEdge(indices[i], indices[i+1]);
         
-        // Add Random extra edges to create cycles
-        const extraEdges = count + 2; 
-        for(let k=0; k<extraEdges; k++) {
-            let u = Math.floor(Math.random()*count);
-            let v = Math.floor(Math.random()*count);
+        for(let k=0; k<count+2; k++) {
+            let u = Math.floor(Math.random()*count), v = Math.floor(Math.random()*count);
             if(u !== v) this.addEdge(u, v);
         }
 
-        // --- 3. Physics Layout ---
-        this.relaxGraph(350); 
-        this.updateEdgeCurves();
-        
-        // --- 4. Resolve Label Collisions (Visual Clarity) ---
-        this.resolveLabelOverlaps();
-
-        this.calculateMST();
-        this.updateUI();
+        this.relaxGraph(350); this.updateEdgeCurves(); this.resolveLabelOverlaps(); this.calculateMST(); this.updateUI();
     }
 
     addEdge(u, v) {
         if(this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) return;
-        const weight = Math.floor(Math.random() * 15) + 5;
-        this.edges.push({ 
-            id: this.edges.length,
-            u, v, weight, 
-            active: false, 
-            cpX: 0, cpY: 0,
-            labelX: 0, labelY: 0,
-            t: 0.5
-        });
+        this.edges.push({ id: this.edges.length, u, v, weight: Math.floor(Math.random() * 15) + 5, active: false, cpX: 0, cpY: 0, labelX: 0, labelY: 0, t: 0.5 });
     }
 
-    // Force Directed Layout
     relaxGraph(iterations) {
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const repelK = 150000;
-        const springLen = 250;
-        const springK = 0.008; 
-
+        const repelK = 150000, springLen = 200, springK = 0.01; 
+        const sb = this.safeBounds;
         for(let i=0; i<iterations; i++) {
-            // Repulsion
             for(let a=0; a<this.nodes.length; a++) {
                 for(let b=0; b<this.nodes.length; b++) {
                     if(a === b) continue;
-                    let n1 = this.nodes[a];
-                    let n2 = this.nodes[b];
-                    let dx = n1.x - n2.x;
-                    let dy = n1.y - n2.y;
-                    let dist = Math.sqrt(dx*dx + dy*dy) + 0.1;
-                    let force = repelK / (dist * dist);
-                    n1.vx += (dx/dist) * force;
-                    n1.vy += (dy/dist) * force;
+                    let dx = this.nodes[a].x - this.nodes[b].x, dy = this.nodes[a].y - this.nodes[b].y;
+                    let dist = Math.sqrt(dx*dx + dy*dy) + 0.1, force = repelK / (dist * dist);
+                    this.nodes[a].vx += (dx/dist)*force; this.nodes[a].vy += (dy/dist)*force;
                 }
             }
-            // Attraction
             this.edges.forEach(e => {
-                let n1 = this.nodes[e.u];
-                let n2 = this.nodes[e.v];
-                let dx = n2.x - n1.x;
-                let dy = n2.y - n1.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                let force = (dist - springLen) * springK;
-                n1.vx += (dx/dist) * force;
-                n1.vy += (dy/dist) * force;
-                n2.vx -= (dx/dist) * force;
-                n2.vy -= (dy/dist) * force;
+                let dx = this.nodes[e.v].x - this.nodes[e.u].x, dy = this.nodes[e.v].y - this.nodes[e.u].y;
+                let dist = Math.sqrt(dx*dx + dy*dy), force = (dist - springLen) * springK;
+                this.nodes[e.u].vx += (dx/dist)*force; this.nodes[e.u].vy += (dy/dist)*force;
+                this.nodes[e.v].vx -= (dx/dist)*force; this.nodes[e.v].vy -= (dy/dist)*force;
             });
-            // Centering
             this.nodes.forEach(n => {
-                n.vx += (width/2 - n.x) * 0.01;
-                n.vy += (height/2 - n.y) * 0.01;
-                n.x += n.vx;
-                n.y += n.vy;
-                n.vx *= 0.5; n.vy *= 0.5;
-                // Clamp
-                n.x = Math.max(300, Math.min(width - 300, n.x));
-                n.y = Math.max(80, Math.min(height - 80, n.y));
+                n.x += n.vx; n.y += n.vy; n.vx *= 0.5; n.vy *= 0.5;
+                n.x = Math.max(sb.minX, Math.min(sb.maxX, n.x));
+                n.y = Math.max(sb.minY, Math.min(sb.maxY, n.y));
             });
         }
     }
 
     updateEdgeCurves() {
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u];
-            const p2 = this.nodes[e.v];
-            const midX = (p1.x + p2.x) / 2;
-            const midY = (p1.y + p2.y) / 2;
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            
-            // Subtle random curve
-            const r = ((e.u * 13 + e.v * 7) % 100) / 100;
-            const offset = (r - 0.5) * 40;
-            
-            e.cpX = midX - (dy/dist) * offset;
-            e.cpY = midY + (dx/dist) * offset;
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
+            const dx = p2.x - p1.x, dy = p2.y - p1.y, dist = Math.sqrt(dx*dx + dy*dy);
+            const offset = (((e.u * 13 + e.v * 7) % 100) / 100 - 0.5) * 40;
+            e.cpX = (p1.x + p2.x)/2 - (dy/dist)*offset; e.cpY = (p1.y + p2.y)/2 + (dx/dist)*offset;
             this.updateLabelPos(e);
         });
     }
 
     updateLabelPos(e) {
-        const p1 = this.nodes[e.u];
-        const p2 = this.nodes[e.v];
-        const t = e.t;
-        e.labelX = (1-t)*(1-t)*p1.x + 2*(1-t)*t*e.cpX + t*t*p2.x;
-        e.labelY = (1-t)*(1-t)*p1.y + 2*(1-t)*t*e.cpY + t*t*p2.y;
+        e.labelX = (1-e.t)*(1-e.t)*this.nodes[e.u].x + 2*(1-e.t)*e.t*e.cpX + e.t*e.t*this.nodes[e.v].x;
+        e.labelY = (1-e.t)*(1-e.t)*this.nodes[e.u].y + 2*(1-e.t)*e.t*e.cpY + e.t*e.t*this.nodes[e.v].y;
     }
 
-    // Ensure cost labels don't overlap edges or nodes
     resolveLabelOverlaps() {
-        const iterations = 50;
-        const minDistance = 35; 
-
-        for (let iter = 0; iter < iterations; iter++) {
+        for (let iter = 0; iter < 50; iter++) {
             let moved = false;
             for (let i = 0; i < this.edges.length; i++) {
                 for (let j = i + 1; j < this.edges.length; j++) {
-                    let e1 = this.edges[i];
-                    let e2 = this.edges[j];
-                    let dx = e1.labelX - e2.labelX;
-                    let dy = e1.labelY - e2.labelY;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-
-                    if (dist < minDistance) {
-                        const slideSpeed = 0.02;
+                    let e1 = this.edges[i], e2 = this.edges[j];
+                    if (Math.hypot(e1.labelX - e2.labelX, e1.labelY - e2.labelY) < 35) {
                         let dir = (e1.t < e2.t) ? -1 : 1;
-                        e1.t += dir * slideSpeed;
-                        e2.t -= dir * slideSpeed;
-                        e1.t = Math.max(0.3, Math.min(0.7, e1.t));
-                        e2.t = Math.max(0.3, Math.min(0.7, e2.t));
-                        this.updateLabelPos(e1);
-                        this.updateLabelPos(e2);
-                        moved = true;
+                        e1.t = Math.max(0.3, Math.min(0.7, e1.t + dir * 0.02));
+                        e2.t = Math.max(0.3, Math.min(0.7, e2.t - dir * 0.02));
+                        this.updateLabelPos(e1); this.updateLabelPos(e2); moved = true;
                     }
                 }
             }
@@ -428,206 +304,98 @@ class RoadGame {
     }
 
     calculateMST() {
-        const sorted = [...this.edges].sort((a,b) => a.weight - b.weight);
+        const sorted =[...this.edges].sort((a,b) => a.weight - b.weight);
         const uf = new UnionFind(this.nodes.length);
-        this.optimalCost = 0;
-        this.optimalEdges.clear();
-
-        for(let e of sorted) {
-            if(uf.union(e.u, e.v)) {
-                this.optimalCost += e.weight;
-                this.optimalEdges.add(e.id);
-            }
-        }
+        this.optimalCost = 0; this.optimalEdges.clear();
+        for(let e of sorted) if(uf.union(e.u, e.v)) { this.optimalCost += e.weight; this.optimalEdges.add(e.id); }
     }
 
-    // --- INTERACTION ---
-    openMathModal() {
-        document.getElementById('mathOptVal').innerText = "$" + this.optimalCost;
-        document.getElementById('mathModal').style.display = 'flex';
-    }
+    openMathModal() { document.getElementById('mathOptVal').innerText = "$" + this.optimalCost; document.getElementById('mathModal').style.display = 'flex'; }
 
-    toggleMathViz(show) {
-        this.showSolution = show;
-        document.getElementById('mathModal').style.display = 'none';
-        this.loop(); // Redraw
+    animateSolution() {
+        this.showSolution = !this.showSolution;
+        if(this.showSolution) this.edges.forEach(e => e.active = this.optimalEdges.has(e.id));
+        else this.reset();
+        this.updateUI();
     }
 
     handleHover(e) {
         if(this.showSolution) return;
         const rect = this.canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        
-        let nearest = null;
-        let minD = 45;
-
-        this.edges.forEach(e => {
-            const dist = Math.hypot(mx - e.labelX, my - e.labelY);
-            if(dist < minD) { minD = dist; nearest = e; }
+        let nearest = null, minD = 45;
+        this.edges.forEach(edge => {
+            if(Math.hypot((e.clientX - rect.left) - edge.labelX, (e.clientY - rect.top) - edge.labelY) < minD) { minD = Math.hypot((e.clientX - rect.left) - edge.labelX, (e.clientY - rect.top) - edge.labelY); nearest = edge; }
         });
-        
-        this.hoverEdge = nearest;
-        this.canvas.style.cursor = this.hoverEdge ? 'pointer' : 'default';
+        this.hoverEdge = nearest; this.canvas.style.cursor = this.hoverEdge ? 'pointer' : 'default';
     }
 
-    handleClick(e) {
-        if(this.showSolution) return;
-        if(this.hoverEdge) {
-            this.hoverEdge.active = !this.hoverEdge.active;
-            this.updateUI();
-        }
-    }
+    handleClick(e) { if(this.showSolution) return; if(this.hoverEdge) { this.hoverEdge.active = !this.hoverEdge.active; this.updateUI(); } }
 
-    reset() {
-        this.edges.forEach(e => e.active = false);
-        this.updateUI();
-    }
+    reset() { this.edges.forEach(e => e.active = false); this.showSolution = false; this.updateUI(); }
 
     checkWin() {
         const userCost = this.edges.reduce((sum, e) => e.active ? sum + e.weight : sum, 0);
-        
         const uf = new UnionFind(this.nodes.length);
         this.edges.forEach(e => { if(e.active) uf.union(e.u, e.v); });
-        const root = uf.find(0);
-        const isConnected = this.nodes.every(n => uf.find(n.id) === root);
+        const isConnected = this.nodes.every(n => uf.find(n.id) === uf.find(0));
 
-        const stamp = document.getElementById('stamp');
-        const title = document.getElementById('modalTitle');
-        const msg = document.getElementById('modalMsg');
-        
+        const stamp = document.getElementById('stamp'), title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
         if(!isConnected) {
-            stamp.className = "stamp-result stamp-fail";
-            stamp.innerText = "ISOLATED";
-            title.innerText = "Plan Rejected";
-            msg.innerText = "Some cities are not connected to the grid. The network must be contiguous.";
+            stamp.className = "stamp-result stamp-fail"; stamp.innerText = "ISOLATED";
+            title.innerText = "Plan Rejected"; msg.innerText = "Some cities are not connected to the grid.";
         } else if (userCost > this.optimalCost) {
-            stamp.className = "stamp-result stamp-fail";
-            stamp.style.color = "#f9a825"; stamp.style.borderColor = "#f9a825";
-            stamp.innerText = "OVERBUDGET";
-            title.innerText = "Too Expensive";
-            msg.innerText = "The cities are connected, but you wasted taxpayer money. Find cheaper routes.";
+            stamp.className = "stamp-result stamp-fail"; stamp.style.color = "#f9a825"; stamp.style.borderColor = "#f9a825";
+            stamp.innerText = "OVERBUDGET"; title.innerText = "Too Expensive"; msg.innerText = "You connected them, but wasted taxpayer money.";
         } else {
-            stamp.className = "stamp-result stamp-pass";
-            stamp.innerText = "APPROVED";
-            title.innerText = "Engineering Masterpiece";
-            msg.innerText = "You found the Minimum Spanning Tree perfectly.";
+            stamp.className = "stamp-result stamp-pass"; stamp.innerText = "APPROVED";
+            title.innerText = "Engineering Masterpiece"; msg.innerText = "You found the Minimum Spanning Tree perfectly.";
         }
-
-        document.getElementById('endUserCost').innerText = "$" + userCost;
-        document.getElementById('endOptCost').innerText = "$" + this.optimalCost;
+        document.getElementById('endUserCost').innerText = "$" + userCost; document.getElementById('endOptCost').innerText = "$" + this.optimalCost;
         document.getElementById('modal').style.display = 'flex';
     }
 
-    updateUI() {
-        const cost = this.edges.reduce((sum, e) => e.active ? sum + e.weight : sum, 0);
-        document.getElementById('userCost').innerText = "$" + cost;
-    }
+    updateUI() { document.getElementById('userCost').innerText = "$" + this.edges.reduce((sum, e) => e.active ? sum + e.weight : sum, 0); }
 
-    // --- DRAWING ---
     loop() {
-        this.frame++;
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.frame++; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 1. Draw Edges
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u];
-            const p2 = this.nodes[e.v];
-            const isHover = (this.hoverEdge === e);
-
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v], isHover = (this.hoverEdge === e);
             this.ctx.lineCap = "round";
 
-            // Draw Optimal Solution Highlight (Math Vision)
             if(this.showSolution && this.optimalEdges.has(e.id)) {
-                this.ctx.beginPath();
-                this.ctx.moveTo(p1.x, p1.y);
-                this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                this.ctx.strokeStyle = "rgba(46, 125, 50, 0.3)"; // Transparent Green
-                this.ctx.lineWidth = 25;
-                this.ctx.setLineDash([]);
-                this.ctx.stroke();
+                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                this.ctx.strokeStyle = "rgba(46, 125, 50, 0.3)"; this.ctx.lineWidth = 25; this.ctx.setLineDash([]); this.ctx.stroke();
             }
 
-            // Draw Base Edge
-            this.ctx.beginPath();
-            this.ctx.moveTo(p1.x, p1.y);
-            this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-
+            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
             if(e.active) {
-                // Paved Road Style
-                this.ctx.strokeStyle = "#37474f"; 
-                this.ctx.lineWidth = 14;
-                this.ctx.setLineDash([]);
-                this.ctx.stroke();
-
-                // Yellow Center Line
-                this.ctx.beginPath();
-                this.ctx.moveTo(p1.x, p1.y);
-                this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                this.ctx.strokeStyle = "#fbc02d";
-                this.ctx.lineWidth = 2;
-                this.ctx.setLineDash([15, 15]);
-                this.ctx.stroke();
+                this.ctx.strokeStyle = "#37474f"; this.ctx.lineWidth = 14; this.ctx.setLineDash([]); this.ctx.stroke();
+                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                this.ctx.strokeStyle = "#fbc02d"; this.ctx.lineWidth = 2; this.ctx.setLineDash([15, 15]); this.ctx.stroke();
             } else {
-                // Dirt Road Style
-                this.ctx.strokeStyle = isHover ? "#1565c0" : "#bbb";
-                this.ctx.lineWidth = isHover ? 6 : 4;
-                this.ctx.setLineDash([8, 12]);
-                this.ctx.stroke();
+                this.ctx.strokeStyle = isHover ? "#1565c0" : "#bbb"; this.ctx.lineWidth = isHover ? 6 : 4; this.ctx.setLineDash([8, 12]); this.ctx.stroke();
             }
 
-            // Draw Cost Label
-            this.ctx.beginPath();
-            this.ctx.arc(e.labelX, e.labelY, 18, 0, Math.PI*2);
-            this.ctx.fillStyle = "#fff";
-            this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(e.labelX, e.labelY, 18, 0, Math.PI*2);
+            this.ctx.fillStyle = "#fff"; this.ctx.fill();
             this.ctx.strokeStyle = (e.active || (this.showSolution && this.optimalEdges.has(e.id))) ? "#333" : "#ccc";
-            this.ctx.lineWidth = 2;
-            this.ctx.setLineDash([]);
-            this.ctx.stroke();
-
-            this.ctx.fillStyle = "#000";
-            this.ctx.font = "bold 16px 'Architects Daughter'";
-            this.ctx.textAlign = "center";
-            this.ctx.textBaseline = "middle";
+            this.ctx.lineWidth = 2; this.ctx.setLineDash([]); this.ctx.stroke();
+            this.ctx.fillStyle = "#000"; this.ctx.font = "bold 16px 'Architects Daughter'"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
             this.ctx.fillText("$"+e.weight, e.labelX, e.labelY);
         });
 
-        // 2. Draw Nodes
         this.nodes.forEach(n => {
-            // Pulse Animation
             const pulse = Math.sin(this.frame * 0.05 + n.id) * 2;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
-            this.ctx.fillStyle = "#fff";
-            this.ctx.fill();
-            
-            this.ctx.strokeStyle = "#1565c0"; 
-            this.ctx.lineWidth = 3;
-            this.ctx.setLineDash([]);
-            this.ctx.stroke();
-
-            // Inner styling
-            this.ctx.fillStyle = "#1565c0";
-            this.ctx.font = "bold 24px 'Architects Daughter'";
-            this.ctx.textAlign = "center";
-            this.ctx.textBaseline = "middle";
+            this.ctx.beginPath(); this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
+            this.ctx.fillStyle = "#fff"; this.ctx.fill();
+            this.ctx.strokeStyle = "#1565c0"; this.ctx.lineWidth = 3; this.ctx.setLineDash([]); this.ctx.stroke();
+            this.ctx.fillStyle = "#1565c0"; this.ctx.font = "bold 24px 'Architects Daughter'"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
             this.ctx.fillText(n.label, n.x, n.y);
-            
-            // Decorative dots (blueprint feel)
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y - this.nodeRadius - 5, 2, 0, Math.PI*2);
-            this.ctx.fill();
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y + this.nodeRadius + 5, 2, 0, Math.PI*2);
-            this.ctx.fill();
         });
-
         requestAnimationFrame(() => this.loop());
     }
 }
-
 const game = new RoadGame();
 </script>
 </body>

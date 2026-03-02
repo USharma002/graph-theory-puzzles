@@ -1,3 +1,4 @@
+<!-- START OF FILE museum_security_vertex_cover.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,88 +19,81 @@
         }
 
         body {
-            margin: 0; overflow: hidden;
-            background-color: var(--paper-bg);
-            font-family: 'Architects Daughter', cursive;
-            color: #202124; user-select: none;
+            margin: 0; overflow: hidden; background-color: var(--paper-bg);
+            font-family: 'Architects Daughter', cursive; color: #202124; user-select: none;
+            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 30px 30px; 
         }
 
         .ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            padding: 20px; box-sizing: border-box;
-            display: flex; justify-content: space-between;
+            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
         }
 
         .notebook-panel {
-            background: #fff; transform: rotate(-1deg);
-            padding: 25px 35px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
-            border: 1px solid #ddd; border-radius: 4px;
-            pointer-events: auto; width: 250px; 
-            display: flex; flex-direction: column; z-index: 10;
+            background: #fff; transform: rotate(-1deg); padding: 25px 30px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
         }
 
-        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--asphalt); text-decoration: underline; }
-        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
+        h1 { margin: 0 0 15px 0; font-size: 1.6rem; color: var(--asphalt); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.2rem; }
         .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--ink-blue); }
         
         button {
-            font-family: 'Architects Daughter', cursive;
-            border: 3px solid var(--asphalt);
-            padding: 12px 10px; font-size: 1.1rem; font-weight: bold;
-            cursor: pointer;
-            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; 
-            transition: all 0.2s; margin-top: 10px; width: 100%;
+            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
+            padding: 12px 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%; background: #fff;
         }
+        button:hover { background: #eee; transform: translateY(-2px); }
 
         .btn-check { background: var(--success-green); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
-        .btn-check:hover { background: #2b8a41; transform: scale(1.02) rotate(1deg); }
-        .btn-reset { background: #fff; color: var(--asphalt); margin-top: 10px; }
-        .btn-reset:hover { background: #f0f0f0; }
-        .btn-solution { background: var(--ink-blue); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
-        .btn-solution:hover { background: #1557b0; transform: scale(1.02) rotate(1deg); }
+        .btn-check:hover { background: #2b8a41; }
 
         .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px;}
-        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-list { padding-left: 20px; font-size: 1rem; line-height: 1.5; margin: 0; }
         .intel-list li { margin-bottom: 8px; }
 
-        .info-container { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; }
-        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; display: flex; gap: 10px; align-items: center; }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
         .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
+        
+        .btn-circle {
+            width: 48px; height: 45px; border-radius: 50%; background: var(--ink-blue); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+        }
+        .btn-circle:hover { transform: scale(1.08) rotate(5deg); background: #1557b0; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px);
         }
         .clipboard {
-            background: #fff; width: 600px; padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             text-align: center; position: relative; transform: rotate(1deg); border-radius: 5px;
         }
 
         .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
-        .math-section {
-            background: #f8f9fa; border-left: 5px solid var(--math-purple);
-            padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5;
-        }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
         .math-section h3 { margin-top: 0; color: var(--math-purple); }
         .stamp-result {
-            font-size: 3.5rem; font-weight: bold; transform: rotate(-12deg);
-            border: 6px solid; padding: 10px 30px; border-radius: 15px;
+            font-size: 3.5rem; font-weight: bold; transform: rotate(-12deg); border: 5px solid; padding: 10px 30px; border-radius: 10px;
             display: inline-block; margin: 20px 0; opacity: 0.9;
         }
 
+        @media (max-width: 768px) {
+            .ui-layer { flex-direction: column; padding: 10px; }
+            .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
+            .intel-box { display: none; }
+        }
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
 </head>
 <body>
-
     <canvas id="gameCanvas"></canvas>
 
     <div class="ui-layer">
-        <div class="notebook-panel" id="left-panel">
+        <div class="notebook-panel" id="leftPanel">
             <h1>Security HQ</h1>
             <div class="stat-row"><span>Cameras Placed:</span></div>
             <div class="stat-row"><span class="cost-display" id="camCount">0</span></div>
@@ -109,16 +103,15 @@
             </div>
             <hr style="border: 1px dashed #ccc; margin: 15px 0;">
             <button class="btn-check" onclick="game.checkWin()">ACTIVATE SYSTEM</button>
-            <button class="btn-reset" onclick="game.reset()">Clear Cameras</button>
-            <button class="btn-solution" onclick="game.showSolution()">Give Solution</button>
-            <button class="btn-reset" onclick="game.newLevel()">New Floorplan</button>
-            
-            <div class="info-container">
+            <button onclick="game.reset()">Clear Cameras</button>
+            <button onclick="game.newLevel()">New Floorplan</button>
+            <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
             </div>
         </div>
         
-        <div class="notebook-panel intel-box" id="right-panel">
+        <div class="notebook-panel intel-box" id="rightPanel">
             <h1>The Blueprint</h1>
             <ul class="intel-list">
                 <li><b>Mission:</b> Protect the museum art.</li>
@@ -136,16 +129,16 @@
 
     <div class="modal-overlay" id="modal">
         <div class="clipboard">
-            <h2 id="modalTitle" style="font-size: 2rem; margin:0;">Security Audit</h2>
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Security Audit</h2>
             <div id="stamp" class="stamp-result">SECURE</div>
-            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px;">Sample text.</p>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Sample text.</p>
             <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px;">
                 <div>Your Cameras: <b id="endUserCost">0</b></div>
                 <div>Optimal Minimum: <b id="endOptCost">0</b></div>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="btn-check" onclick="game.newLevel()">Next Floor</button>
-                <button class="btn-reset" onclick="document.getElementById('modal').style.display='none'">Adjust</button>
+                <button onclick="document.getElementById('modal').style.display='none'">Adjust</button>
             </div>
         </div>
     </div>
@@ -164,7 +157,7 @@
                 <p>The Minimum Vertex Cover problem is a classic <b>NP-Complete</b> problem. This means for large maps, there is no known fast formula to find the perfect answer, and computers must systematically check combinations!</p>
                 <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">Optimal Cameras for this floor: <span id="mathOptVal" style="color:var(--math-purple)">0</span></p>
             </div>
-            <button class="btn-reset" onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Game</button>
+            <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Game</button>
         </div>
     </div>
 
@@ -173,130 +166,78 @@ class VertexCoverGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.nodes = [];
-        this.edges = []; 
-        this.optSize = 0;
-        this.optMask = 0;
-        this.hoverNode = null;
-        this.animating = false;
-        this.animInterval = null;
+        this.nodes = []; this.edges =[]; this.optSize = 0; this.optMask = 0;
+        this.hoverNode = null; this.animating = false; this.animInterval = null;
         this.safeBounds = {minX: 0, maxX: 0, minY: 0, maxY: 0};
         
-        window.addEventListener('resize', () => {
-            this.resize();
-            this.updateSafeBounds();
-        });
+        window.addEventListener('resize', () => { this.resize(); this.updateSafeBounds(); });
         this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
 
         this.resize();
-        this.newLevel();
+        setTimeout(() => this.newLevel(), 50);
         this.loop();
     }
 
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-    }
+    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
 
     updateSafeBounds() {
-        const lRect = document.getElementById('left-panel').getBoundingClientRect();
-        const rRect = document.getElementById('right-panel').getBoundingClientRect();
-        
-        // Ensure graph only generates between the two UI panels
-        let minX = lRect.right + 50;
-        let maxX = rRect.left - 50;
-        if (maxX <= minX) maxX = minX + 200; // Fallback for very small screens
-
-        this.safeBounds = {
-            minX: minX,
-            maxX: maxX,
-            minY: 80,
-            maxY: this.canvas.height - 80
-        };
+        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
+        const isMobile = window.innerWidth <= 768;
+        if(isMobile) {
+            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+        } else {
+            let minX = lRect.right + 60; let maxX = rRect.left - 60;
+            if(maxX <= minX) maxX = minX + 200;
+            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+        }
     }
 
     newLevel() {
-        clearInterval(this.animInterval);
-        this.animating = false;
-        this.nodes = [];
-        this.edges = [];
+        clearInterval(this.animInterval); this.animating = false; this.nodes = []; this.edges =[];
         document.getElementById('modal').style.display = 'none';
-        
         this.updateSafeBounds();
         const nNodes = 12; 
 
-        // Generate nodes strictly inside the safe bounds
         for(let i=0; i<nNodes; i++) {
-            this.nodes.push({
-                id: i, 
-                x: this.safeBounds.minX + Math.random() * (this.safeBounds.maxX - this.safeBounds.minX),
-                y: this.safeBounds.minY + Math.random() * (this.safeBounds.maxY - this.safeBounds.minY),
-                vx: 0, vy: 0, camera: false
-            });
+            this.nodes.push({ id: i, x: this.safeBounds.minX + Math.random() * (this.safeBounds.maxX - this.safeBounds.minX), y: this.safeBounds.minY + Math.random() * (this.safeBounds.maxY - this.safeBounds.minY), vx: 0, vy: 0, camera: false });
         }
 
-        // Generate edges (Delaunay-ish)
         const sorted = [...this.nodes].sort((a,b) => a.x - b.x);
         for(let i=0; i<nNodes; i++) {
             let n1 = this.nodes[i];
-            let neighbors = this.nodes
-                .map(n => ({node: n, dist: Math.hypot(n.x-n1.x, n.y-n1.y)}))
-                .filter(n => n.node.id !== n1.id)
-                .sort((a,b) => a.dist - b.dist)
-                .slice(0, 3);
-            
-            for(let neigh of neighbors) {
-                if(!this.isIntersectingAny(n1, neigh.node)) {
-                    this.addEdge(n1.id, neigh.node.id);
-                }
-            }
+            let neighbors = this.nodes.map(n => ({node: n, dist: Math.hypot(n.x-n1.x, n.y-n1.y)})).filter(n => n.node.id !== n1.id).sort((a,b) => a.dist - b.dist).slice(0, 3);
+            for(let neigh of neighbors) if(!this.isIntersectingAny(n1, neigh.node)) this.addEdge(n1.id, neigh.node.id);
         }
 
-        this.relaxGraph();
-        this.calculateOptimal();
-        this.updateUI();
+        this.relaxGraph(); this.calculateOptimal(); this.updateUI();
     }
 
     relaxGraph() {
-        const iterations = 300;
-        const repelK = 100000;
-        const springLen = 150;
-        const springK = 0.02;
-
+        const iterations = 300, repelK = 100000, springLen = 150, springK = 0.02;
         for(let i=0; i<iterations; i++) {
             for(let a=0; a<this.nodes.length; a++) {
                 for(let b=a+1; b<this.nodes.length; b++) {
                     let n1 = this.nodes[a], n2 = this.nodes[b];
-                    let dx = n1.x - n2.x, dy = n1.y - n2.y;
-                    let dist = Math.sqrt(dx*dx + dy*dy) + 1;
-                    let force = repelK / (dist * dist);
-                    n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force;
-                    n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
+                    let dx = n1.x - n2.x, dy = n1.y - n2.y, dist = Math.sqrt(dx*dx + dy*dy) + 1, force = repelK / (dist * dist);
+                    n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force; n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
                 }
             }
             this.edges.forEach(e => {
                 let n1 = this.nodes[e.u], n2 = this.nodes[e.v];
-                let dx = n2.x - n1.x, dy = n2.y - n1.y;
-                let dist = Math.sqrt(dx*dx + dy*dy) + 1;
-                let force = (dist - springLen) * springK;
-                n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force;
-                n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
+                let dx = n2.x - n1.x, dy = n2.y - n1.y, dist = Math.sqrt(dx*dx + dy*dy) + 1, force = (dist - springLen) * springK;
+                n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force; n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
             });
             this.nodes.forEach(n => {
-                n.x += n.vx; n.y += n.vy;
-                n.vx *= 0.5; n.vy *= 0.5;
-                // Clamp tightly to safe bounds
+                n.x += n.vx; n.y += n.vy; n.vx *= 0.5; n.vy *= 0.5;
                 n.x = Math.max(this.safeBounds.minX, Math.min(this.safeBounds.maxX, n.x));
                 n.y = Math.max(this.safeBounds.minY, Math.min(this.safeBounds.maxY, n.y));
             });
         }
     }
 
-    addEdge(u, v) {
-        if(this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) return;
-        this.edges.push({ u, v });
-    }
+    addEdge(u, v) { if(!this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) this.edges.push({ u, v }); }
 
     isIntersectingAny(n1, n2) {
         for(let e of this.edges) {
@@ -312,190 +253,99 @@ class VertexCoverGame {
     }
 
     calculateOptimal() {
-        const n = this.nodes.length;
-        let minSize = n;
-        let bestMask = (1 << n) - 1; 
-        const totalPerms = 1 << n;
-
-        // Brute force exact optimal vertex cover
+        const n = this.nodes.length; let minSize = n, bestMask = (1 << n) - 1; const totalPerms = 1 << n;
         for(let i=0; i<totalPerms; i++) {
             let valid = true;
-            for(let e of this.edges) {
-                if(((i & (1 << e.u)) === 0) && ((i & (1 << e.v)) === 0)) { valid = false; break; }
-            }
+            for(let e of this.edges) { if(((i & (1 << e.u)) === 0) && ((i & (1 << e.v)) === 0)) { valid = false; break; } }
             if(valid) {
-                let size = 0;
-                for(let j=0; j<n; j++) if((i & (1 << j)) !== 0) size++;
-                if(size < minSize) {
-                    minSize = size;
-                    bestMask = i;
-                }
+                let size = 0; for(let j=0; j<n; j++) if((i & (1 << j)) !== 0) size++;
+                if(size < minSize) { minSize = size; bestMask = i; }
             }
         }
-        this.optSize = minSize;
-        this.optMask = bestMask;
-        return minSize;
+        this.optSize = minSize; this.optMask = bestMask;
     }
 
-    showSolution() {
-        if(this.animating) return;
-        this.reset();
-        this.animating = true;
-        
-        let targetNodes = [];
-        for(let i=0; i<this.nodes.length; i++) {
-            if((this.optMask & (1 << i)) !== 0) targetNodes.push(this.nodes[i]);
-        }
-
+    animateSolution() {
+        if(this.animating) return; this.reset(); this.animating = true;
+        let targetNodes =[];
+        for(let i=0; i<this.nodes.length; i++) if((this.optMask & (1 << i)) !== 0) targetNodes.push(this.nodes[i]);
         let idx = 0;
         this.animInterval = setInterval(() => {
-            if(idx < targetNodes.length) {
-                targetNodes[idx].camera = true;
-                this.updateUI();
-                idx++;
-            } else {
-                clearInterval(this.animInterval);
-                this.animating = false;
-                setTimeout(() => this.checkWin(), 500); // Wait a moment then show win
-            }
+            if(idx < targetNodes.length) { targetNodes[idx].camera = true; this.updateUI(); idx++; } 
+            else { clearInterval(this.animInterval); this.animating = false; setTimeout(() => this.checkWin(), 500); }
         }, 500);
     }
 
     handleHover(e) {
-        if(this.animating) return;
-        const mx = e.clientX, my = e.clientY;
-        this.hoverNode = null;
-        for(let n of this.nodes) {
-            if(Math.hypot(n.x - mx, n.y - my) < 25) { this.hoverNode = n; break; }
-        }
+        if(this.animating) return; const mx = e.clientX, my = e.clientY; this.hoverNode = null;
+        for(let n of this.nodes) { if(Math.hypot(n.x - mx, n.y - my) < 25) { this.hoverNode = n; break; } }
         this.canvas.style.cursor = this.hoverNode ? 'pointer' : 'default';
     }
 
-    handleClick(e) {
-        if(this.animating) return;
-        if(this.hoverNode) {
-            this.hoverNode.camera = !this.hoverNode.camera;
-            this.updateUI();
-        }
-    }
+    handleClick(e) { if(this.animating) return; if(this.hoverNode) { this.hoverNode.camera = !this.hoverNode.camera; this.updateUI(); } }
 
-    reset() {
-        clearInterval(this.animInterval);
-        this.animating = false;
-        this.nodes.forEach(n => n.camera = false);
-        this.updateUI();
-    }
+    reset() { clearInterval(this.animInterval); this.animating = false; this.nodes.forEach(n => n.camera = false); this.updateUI(); }
 
     updateUI() {
-        let cams = this.nodes.filter(n => n.camera).length;
-        let vuln = 0;
+        let cams = this.nodes.filter(n => n.camera).length, vuln = 0;
         this.edges.forEach(e => { if(!this.nodes[e.u].camera && !this.nodes[e.v].camera) vuln++; });
-        document.getElementById('camCount').innerText = cams;
-        document.getElementById('vulnCount').innerText = vuln;
+        document.getElementById('camCount').innerText = cams; document.getElementById('vulnCount').innerText = vuln;
         return vuln;
     }
 
-    openMathModal() {
-        document.getElementById('mathOptVal').innerText = this.optSize;
-        document.getElementById('mathModal').style.display = 'flex';
-    }
+    openMathModal() { document.getElementById('mathOptVal').innerText = this.optSize; document.getElementById('mathModal').style.display = 'flex'; }
 
     checkWin() {
-        let vuln = this.updateUI();
-        let cams = this.nodes.filter(n => n.camera).length;
-        const stamp = document.getElementById('stamp');
-        const title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
-
+        let vuln = this.updateUI(), cams = this.nodes.filter(n => n.camera).length;
+        const stamp = document.getElementById('stamp'), title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
         if(vuln > 0) {
             stamp.innerText = "BREACHED"; stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
-            title.innerText = "Hallways Vulnerable!";
-            msg.innerText = `You left ${vuln} hallway(s) unmonitored.`;
+            title.innerText = "Hallways Vulnerable!"; msg.innerText = `You left ${vuln} hallway(s) unmonitored.`;
         } else if(cams > this.optSize) {
             stamp.innerText = "OVERBUDGET"; stamp.style.color = "#fbbc04"; stamp.style.borderColor = "#fbbc04";
-            title.innerText = "Secure, but Expensive";
-            msg.innerText = "The museum is safe, but you used too many cameras. Try to cover it with fewer.";
+            title.innerText = "Secure, but Expensive"; msg.innerText = "The museum is safe, but you used too many cameras.";
         } else {
             stamp.innerText = "SECURE"; stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
-            title.innerText = "Perfect Security";
-            msg.innerText = "You found the Minimum Vertex Cover!";
+            title.innerText = "Perfect Security"; msg.innerText = "You found the Minimum Vertex Cover!";
         }
-        document.getElementById('endUserCost').innerText = cams;
-        document.getElementById('endOptCost').innerText = this.optSize;
+        document.getElementById('endUserCost').innerText = cams; document.getElementById('endOptCost').innerText = this.optSize;
         document.getElementById('modal').style.display = 'flex';
     }
 
     loop() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw Hallways
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
-            const isCovered = (p1.camera || p2.camera);
-
-            // Wall outer line
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v], isCovered = (p1.camera || p2.camera);
             this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
             this.ctx.strokeStyle = "#bbb"; this.ctx.lineWidth = 18; this.ctx.stroke();
 
-            // Inner hallway floor
             this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
-            if(isCovered) {
-                this.ctx.strokeStyle = "#a5d6a7"; // Secure Green floor
-                this.ctx.lineWidth = 12;
-            } else {
-                this.ctx.strokeStyle = "#ffcdd2"; // Unsecure Red floor
-                this.ctx.lineWidth = 12;
-            }
-            this.ctx.stroke();
+            this.ctx.strokeStyle = isCovered ? "#a5d6a7" : "#ffcdd2"; this.ctx.lineWidth = 12; this.ctx.stroke();
 
-            // Security Laser Line
             this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
-            if(isCovered) {
-                this.ctx.strokeStyle = "#2e7d32"; this.ctx.lineWidth = 2; this.ctx.setLineDash([]);
-            } else {
-                this.ctx.strokeStyle = "#c62828"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 5]);
-            }
+            if(isCovered) { this.ctx.strokeStyle = "#2e7d32"; this.ctx.lineWidth = 2; this.ctx.setLineDash([]); } 
+            else { this.ctx.strokeStyle = "#c62828"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 5]); }
             this.ctx.stroke(); this.ctx.setLineDash([]);
         });
 
-        // Draw Nodes
         this.nodes.forEach(n => {
             if(n.camera) {
-                // Draw Camera Graphics
-                this.ctx.save();
-                this.ctx.translate(n.x, n.y);
-                
-                // Base
-                this.ctx.beginPath(); this.ctx.arc(0, 0, 15, 0, Math.PI*2);
-                this.ctx.fillStyle = "#3c4043"; this.ctx.fill();
-
-                // Rotate slightly for effect
+                this.ctx.save(); this.ctx.translate(n.x, n.y);
+                this.ctx.beginPath(); this.ctx.arc(0, 0, 15, 0, Math.PI*2); this.ctx.fillStyle = "#3c4043"; this.ctx.fill();
                 this.ctx.rotate(-Math.PI/6);
-                
-                // Camera Body
-                this.ctx.fillStyle = "#e0e0e0"; this.ctx.fillRect(-5, -12, 24, 20);
-                this.ctx.strokeStyle = "#3c4043"; this.ctx.lineWidth = 2; this.ctx.strokeRect(-5, -12, 24, 20);
-                
-                // Lens
+                this.ctx.fillStyle = "#e0e0e0"; this.ctx.fillRect(-5, -12, 24, 20); this.ctx.strokeStyle = "#3c4043"; this.ctx.lineWidth = 2; this.ctx.strokeRect(-5, -12, 24, 20);
                 this.ctx.fillStyle = "#111"; this.ctx.fillRect(19, -8, 6, 12);
-                
-                // Blinking Red Light
                 let blink = Math.floor(Date.now() / 400) % 2 === 0;
-                this.ctx.fillStyle = blink ? "#ff0000" : "#550000";
-                this.ctx.beginPath(); this.ctx.arc(14, -6, 2.5, 0, Math.PI*2); this.ctx.fill();
-                if(blink) {
-                    this.ctx.shadowBlur = 10; this.ctx.shadowColor = "red"; this.ctx.fill(); this.ctx.shadowBlur = 0;
-                }
-                
+                this.ctx.fillStyle = blink ? "#ff0000" : "#550000"; this.ctx.beginPath(); this.ctx.arc(14, -6, 2.5, 0, Math.PI*2); this.ctx.fill();
+                if(blink) { this.ctx.shadowBlur = 10; this.ctx.shadowColor = "red"; this.ctx.fill(); this.ctx.shadowBlur = 0; }
                 this.ctx.restore();
             } else {
-                // Empty Pedestal
                 this.ctx.beginPath(); this.ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
-                this.ctx.fillStyle = (n === this.hoverNode && !this.animating) ? "#fff" : "#f1f3f4";
-                this.ctx.fill();
+                this.ctx.fillStyle = (n === this.hoverNode && !this.animating) ? "#fff" : "#f1f3f4"; this.ctx.fill();
                 this.ctx.strokeStyle = "#9aa0a6"; this.ctx.lineWidth = 3; this.ctx.stroke();
             }
         });
-
         requestAnimationFrame(() => this.loop());
     }
 }
