@@ -494,11 +494,48 @@ class RoadGame {
         document.getElementById('mathModal').style.display='flex';
     }
 
-    animateSolution() {
-        this.showSolution=!this.showSolution;
-        if (this.showSolution) this.edges.forEach(e=>e.active=this.optimalEdges.has(e.id));
-        else this.reset();
+    async animateSolution() {
+        if(this.isAnimating) return;
+        this.showSolution = true;
+        this.isAnimating = true;
+        
+        // Reset state for animation
+        this.edges.forEach(e => { e.active = false; e.testing = false; e.cycle = false; });
         this.updateUI();
+
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        
+        const sorted = [...this.edges].sort((a,b) => a.weight - b.weight);
+        const uf = new UnionFind(this.nodes.length);
+        let edgesAdded = 0;
+
+        for(let e of sorted) {
+            if(!this.isAnimating) break; // Allow interruption
+            
+            // Highlight current edge being tested
+            e.testing = true;
+            await delay(400); 
+
+            if(uf.union(e.u, e.v)) {
+                // valid edge for MST
+                e.active = true;
+                e.testing = false;
+                edgesAdded++;
+                this.updateUI();
+                await delay(200);
+            } else {
+                // Creates a cycle
+                e.testing = false;
+                e.cycle = true; // Mark as rejected visually
+                await delay(100);
+            }
+
+            if(edgesAdded === this.nodes.length - 1) {
+                break; // MST complete
+            }
+        }
+        
+        this.isAnimating = false;
     }
 
     getPos(clientX, clientY) {
@@ -517,27 +554,32 @@ class RoadGame {
     }
 
     handleHover(e) {
-        if (this.showSolution) return;
+        if (this.showSolution || this.isAnimating) return;
         const p=this.getPos(e.clientX,e.clientY);
         this.hoverEdge=this.getNearestEdge(p.x,p.y);
         this.canvas.style.cursor=this.hoverEdge?'pointer':'default';
     }
 
     handleClick(e) {
-        if (this.showSolution||!this.hoverEdge) return;
+        if (this.showSolution || this.isAnimating || !this.hoverEdge) return;
         this.hoverEdge.active=!this.hoverEdge.active;
         this.updateUI();
     }
 
     handleTouch(e) {
         e.preventDefault();
-        if (this.showSolution) return;
+        if (this.showSolution || this.isAnimating) return;
         const t=e.touches[0], p=this.getPos(t.clientX,t.clientY);
         const edge=this.getNearestEdge(p.x,p.y);
         if (edge) { edge.active=!edge.active; this.updateUI(); }
     }
 
-    reset() { this.edges.forEach(e=>e.active=false); this.showSolution=false; this.updateUI(); }
+    reset() { 
+        this.isAnimating = false; 
+        this.edges.forEach(e => { e.active = false; e.testing = false; e.cycle = false; }); 
+        this.showSolution = false; 
+        this.updateUI(); 
+    }
 
     checkWin() {
         const userCost=this.edges.reduce((s,e)=>e.active?s+e.weight:s,0);
@@ -585,9 +627,14 @@ class RoadGame {
             const p1=this.nodes[e.u], p2=this.nodes[e.v], isHover=(this.hoverEdge===e);
             ctx.lineCap='round';
 
-            if (this.showSolution&&this.optimalEdges.has(e.id)) {
-                ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
-                ctx.strokeStyle='rgba(46,125,50,0.3)'; ctx.lineWidth=this.isMobile()?16:25; ctx.setLineDash([]); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
+            
+            if (e.testing) {
+                // Bright yellow thick highlight for testing
+                ctx.strokeStyle='rgba(255, 235, 59, 0.8)'; ctx.lineWidth=this.isMobile()?16:24; ctx.setLineDash([]); ctx.stroke();
+            } else if (e.cycle) {
+                // Dimmed red to show rejection
+                ctx.strokeStyle='rgba(234, 67, 53, 0.3)'; ctx.lineWidth=this.isMobile()?8:12; ctx.setLineDash([]); ctx.stroke();
             }
 
             ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
@@ -595,7 +642,7 @@ class RoadGame {
                 ctx.strokeStyle='#37474f'; ctx.lineWidth=this.isMobile()?9:14; ctx.setLineDash([]); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
                 ctx.strokeStyle='#fbc02d'; ctx.lineWidth=2; ctx.setLineDash([15,15]); ctx.stroke();
-            } else {
+            } else if (!e.cycle && !e.testing) {
                 ctx.strokeStyle=isHover?'#1565c0':'#bbb'; ctx.lineWidth=isHover?5:3; ctx.setLineDash([8,12]); ctx.stroke();
             }
 

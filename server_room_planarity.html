@@ -125,7 +125,8 @@
     </div>
 
     <div class="mobile-bar" id="mobileBottomBar">
-        <button onclick="game.newLevel()">New</button>
+        <button onclick="game.newLevel()">New Network</button>
+        <button class="info-btn" style="background:var(--math-purple); color:white; border:none;" onclick="game.openMathModal()">Theory</button>
         <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.animateSolution()">?</button>
     </div>
 
@@ -357,32 +358,46 @@ class PlanarityGame {
         }
     }
 
-    animateSolution() {
+    async animateSolution() {
         if(this.isAnimating) return;
         this.isAnimating = true;
 
-        let frame = 0;
-        const duration = 60; // frames
-        const startPos = this.nodes.map(n => ({x: n.x, y: n.y}));
-
-        const anim = setInterval(() => {
-            frame++;
-            const t = frame / duration;
-            // Easing function (easeOutCubic)
-            const ease = 1 - Math.pow(1 - t, 3);
-            
-            this.nodes.forEach((n, i) => {
-                n.x = startPos[i].x + (n.solX - startPos[i].x) * ease;
-                n.y = startPos[i].y + (n.solY - startPos[i].y) * ease;
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+        
+        let unsolvedNodes = this.nodes.filter(n => Math.abs(n.x - n.solX) > 1 || Math.abs(n.y - n.solY) > 1);
+        
+        while(unsolvedNodes.length > 0 && this.isAnimating) {
+            // Sort to pick "most crossed" node
+            let nodeScores = unsolvedNodes.map(n => {
+                let crossEdges = this.edges.filter(e => e.cross && (e.u === n.id || e.v === n.id)).length;
+                return { node: n, score: crossEdges };
             });
-            this.updateIntersections();
-
-            if(frame >= duration) {
-                clearInterval(anim);
-                this.isAnimating = false;
-                this.updateIntersections(); // Triggers win
+            nodeScores.sort((a,b) => b.score - a.score);
+            
+            let n = nodeScores[0].node;
+            n.isResolving = true;
+            
+            // Animate moving this specific node
+            const startX = n.x, startY = n.y;
+            const targetX = n.solX, targetY = n.solY;
+            const steps = 25;
+            for(let i=1; i<=steps; i++) {
+                if(!this.isAnimating) break;
+                const ease = 1 - Math.pow(1 - (i/steps), 3);
+                n.x = startX + (targetX - startX) * ease;
+                n.y = startY + (targetY - startY) * ease;
+                this.updateIntersections();
+                await delay(20);
             }
-        }, 16);
+            n.x = targetX; n.y = targetY;
+            n.isResolving = false;
+            
+            unsolvedNodes = this.nodes.filter(n => Math.abs(n.x - n.solX) > 1 || Math.abs(n.y - n.solY) > 1);
+            await delay(150);
+        }
+
+        this.isAnimating = false;
+        this.updateIntersections(); // Triggers win
     }
 
     handleDown(e) {
@@ -447,6 +462,13 @@ class PlanarityGame {
             this.ctx.save();
             this.ctx.translate(n.x, n.y);
             
+            if(n.isResolving) {
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, 45, 0, Math.PI*2);
+                this.ctx.fillStyle = "rgba(251, 188, 4, 0.4)"; // Yellow halo
+                this.ctx.fill();
+            }
+
             // Server Body
             this.ctx.fillStyle = "#1e1e1e";
             this.ctx.strokeStyle = "#555";

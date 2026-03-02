@@ -240,22 +240,23 @@ class VertexCoverGame {
 
     updateSafeBounds() {
         const isMobile = window.innerWidth <= 768;
-        let topBarHeight = 0;
-        let bottomBarHeight = 0;
-        let sidePanelWidth = 320;
-
+        const pad = 30;
         if (isMobile) {
-            topBarHeight = (document.getElementById('mobileTopbar').offsetHeight || 60) + 20;
-            bottomBarHeight = (document.getElementById('mobileBar').offsetHeight || 70) + 20;
-            sidePanelWidth = 0;
+            const topH = (document.getElementById('mobileTopbar').offsetHeight || 60) + pad;
+            const botH = (document.getElementById('mobileBar').offsetHeight || 70) + pad;
+            this.safeBounds = { minX: pad, maxX: this.logicalWidth - pad, minY: topH, maxY: this.logicalHeight - botH };
+        } else {
+            const leftPanel = document.getElementById('leftPanel');
+            const leftRight = leftPanel ? leftPanel.getBoundingClientRect().right + pad : 310;
+            const rightPanel = document.getElementById('rightPanel');
+            const rightLeft = rightPanel ? rightPanel.getBoundingClientRect().left - pad : this.logicalWidth - pad;
+            this.safeBounds = {
+                minX: leftRight,
+                maxX: Math.max(leftRight + 200, rightLeft),
+                minY: pad,
+                maxY: this.logicalHeight - pad
+            };
         }
-
-        this.safeBounds = {
-            minX: isMobile ? 40 : 360, 
-            maxX: this.logicalWidth - 40,
-            minY: topBarHeight || 40,
-            maxY: this.logicalHeight - bottomBarHeight - 40
-        };
     }
 
     newLevel() {

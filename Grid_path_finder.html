@@ -423,8 +423,8 @@
         });
 
         // --- Interaction Logic ---
-        function setWall(node, isWall) {
-            if (isRunning || isGameActive) return;
+        function setWall(node, isWall, force = false) {
+            if (!force && (isRunning || isGameActive)) return;
             if (node.isStart || node.isEnd) return; 
             node.isWall = isWall;
             const div = document.getElementById(`node-${node.r}-${node.c}`);
@@ -481,7 +481,7 @@
                 for (let c = 0; c < cols; c++) {
                     let node = grid[r][c];
                     if (!node.isStart && !node.isEnd) {
-                        setWall(node, true);
+                        setWall(node, true, true);
                     }
                 }
             }
@@ -494,7 +494,7 @@
             function carveCell(r, c) {
                 inMaze.add(`${r},${c}`);
                 if (!grid[r][c].isStart && !grid[r][c].isEnd) {
-                    setWall(grid[r][c], false);
+                    setWall(grid[r][c], false, true);
                     let div = document.getElementById(`node-${r}-${c}`);
                     div.classList.add('node-carve');
                     setTimeout(() => div.classList.remove('node-carve'), 400);
@@ -563,7 +563,7 @@
 
         function forceClearTrappedNode(target) {
             let r = target.r, c = target.c;
-            setWall(grid[r][c], false);
+            setWall(grid[r][c], false, true);
             
             let dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
             let isConnected = false;
@@ -578,11 +578,11 @@
             
             if(!isConnected) {
                 if (r % 2 === 0) { 
-                    if(r > 1) setWall(grid[r-1][c], false);
-                    else setWall(grid[r+1][c], false);
+                    if(r > 1) setWall(grid[r-1][c], false, true);
+                    else setWall(grid[r+1][c], false, true);
                 } else { 
-                    if(c > 1) setWall(grid[r][c-1], false);
-                    else setWall(grid[r][c+1], false);
+                    if(c > 1) setWall(grid[r][c-1], false, true);
+                    else setWall(grid[r][c+1], false, true);
                 }
             }
         }

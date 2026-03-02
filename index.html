@@ -4,225 +4,314 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graph Theory Demos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-purple: #c084fc;
-            --border-color: #334155;
+            --white:  #ffffff;
+            --off:    #fafaf9;
+            --black:  #111111;
+            --red:    #e53935;
+            --blue:   #1565c0;
+            --muted:  #888;
+            --border: #ddd;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background: var(--off);
+            color: var(--black);
             min-height: 100vh;
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%);
+            overflow-x: hidden;
+        }
+        /* dot-grid background */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
         }
 
-        header { text-align: center; padding: 60px 20px 40px; }
-
+        /* ── HEADER ── */
+        header {
+            position: relative; z-index: 10;
+            background: var(--white);
+            border-bottom: 3px solid var(--black);
+            padding: 32px 48px 24px;
+        }
+        .header-inner {
+            max-width: 1280px; margin: 0 auto;
+            display: flex; align-items: flex-start; gap: 40px; flex-wrap: wrap;
+        }
+        .header-text { flex: 1; min-width: 260px; }
+        .eyebrow {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase;
+            color: var(--red); margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .eyebrow::before { content: ''; width: 18px; height: 2px; background: var(--red); }
         h1 {
-            font-size: 3rem; font-weight: 800; margin-bottom: 15px;
-            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-family: 'Architects Daughter', cursive;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 400; line-height: 1.1; color: var(--black);
+        }
+        h1 span { color: var(--blue); }
+        .header-desc {
+            margin-top: 10px; font-size: 0.9rem;
+            color: var(--muted); max-width: 480px; line-height: 1.65;
+        }
+        .stats {
+            display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap;
+        }
+        .stat { display: flex; flex-direction: column; }
+        .stat-n {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.4rem; font-weight: 700; line-height: 1;
+        }
+        .stat-n.r { color: var(--red); }
+        .stat-n.b { color: var(--blue); }
+        .stat-l {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase;
+            color: var(--muted); margin-top: 3px;
         }
 
-        header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        /* decorative graph SVG in header */
+        .deco-svg {
+            flex-shrink: 0; width: 110px; height: 85px;
+            opacity: 0.85; margin-top: 4px;
+        }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px 80px; }
+        /* ── MAIN ── */
+        main {
+            position: relative; z-index: 10;
+            max-width: 1280px; margin: 0 auto;
+            padding: 32px 48px 80px;
+        }
+        .section-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .section-lbl {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--muted); white-space: nowrap;
+        }
+        .section-line { flex: 1; height: 1px; background: var(--border); }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+            gap: 20px;
         }
 
-        /* --- CARD STYLING --- */
+        /* ── CARD ── */
         .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
+            background: var(--white);
+            border: 2px solid var(--black);
+            border-radius: 5px;
             overflow: hidden;
             text-decoration: none;
-            color: inherit;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            position: relative;
+            color: var(--black);
+            display: flex; flex-direction: column;
+            box-shadow: 4px 4px 0 var(--black);
+            transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
         }
-
         .card:hover {
-            transform: translateY(-8px);
-            border-color: var(--accent-blue);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(56, 189, 248, 0.15);
+            transform: translate(-2px,-3px);
+            box-shadow: 7px 7px 0 var(--black);
         }
 
-        /* --- THE AUTOMATIC THUMBNAIL TRICK --- */
-        .card-image-container {
-            position: relative;
-            width: 100%;
-            height: 220px; /* Height of the thumbnail */
-            overflow: hidden;
-            background-color: #000;
-            border-bottom: 1px solid var(--border-color);
+        /* thumbnail */
+        .thumb {
+            position: relative; width: 100%; height: 180px;
+            overflow: hidden; background: #ebebeb;
+            border-bottom: 2px solid var(--black); flex-shrink: 0;
+        }
+        .thumb iframe {
+            position: absolute; top:0; left:0;
+            width: 400%; height: 400%;
+            transform: scale(0.25); transform-origin: top left;
+            border: none; pointer-events: none;
+        }
+        /* bottom fade on thumb */
+        .thumb::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 55%, rgba(255,255,255,0.55) 100%);
+            pointer-events: none;
+        }
+        .stamp {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.57rem; font-weight: 700;
+            letter-spacing: 0.8px; text-transform: uppercase;
+            padding: 3px 7px; border: 1.5px solid; border-radius: 2px;
+            background: var(--white);
+        }
+        .stamp.hard { color: var(--red);   border-color: var(--red); }
+        .stamp.math { color: var(--blue);  border-color: var(--blue); }
+        .stamp.path { color: var(--black); border-color: #888; }
+        .stamp.opt  { color: #555;         border-color: #aaa; }
+
+        /* node index badge */
+        .nbadge {
+            position: absolute; bottom: 9px; left: 9px; z-index: 2;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--white); border: 2px solid var(--black);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Roboto Mono', monospace; font-size: 0.62rem; font-weight: 700;
+            box-shadow: 2px 2px 0 var(--black);
         }
 
-        .thumbnail-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            /* Make iframe 4x the size of the container */
-            width: 400%;  
-            height: 400%; 
-            /* Shrink it down to 25% so it fits perfectly inside the container */
-            transform: scale(0.25); 
-            transform-origin: top left;
-            border: none;
-            pointer-events: none; /* Prevents interaction inside the thumbnail */
+        .card-body { padding: 14px 16px 10px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .card-title {
+            font-family: 'Architects Daughter', cursive;
+            font-size: 1rem; color: var(--black); line-height: 1.2;
         }
+        .card-desc { font-size: 0.8rem; color: #666; line-height: 1.55; flex: 1; }
 
-        /* Transparent overlay so the whole card acts as a clickable link */
-        .click-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+        .card-foot {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 16px 12px; border-top: 1px dashed var(--border);
         }
-
-        /* --- CARD CONTENT --- */
-        .card-content { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
-        .card-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
-        .card-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; flex-grow: 1; }
-
-        .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tags { display: flex; gap: 4px; flex-wrap: wrap; }
         .tag {
-            background-color: rgba(56, 189, 248, 0.1); color: var(--accent-blue);
-            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.58rem; font-weight: 700;
+            letter-spacing: 0.4px; text-transform: uppercase;
+            padding: 2px 6px; border: 1.5px solid; border-radius: 2px;
         }
-        .tag.math { color: var(--accent-purple); background-color: rgba(192, 132, 252, 0.1); }
-        .tag.hard { color: #f87171; background-color: rgba(248, 113, 113, 0.1); }
+        .tag.r { color: var(--red);   border-color: rgba(229,57,53,.4);  background: rgba(229,57,53,.05); }
+        .tag.b { color: var(--blue);  border-color: rgba(21,101,192,.4); background: rgba(21,101,192,.05); }
+        .tag.k { color: #444;         border-color: rgba(0,0,0,.22);     background: rgba(0,0,0,.03); }
 
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
-            .container { padding: 20px; }
-            h1 { font-size: 2.2rem; }
+        .arr {
+            width: 26px; height: 26px; border-radius: 50%;
+            border: 2px solid var(--black);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: bold; color: var(--black);
+            transition: background .15s, color .15s; flex-shrink: 0;
+        }
+        .card:hover .arr { background: var(--black); color: var(--white); }
+
+        /* ── FOOTER ── */
+        footer {
+            position: relative; z-index: 10;
+            border-top: 2px solid var(--border);
+            padding: 16px 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 8px;
+        }
+        .ft { font-family: 'Roboto Mono', monospace; font-size: 0.67rem; color: var(--muted); }
+        .legend { display: flex; gap: 14px; }
+        .li {
+            display: flex; align-items: center; gap: 5px;
+            font-family: 'Roboto Mono', monospace; font-size: 0.62rem; color: var(--muted);
+        }
+        .ld {
+            width: 9px; height: 9px; border-radius: 50%; border: 2px solid;
+        }
+
+        @media (max-width: 640px) {
+            header { padding: 20px 18px 16px; }
+            main { padding: 20px 14px 50px; }
+            footer { padding: 14px 18px; }
+            .deco-svg { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Graph Theory Demos</h1>
-        <p>Interactive, cinematic explorations of famous graph theory problems, optimizations, and NP-Hard algorithms.</p>
-    </header>
-
-    <div class="container">
-        <div class="grid" id="portfolio-grid"></div>
+<header>
+  <div class="header-inner">
+    <div class="header-text">
+      <div class="eyebrow">Interactive · Educational</div>
+      <h1>Graph Theory <span>Demos</span></h1>
+      <p class="header-desc">Ten playable explorations of graph algorithms, NP-Hard puzzles, and combinatorial theory — each rendered live in the browser.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-n">10</span><span class="stat-l">Demos</span></div>
+        <div class="stat"><span class="stat-n r">3</span><span class="stat-l">NP-Hard</span></div>
+        <div class="stat"><span class="stat-n b">4</span><span class="stat-l">Theory</span></div>
+      </div>
     </div>
 
-    <script>
-        // MATCHED TO YOUR EXACT FILE NAMES FROM THE GOOGLE DRIVE SCREENSHOT
-        const projects =[
-            {
-                title: "IISc Path Finder",
-                description: "Visualize shortest path algorithms dynamically carving through mapping data.",
-                url: "IISc_path_finder.html",
-                tags:["Dijkstra", "Mapping"]
-            },
-            {
-                title: "Grid Path Finder",
-                description: "Classic grid-based pathfinding visualizer and maze generator featuring A*, BFS, and DFS.",
-                url: "Grid_path_finder.html",
-                tags: ["A* Search", "Algorithms"]
-            },
-            {
-                title: "Server Room Untangled",
-                description: "Untangle crossed network cables in a gamified environment based on Kuratowski's Theorem.",
-                url: "server_room_planarity.html",
-                tags:["Planarity", "Math"]
-            },
-            {
-                title: "Robber Blockade",
-                description: "Deploy roadblocks to cut off all escape routes. An interactive lesson on Max-Flow Min-Cut.",
-                url: "robber_cops_maxflow.html",
-                tags:["Network Flow", "Math"]
-            },
-            {
-                title: "Road Repair",
-                description: "Connect isolated cities to the power grid for the lowest possible cost using Kruskal's Algorithm.",
-                url: "road_repair_mst.html",
-                tags:["MST", "Kruskal"]
-            },
-            {
-                title: "Postman's Route",
-                description: "Find the absolute shortest route that visits every house and returns to the start.",
-                url: "postman_euclidean_tsp.html",
-                tags:["TSP", "NP-Hard", "Hard"]
-            },
-            {
-                title: "N-Puzzle Parity",
-                description: "Explore the mathematical concept of permutations and parity in classic sliding tile puzzles.",
-                url: "n_puzzle_parity.html",
-                tags:["Parity", "Permutations", "Math"]
-            },
-            {
-                title: "Museum Security",
-                description: "Place the absolute minimum number of security cameras to monitor every single hallway.",
-                url: "museum_security_vertex_cover.html",
-                tags:["NP-Complete", "Vertex Cover", "Hard"]
-            },
-            {
-                title: "Knight Swap",
-                description: "Visualize knight movements on a chessboard as a graph traversal problem.",
-                url: "knight_swap.html",
-                tags:["Traversal", "Graph"]
-            },
-            {
-                title: "Graph Coloring Map",
-                description: "Color a map ensuring no two adjacent regions share the same color. Explores the Four Color Theorem.",
-                url: "graph_coloring_map.html",
-                tags:["Coloring", "NP-Hard", "Hard"]
-            }
-        ];
+    <!-- Decorative graph in header -->
+    <svg class="deco-svg" viewBox="0 0 110 85" fill="none">
+      <line x1="18" y1="18" x2="55" y2="8"  stroke="#111" stroke-width="1.5"/>
+      <line x1="55" y1="8"  x2="96" y2="22" stroke="#111" stroke-width="1.5"/>
+      <line x1="96" y1="22" x2="100" y2="62" stroke="#111" stroke-width="1.5"/>
+      <line x1="100" y1="62" x2="65" y2="78" stroke="#111" stroke-width="1.5"/>
+      <line x1="65" y1="78" x2="22" y2="72" stroke="#111" stroke-width="1.5"/>
+      <line x1="22" y1="72" x2="18" y2="18" stroke="#111" stroke-width="1.5"/>
+      <line x1="55" y1="8"  x2="65" y2="78" stroke="#111" stroke-width="1.5"/>
+      <line x1="18" y1="18" x2="100" y2="62" stroke="#111" stroke-width="1.5"/>
+      <circle cx="18"  cy="18" r="7" fill="#fff"    stroke="#111" stroke-width="2"/>
+      <circle cx="55"  cy="8"  r="7" fill="#e53935" stroke="#111" stroke-width="2"/>
+      <circle cx="96"  cy="22" r="7" fill="#fff"    stroke="#111" stroke-width="2"/>
+      <circle cx="100" cy="62" r="7" fill="#1565c0" stroke="#111" stroke-width="2"/>
+      <circle cx="65"  cy="78" r="7" fill="#fff"    stroke="#111" stroke-width="2"/>
+      <circle cx="22"  cy="72" r="7" fill="#e53935" stroke="#111" stroke-width="2"/>
+    </svg>
+  </div>
+</header>
 
-        const gridContainer = document.getElementById('portfolio-grid');
+<main>
+  <div class="section-row">
+    <span class="section-lbl">All Demos</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
 
-        projects.forEach(project => {
-            // HTML for Tags
-            const tagsHtml = project.tags.map(tag => {
-                let lowerTag = tag.toLowerCase();
-                let className = "tag";
-                if(lowerTag === "math" || lowerTag === "hard") className += ` ${lowerTag}`;
-                return `<span class="${className}">${tag}</span>`;
-            }).join('');
+<footer>
+  <span class="ft">graph-theory-demos · canvas + vanilla js</span>
+  <div class="legend">
+    <div class="li"><div class="ld" style="border-color:var(--red);background:rgba(229,57,53,.1)"></div>NP-Hard</div>
+    <div class="li"><div class="ld" style="border-color:var(--blue);background:rgba(21,101,192,.1)"></div>Theory</div>
+    <div class="li"><div class="ld" style="border-color:#777;background:#eee"></div>Algorithm</div>
+  </div>
+</footer>
 
-            // Card Structure with Scaled Iframe Thumbnail
-            const card = document.createElement('a');
-            card.href = project.url;
-            card.className = 'card';
-            card.innerHTML = `
-                <div class="card-image-container">
-                    <!-- The iframe loads the actual game, 'loading=lazy' keeps the page fast -->
-                    <iframe src="${project.url}" class="thumbnail-frame" scrolling="no" tabindex="-1" loading="lazy"></iframe>
-                    <!-- Invisible overlay so the iframe doesn't intercept your clicks -->
-                    <div class="click-overlay"></div>
-                </div>
-                <div class="card-content">
-                    <h2 class="card-title">${project.title}</h2>
-                    <p class="card-desc">${project.description}</p>
-                    <div class="tags">
-                        ${tagsHtml}
-                    </div>
-                </div>
-            `;
-            gridContainer.appendChild(card);
-        });
-    </script>
+<script>
+const projects = [
+  { title:"IISc Path Finder",         desc:"Dijkstra's algorithm carves shortest paths through real IISc campus map data.",                        url:"IISc_path_finder.html",              tags:[["Dijkstra","k"],["Mapping","k"]],          cat:"path", lbl:"Pathfinding", i:1 },
+  { title:"Grid Path Finder",          desc:"A*, BFS, and DFS race through procedurally generated mazes side-by-side.",                           url:"Grid_path_finder.html",              tags:[["A* Search","k"],["BFS","k"],["DFS","k"]], cat:"path", lbl:"Pathfinding", i:2 },
+  { title:"Server Room Untangled",     desc:"Drag server racks until no cables cross. Kuratowski's Planarity Theorem made tangible.",              url:"server_room_planarity.html",         tags:[["Planarity","b"],["Math","b"]],            cat:"math", lbl:"Math Theory",  i:3 },
+  { title:"Robber Blockade",           desc:"Place roadblocks to cut every escape route. Live demo of Max-Flow Min-Cut theorem.",                  url:"robber_cops_maxflow.html",           tags:[["Max-Flow","k"],["Min-Cut","k"]],          cat:"opt",  lbl:"Optimization", i:4 },
+  { title:"Road Repair",               desc:"Connect cities to the power grid at minimum cost. Kruskal's MST builds in front of you.",             url:"road_repair_mst.html",               tags:[["MST","k"],["Kruskal","k"]],               cat:"opt",  lbl:"Optimization", i:5 },
+  { title:"Postman's Route",           desc:"Find the shortest tour visiting every house. Confront NP-Hard TSP complexity first-hand.",            url:"postman_euclidean_tsp.html",         tags:[["TSP","r"],["NP-Hard","r"]],               cat:"hard", lbl:"NP-Hard",      i:6 },
+  { title:"N-Puzzle Parity",           desc:"Discover why half of sliding-tile configs are unsolvable. Permutation parity is the answer.",         url:"n_puzzle_parity.html",               tags:[["Parity","b"],["Permutations","b"]],       cat:"math", lbl:"Math Theory",  i:7 },
+  { title:"Museum Security",           desc:"Fewest cameras to cover every hallway. A direct encounter with NP-Complete Vertex Cover.",            url:"museum_security_vertex_cover.html",  tags:[["Vertex Cover","r"],["NP-Complete","r"]], cat:"hard", lbl:"NP-Complete",  i:8 },
+  { title:"Knight Swap",               desc:"Swap white and black knights on a 3×3 board. Every legal knight move is a graph edge.",               url:"knight_swap.html",                   tags:[["BFS","k"],["Graph","k"]],                 cat:"path", lbl:"Traversal",    i:9 },
+  { title:"Graph Coloring Map",        desc:"Color every region so no neighbours match. Prove the Four Color Theorem yourself.",                   url:"graph_coloring_map.html",            tags:[["4-Coloring","b"],["NP-Hard","r"]],        cat:"hard", lbl:"NP-Hard",      i:10 },
+];
+
+const sC = { hard:'hard', math:'math', path:'path', opt:'opt' };
+const g = document.getElementById('grid');
+
+projects.forEach(p => {
+  const tags = p.tags.map(([l,c]) => `<span class="tag ${c}">${l}</span>`).join('');
+  const a = document.createElement('a');
+  a.href = p.url;
+  a.className = 'card';
+  a.innerHTML = `
+    <div class="thumb">
+      <iframe src="${p.url}" scrolling="no" tabindex="-1" loading="lazy"></iframe>
+      <span class="stamp ${sC[p.cat]}">${p.lbl}</span>
+      <span class="nbadge">${p.i}</span>
+    </div>
+    <div class="card-body">
+      <h2 class="card-title">${p.title}</h2>
+      <p class="card-desc">${p.desc}</p>
+    </div>
+    <div class="card-foot">
+      <div class="tags">${tags}</div>
+      <div class="arr">→</div>
+    </div>`;
+  g.appendChild(a);
+});
+</script>
 </body>
 </html>

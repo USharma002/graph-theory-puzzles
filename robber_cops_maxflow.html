@@ -152,6 +152,7 @@
         <button class="btn-check" onclick="game.checkWin()">DEPLOY</button>
         <button onclick="game.reset()">Clear</button>
         <button onclick="game.newLevel()">New</button>
+        <button class="info-btn" onclick="game.openMathModal()">Theory</button>
         <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.animateSolution()">?</button>
     </div>
 
@@ -240,6 +241,9 @@ class FlowGame {
 
     newLevel() {
         this.nodes =[]; this.edges =[]; this.frame = 0; this.showSolution = false;
+        this.isAnimating = false;
+        this.bfsHighlightNodes = new Set();
+        this.pushHighlightEdges = new Set();
         document.getElementById('modal').style.display = 'none';
         this.updateSafeBounds();
         
@@ -362,13 +366,93 @@ class FlowGame {
         document.getElementById('mathModal').style.display = 'flex';
     }
 
-    animateSolution() {
-        this.showSolution = !this.showSolution;
-        if(this.showSolution) {
-            this.edges.forEach(e => e.blocked = this.minCutEdges.has(e.id));
-        } else {
-            this.reset();
+    async animateSolution() {
+        if(this.isAnimating) return;
+        this.isAnimating = true;
+        this.showSolution = true;
+        this.edges.forEach(e => e.blocked = false);
+        this.updateUI();
+
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+        const source = 0, sink = this.nodes.length - 1, n = this.nodes.length;
+        
+        let capacity = Array(n).fill().map(()=>Array(n).fill(0));
+        let originalCapacity = Array(n).fill().map(()=>Array(n).fill(0));
+        this.edges.forEach(e => { capacity[e.u][e.v] += e.capacity; originalCapacity[e.u][e.v] += e.capacity; });
+
+        this.solutionFlows = {};
+        this.minCutEdges.clear();
+
+        let flow = 0;
+        while(this.isAnimating) {
+            let parent = Array(n).fill(-1), queue = [source]; parent[source] = source;
+            this.bfsHighlightNodes.clear();
+            
+            // Highlight BFS Wave
+            while(queue.length > 0 && parent[sink] === -1 && this.isAnimating) {
+                let u = queue.shift();
+                this.bfsHighlightNodes.add(u);
+                await delay(100); 
+                
+                for(let v = 0; v < n; v++) {
+                    if(parent[v] === -1 && capacity[u][v] > 0) { 
+                        parent[v] = u; 
+                        queue.push(v); 
+                    }
+                }
+            }
+            
+            this.bfsHighlightNodes.clear();
+
+            if(parent[sink] === -1 || !this.isAnimating) break;
+            
+            let pathFlow = Infinity, s = sink;
+            let pathEdges = [];
+            while(s !== source) { 
+                pathFlow = Math.min(pathFlow, capacity[parent[s]][s]);
+                let p = parent[s];
+                let e = this.edges.find(edge => (edge.u === p && edge.v === s) || (edge.v === p && edge.u === s));
+                if(e) pathEdges.push(e);
+                s = p; 
+            }
+            
+            // Animate Push Flow
+            this.pushHighlightEdges.clear();
+            for(let e of pathEdges) this.pushHighlightEdges.add(e.id);
+            await delay(400); 
+            
+            s = sink;
+            while(s !== source) { 
+                let p = parent[s];
+                capacity[p][s] -= pathFlow; 
+                capacity[s][p] += pathFlow; 
+                s = p; 
+            }
+            flow += pathFlow; 
+            
+            // update solution flows immediately
+            this.solutionFlows = {};
+            this.edges.forEach(e => {
+                const actualFlow = originalCapacity[e.u][e.v] - capacity[e.u][e.v];
+                if(actualFlow > 0) this.solutionFlows[e.id] = actualFlow;
+            });
+            this.pushHighlightEdges.clear();
+            await delay(150);
         }
+        
+        if(!this.isAnimating) return; // Interrupted
+        
+        // Find Min Cut
+        let visited = new Set([source]), q = [source];
+        while(q.length) {
+            let u = q.shift();
+            for(let v=0; v<n; v++) if(!visited.has(v) && capacity[u][v] > 0) { visited.add(v); q.push(v); }
+        }
+        this.edges.forEach(e => { if(visited.has(e.u) && !visited.has(e.v)) this.minCutEdges.add(e.id); });
+        
+        // Apply cut
+        this.edges.forEach(e => e.blocked = this.minCutEdges.has(e.id));
+        this.isAnimating = false;
         this.updateUI();
     }
 
@@ -401,7 +485,15 @@ class FlowGame {
         if(this.hoverEdge) { this.hoverEdge.blocked = !this.hoverEdge.blocked; this.updateUI(); }
     }
 
-    reset() { this.edges.forEach(e => e.blocked = false); this.showSolution = false; this.updateUI(); }
+    reset() { 
+        this.isAnimating = false;
+        if(this.bfsHighlightNodes) this.bfsHighlightNodes.clear();
+        if(this.pushHighlightEdges) this.pushHighlightEdges.clear();
+        this.solutionFlows = {}; // Clear any animating flow lines
+        this.edges.forEach(e => e.blocked = false); 
+        this.showSolution = false; 
+        this.updateUI(); 
+    }
 
     checkWin() {
         const cost = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0);
@@ -447,6 +539,13 @@ class FlowGame {
                     this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
                     this.ctx.strokeStyle = "#4285f4"; this.ctx.lineWidth = flow * 2.5; this.ctx.stroke();
                 }
+
+                if(this.pushHighlightEdges && this.pushHighlightEdges.has(e.id)) {
+                    this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
+                    this.ctx.strokeStyle = "#34a853"; // Green for newly pushed path
+                    this.ctx.lineWidth = Math.max(8, e.capacity * 2.5) + 4; 
+                    this.ctx.setLineDash([]); this.ctx.stroke();
+                }
             } else {
                 // Road styling
                 this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
@@ -477,6 +576,12 @@ class FlowGame {
 
         // Nodes
         this.nodes.forEach(n => {
+            if(this.bfsHighlightNodes.has(n.id)) {
+                this.ctx.beginPath(); this.ctx.arc(n.x, n.y, this.nodeRadius + 6, 0, Math.PI*2);
+                this.ctx.fillStyle = "#fbbc04"; // Yellow wave
+                this.ctx.fill();
+            }
+
             const pulse = Math.sin(this.frame * 0.05 + n.id) * 2;
             this.ctx.beginPath(); this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
             if (n.type === 'source') this.ctx.fillStyle = "#e8f0fe";

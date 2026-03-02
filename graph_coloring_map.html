@@ -16,6 +16,7 @@
             --c-blue: #4285f4;
             --c-green: #34a853;
             --c-yellow: #fbbc04;
+            --math-purple: #9334e6;
         }
 
         body {
@@ -80,6 +81,11 @@
         }
         .btn:hover { background: #eee; transform: scale(1.05); }
 
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; border-radius: 8px; font-family: 'Architects Daughter'; font-size: 1.1rem; padding: 10px; cursor: pointer; transition: transform 0.2s;}
+        .info-btn:hover { transform: scale(1.02); }
+        .btn-circle { width: 45px; height: 45px; border-radius: 50%; background: var(--ink-blue); color: white; border: none; margin: 0; font-family: 'Roboto Mono', monospace; font-size: 1.4rem; font-weight: bold; cursor: pointer; box-shadow: 3px 3px 0 var(--asphalt); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        .btn-circle:hover { transform: scale(1.1); }
+
         /* MODAL */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -127,11 +133,17 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <div class="mobile-topbar" id="mobileTopbar">
-        <div style="font-size:1.1rem; font-weight:bold;">Conflicts: <span id="mobileConflictCount" style="color:var(--c-red);">0</span></div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn" style="margin:0; padding:6px 12px; font-size:0.9rem;" onclick="game.newMap()">New</button>
-            <button class="btn" style="margin:0; padding:6px 12px; font-size:0.9rem; background:var(--c-green); color:white; border-color:var(--c-green);" onclick="game.checkWin()">Submit</button>
+    <div class="mobile-topbar" id="mobileTopbar" style="flex-wrap: wrap; gap: 10px;">
+        <div style="font-size:1.1rem; font-weight:bold; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <span>Conflicts: <span id="mobileConflictCount" style="color:var(--c-red);">0</span></span>
+            <div style="display:flex; gap:5px;">
+                <button class="info-btn" style="padding: 4px 10px; font-size: 0.9rem;" onclick="game.openMathModal()">Theory</button>
+                <button class="btn-circle" style="width: 30px; height: 30px; font-size: 1rem;" onclick="game.animateSolution()">?</button>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; width: 100%;">
+            <button class="btn" style="flex:1; margin:0;" onclick="game.newMap()">New</button>
+            <button class="btn" style="flex:1; margin:0; background:var(--c-green); color:white; border-color:var(--c-green);" onclick="game.checkWin()">Submit</button>
         </div>
     </div>
 
@@ -150,12 +162,18 @@
                 <h1>Cartographer</h1>
                 <p><b>Rule:</b> Adjacent regions cannot have the same color.</p>
                 <div style="margin-top:15px; font-size:1rem; color:#888;">Conflicts: <b id="conflictCount" style="color:var(--c-red); font-size:1.4rem;">0</b></div>
-                <button class="btn" onclick="game.newMap()">New Map</button>
-                <button class="btn" onclick="game.checkWin()">Submit Map</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn" style="flex:1; margin-top:0;" onclick="game.newMap()">New Map</button>
+                    <button class="btn" style="flex:1; margin-top:0;" onclick="game.checkWin()">Submit Map</button>
+                </div>
+                <div class="bottom-controls" style="margin-top:15px; display:flex; gap:10px;">
+                    <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                    <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">?</button>
+                </div>
             </div>
             
             <!-- Right Hint -->
-            <div class="notebook-panel" style="transform: rotate(2deg);">
+            <div class="notebook-panel" id="rightPanelHint" style="transform: rotate(2deg); display: none;">
                 <h1>Theory</h1>
                 <p>The <b>Four Color Theorem</b> states that any plane separated into regions needs no more than 4 colors.</p>
             </div>
@@ -182,6 +200,20 @@
             <br>
             <button class="btn" style="font-size:1.2rem; background:var(--c-blue); color:white; border:none;" onclick="game.newMap()">Next Map</button>
             <button class="btn" onclick="document.getElementById('modal').style.display='none'">Fix It</button>
+        </div>
+    </div>
+
+    <!-- Math Modal -->
+    <div class="modal-overlay" id="mathModal">
+        <div class="clipboard math-mode">
+            <h2 style="font-family:'Architects Daughter'; text-align:center;">The Mathematics of Cartography</h2>
+            <div class="math-section" style="background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5;">
+                <h3 style="margin-top:0; color:var(--math-purple);">The Four Color Theorem</h3>
+                <p>The <b>Four Color Theorem</b> states that any given contiguous map on a plane requires no more than <b>four colors</b> to color the regions such that no two adjacent regions share the same color.</p>
+                <br>
+                <p>This was the first major theorem to be proved using a computer in 1976 by Kenneth Appel and Wolfgang Haken. Our solver uses a <b>Greedy Backtracking algorithm</b> to search the possibility tree for a valid 4-coloring!</p>
+            </div>
+            <button class="btn" onclick="document.getElementById('mathModal').style.display='none'" style="width:100%; border-color:var(--math-purple); color:var(--math-purple);">Return to Map</button>
         </div>
     </div>
 
@@ -236,6 +268,62 @@ class MapGame {
         });
     }
 
+    openMathModal() {
+        document.getElementById('mathModal').style.display = 'flex';
+    }
+
+    async animateSolution() {
+        if(this.isSolving) return;
+        this.isSolving = true;
+        
+        for(let n of this.nodes) { n.color = 0; n.testing = false; }
+        this.updateConflicts();
+        
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        
+        const isSafe = (nodeIdx, color) => {
+            let node = this.nodes[nodeIdx];
+            for(let e of this.edges) {
+                if(e.u === node.id && this.nodes[e.v].color === color) return false;
+                if(e.v === node.id && this.nodes[e.u].color === color) return false;
+            }
+            return true;
+        }
+
+        const solveUtil = async (nodeIdx) => {
+            if (nodeIdx === this.nodes.length) return true;
+            
+            let node = this.nodes[nodeIdx];
+            node.testing = true; 
+            
+            for (let c = 1; c <= 4; c++) {
+                node.color = c;
+                node.pop = 10;
+                this.updateConflicts();
+                await delay(150);
+                
+                if (isSafe(nodeIdx, c)) {
+                    node.testing = false; 
+                    if (await solveUtil(nodeIdx + 1)) return true;
+                    node.testing = true; // Backtracking visually
+                }
+            }
+            
+            // Backtrack visual
+            node.color = 0;
+            node.testing = false;
+            node.pop = 10;
+            this.updateConflicts();
+            await delay(100);
+            return false;
+        }
+
+        await solveUtil(0);
+        this.nodes.forEach(n => n.testing = false);
+        this.isSolving = false;
+        this.checkWin();
+    }
+
     // --- GENERATION: Planar Graph (Delaunay-ish) ---
     newMap() {
         this.nodes = [];
@@ -245,10 +333,14 @@ class MapGame {
         const count = 12 + Math.floor(Math.random() * 8); // 12-20 regions
         
         const isMobile = window.innerWidth <= 768;
-        const paddingTop = isMobile ? 80 : 100;
-        const paddingBottom = isMobile ? 100 : 100;
-        const paddingLeft = isMobile ? 20 : 100;
-        const paddingRight = 20;
+        // Adjust padding to precisely match the DOM UI elements + massive safety margins
+        const paddingTop = isMobile ? 80 : 100; // Mobile topbar / Desktop margin
+        const paddingBottom = isMobile ? 140 : 180; // Bottom paint pot UI
+        const paddingLeft = isMobile ? 20 : 420; // Avoid the massive side-panel on Desktop
+        const paddingRight = 40;
+        
+        // Make the node base radius smaller so it's less cramped
+        const rBaseMulti = isMobile ? 20 : 25;
         
         // 1. Generate Points (Regions)
         for(let i=0; i<count; i++) {
@@ -265,12 +357,12 @@ class MapGame {
             }
             // Irregular "Blob" shape parameters
             const points = [];
-            const rBase = 40 + Math.random() * 20;
+            const rBase = rBaseMulti + Math.random() * 15;
             const segments = 12;
             for(let j=0; j<segments; j++) {
                 const angle = (j / segments) * Math.PI * 2;
                 // Add noise to radius to make it look like a map territory
-                const r = rBase + (Math.random() - 0.5) * 20;
+                const r = rBase + (Math.random() - 0.5) * 15;
                 points.push({
                     dx: Math.cos(angle) * r,
                     dy: Math.sin(angle) * r
@@ -310,6 +402,44 @@ class MapGame {
         
         // 3. Relax graph (Physics) to fix visuals
         this.relaxGraph(100);
+
+        // 4. Force Bounding Box (Fit absolutely on screen)
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        this.nodes.forEach(n => {
+            let maxRadius = 0;
+            n.shape.forEach(p => Math.max(maxRadius, Math.hypot(p.dx, p.dy)));
+            if(n.x - maxRadius < minX) minX = n.x - maxRadius;
+            if(n.x + maxRadius > maxX) maxX = n.x + maxRadius;
+            if(n.y - maxRadius < minY) minY = n.y - maxRadius;
+            if(n.y + maxRadius > maxY) maxY = n.y + maxRadius;
+        });
+
+        // Current width/height
+        const cW = maxX - minX;
+        const cH = maxY - minY;
+        
+        // Target width/height (what we want)
+        // Ensure tW and tH don't go negative on extremely small/squished windows
+        const tW = Math.max(100, this.logicalWidth - paddingLeft - paddingRight);
+        const tH = Math.max(100, this.logicalHeight - paddingTop - paddingBottom);
+        
+        // Scale ratio (whichever is smaller)
+        const scale = Math.min(tW / cW, tH / cH);
+        
+        // Apply scaling and translation
+        this.nodes.forEach(n => {
+            // First translate node to origin (0,0) of bounding box, then scale, then offset to padding coords
+            n.x = paddingLeft + (n.x - minX) * scale;
+            n.y = paddingTop + (n.y - minY) * scale;
+            // Also scale the shapes down tightly if graph is squished
+            if (scale < 1) {
+                n.shape.forEach(p => { 
+                    p.dx *= scale; 
+                    p.dy *= scale; 
+                });
+            }
+        });
+
         this.updateConflicts();
     }
 
@@ -374,8 +504,8 @@ class MapGame {
             }
             // Center
             for(let n of this.nodes) {
-                n.vx += (this.canvas.width/2 - n.x)*centerK;
-                n.vy += (this.canvas.height/2 - n.y)*centerK;
+                n.vx += (this.logicalWidth/2 - n.x)*centerK;
+                n.vy += (this.logicalHeight/2 - n.y)*centerK;
                 n.x += n.vx; n.y += n.vy;
                 n.vx *= 0.8; n.vy *= 0.8; // Friction
             }
@@ -527,8 +657,15 @@ class MapGame {
             this.ctx.fill();
 
             // Outline
-            this.ctx.strokeStyle = "#3c4043"; // Asphalt
-            this.ctx.lineWidth = 3;
+            if(n.testing) {
+                this.ctx.strokeStyle = varCSS('--c-yellow'); 
+                this.ctx.lineWidth = 6;
+                if (Math.sin(this.frame * 0.2) > 0) this.ctx.lineWidth = 9; // Pulse
+            } else {
+                this.ctx.strokeStyle = "#3c4043"; // Asphalt
+                this.ctx.lineWidth = 3;
+            }
+            
             this.ctx.setLineDash([]);
             this.ctx.stroke();
 

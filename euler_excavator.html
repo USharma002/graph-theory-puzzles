@@ -248,12 +248,17 @@
             <button class="btn-primary" onclick="game.resetCurrentProgress()">
                 ↺ Retry Sector
             </button>
-            <button class="btn-icon" id="mathBtn" onclick="game.toggleMathMode()">
-                ? &nbsp; Graph Theory Viz
-            </button>
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button class="btn-primary" id="mathBtn" style="background:var(--bg-dark); border-color:var(--accent-purple); color:var(--text-main); flex: 1;" onclick="game.toggleMathMode()">
+                    Theory
+                </button>
+                <button class="btn-primary" onclick="game.animateSolution()" style="background:var(--accent-blue); width: 45px; padding: 0; font-size: 1.2rem;" title="Show Solution">
+                    ?
+                </button>
+            </div>
         </div>
-
-        <div class="glass-panel" id="math-panel">
+        
+        <div class="glass-panel math-panel" id="math-panel">
             <div style="color:var(--accent-gold); font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">The Euler Path</div>
             <p class="math-text">
                 To solve this efficiently, every intersection must have an <span class="highlight">even number</span> of roads.
@@ -318,7 +323,8 @@
             </select>
         </div>
         <button class="btn-primary" onclick="game.resetCurrentProgress()">↺ Retry</button>
-        <button class="btn-icon" id="mobileMathBtn" onclick="game.toggleMathMode()">?</button>
+        <button class="btn-icon" id="mobileMathBtn" onclick="game.toggleMathMode()">Theory</button>
+        <button class="btn-icon" onclick="game.animateSolution()" style="background:var(--accent-blue); color:white; border-color:var(--accent-blue);">?</button>
     </div>
 
     <div id="alert-box">⚠️ RETURN TO BASE TO FINISH!</div>
@@ -499,7 +505,111 @@ class SnowCityGame {
         if(this.showMath) this.toggleMathMode();
     }
 
+    async animateSolution() {
+        if(this.isAnimating || !this.gameActive) return;
+        this.isAnimating = true;
+
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+
+        while(this.isAnimating && this.edges.some(e => !e.visited)) {
+            // Find shortest path to an unvisited edge using BFS
+            let queue = [{ node: this.playerNode, path: [] }];
+            let visitedNodes = new Set();
+            visitedNodes.add(this.playerNode);
+            let targetEdge = null;
+            let pathToEdge = null;
+
+            // First check if any connected edge is unvisited (Immediate greedy choice)
+            let immediateEdges = this.edges.filter(e => !e.visited && (e.u === this.playerNode || e.v === this.playerNode));
+            if (immediateEdges.length > 0) {
+                targetEdge = immediateEdges[0];
+                pathToEdge = [targetEdge.u === this.playerNode ? targetEdge.v : targetEdge.u];
+            } else {
+                // BFS to find closest unvisited edge
+                bfsLoop:
+                while(queue.length > 0) {
+                    let { node, path } = queue.shift();
+                    let connectedEdges = this.edges.filter(e => e.u === node || e.v === node);
+                    
+                    for(let e of connectedEdges) {
+                        let neighbor = (e.u === node) ? e.v : e.u;
+                        if(!e.visited) {
+                            targetEdge = e;
+                            pathToEdge = [...path, neighbor];
+                            break bfsLoop;
+                        } else if(!visitedNodes.has(neighbor)) {
+                            visitedNodes.add(neighbor);
+                            queue.push({ node: neighbor, path: [...path, neighbor] });
+                        }
+                    }
+                }
+            }
+
+            if(!pathToEdge) break; // Trapped or solved
+
+            // Move along the path
+            for(let nextNode of pathToEdge) {
+                if(!this.isAnimating) break;
+                
+                let edge = this.edges.find(e => (e.u === this.playerNode && e.v === nextNode) || (e.u === nextNode && e.v === this.playerNode));
+                if(edge) {
+                    this.moves++;
+                    edge.visited = true;
+                    this.playerNode = nextNode;
+                    
+                    const tNode = this.nodes[nextNode];
+                    this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
+                    this.isMoving = true;
+                    
+                    this.updateUI();
+                    
+                    // Wait for physical movement to complete
+                    while(this.isMoving) { await delay(20); }
+                }
+            }
+        }
+        
+        // Final check if home
+        if(this.playerNode !== this.startNodeIndex) {
+            // Pathfind home
+            let queue = [{ node: this.playerNode, path: [] }];
+            let seen = new Set([this.playerNode]);
+            let homePath = null;
+            
+            while(queue.length > 0) {
+                let { node, path } = queue.shift();
+                if(node === this.startNodeIndex) { homePath = path; break; }
+                
+                let connected = this.edges.filter(e => e.u === node || e.v === node);
+                for(let e of connected) {
+                    let nbor = e.u === node ? e.v : e.u;
+                    if(!seen.has(nbor)) {
+                        seen.add(nbor);
+                        queue.push({ node: nbor, path: [...path, nbor] });
+                    }
+                }
+            }
+            
+            if(homePath) {
+                for(let nextNode of homePath) {
+                    if(!this.isAnimating) break;
+                    this.moves++;
+                    this.playerNode = nextNode;
+                    const tNode = this.nodes[nextNode];
+                    this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
+                    this.isMoving = true;
+                    this.updateUI();
+                    while(this.isMoving) { await delay(20); }
+                }
+            }
+        }
+
+        this.isAnimating = false;
+        this.checkState();
+    }
+
     resetCurrentProgress() {
+        this.isAnimating = false;
         this.edges.forEach(e => e.visited = false);
         this.playerNode = this.startNodeIndex;
         this.moves = 0;

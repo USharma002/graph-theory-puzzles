@@ -3,263 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3x3 Knight Octagon</title>
-    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
+    <title>Knight Cycle (3×3)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #fdfbf7;
-            --accent-cyan: #1a73e8;
-            --accent-pink: #ea4335;
-            --base-green: #34a853;
-            --base-red: #ea4335;
-            --text-main: #202124;
-            --cell-dark: #cccccc;
+            --white:  #ffffff;
+            --off:    #fafaf9;
+            --black:  #111111;
+            --red:    #e53935;
+            --blue:   #1565c0;
+            --muted:  #888888;
             --cell-light: #ffffff;
+            --cell-dark:  #e8e8e8;
+            --border: #cccccc;
         }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            margin: 0;
-            background-color: var(--bg-deep);
+            font-family: 'Architects Daughter', cursive;
+            background: var(--off);
             background-image: radial-gradient(#ccc 1px, transparent 1px);
-            background-size: 30px 30px;
-            font-family: 'Architects Daughter', cursive, sans-serif;
-            color: var(--text-main);
-            min-height: 100dvh;
-            height: 100%;
+            background-size: 28px 28px;
+            color: var(--black);
+            height: 100dvh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        /* HEADER */
-        .header {
-            padding: 15px 10px;
-            text-align: center;
-            border-bottom: 2px dashed var(--text-main);
-            background: rgba(255, 255, 255, 0.95);
-            z-index: 10;
-        }
-        h1 { margin: 0; font-size: clamp(1rem, 4vw, 1.2rem); letter-spacing: 2px; text-transform: uppercase; color: var(--accent-cyan); }
-        .subtitle { font-size: clamp(0.7rem, 2.5vw, 0.8rem); color: #5f6368; margin-top: 5px; }
-
-        /* CONTAINER */
-        .container {
-            display: flex;
-            flex: 1;
-            flex-direction: row;
-            position: relative;
-            min-height: 0; padding-bottom: 70px;
-        }
-
-        /* PANELS */
-        .view-panel {
-            flex: 1;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-right: 2px dashed rgba(0,0,0,0.1);
             overflow: hidden;
-            min-height: 350px;
         }
 
-        .label {
-            position: absolute; top: 15px; left: 15px;
-            font-size: 0.7rem; font-weight: bold; color: #fdfbf7;
-            text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
-            z-index: 2;
-            background: var(--text-main);
-            padding: 4px 8px;
+        /* ── HEADER ── */
+        .header {
+            flex-shrink: 0;
+            background: var(--white);
+            border-bottom: 2px solid var(--black);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .header-title {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(0.75rem, 3vw, 1rem);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--black);
+        }
+
+        .subtitle {
+            font-size: clamp(0.6rem, 2vw, 0.75rem);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .subtitle .red  { color: var(--red); font-weight: bold; }
+        .subtitle .blue { color: var(--blue); font-weight: bold; }
+
+        .reset-btn {
+            flex-shrink: 0;
+            font-family: 'Architects Daughter', cursive;
+            background: var(--white);
+            border: 2px solid var(--black);
+            color: var(--black);
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
             border-radius: 4px;
+            box-shadow: 3px 3px 0 var(--black);
+            transition: transform 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 var(--black);
+        }
+        .reset-btn:active {
+            transform: translateY(1px);
+            box-shadow: 1px 1px 0 var(--black);
         }
 
-        /* 3x3 BOARD */
+        /* ── TWO PANELS ── */
+        .panels {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            min-height: 0;
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 12px;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .panel:first-child {
+            border-right: 2px dashed var(--border);
+        }
+
+        .panel-label {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--black);
+            color: var(--white);
+            padding: 3px 7px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ── CHESSBOARD ── */
         #board-stage {
             display: grid;
-            --cell-size: clamp(60px, min(25vw, 25vh), 100px);
-            grid-template-columns: repeat(3, var(--cell-size));
-            grid-template-rows: repeat(3, var(--cell-size));
-            gap: calc(var(--cell-size) * 0.04);
-            background: var(--text-main);
-            border: calc(var(--cell-size) * 0.04) solid var(--text-main);
-            border-radius: 4px;
-            box-shadow: 5px 5px 0 rgba(0,0,0,0.8);
-            transform: rotate(-1deg);
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            border: 3px solid var(--black);
+            border-radius: 3px;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.7);
+            transform: rotate(-0.5deg);
+            overflow: hidden;
+            /* Size: fill available space keeping square */
+            width: min(calc(100% - 8px), calc(100dvh - 160px) / 2 - 8px, 240px);
+            aspect-ratio: 1;
+        }
+
+        @media (max-width: 600px) {
+            .panels { flex-direction: column; }
+            .panel:first-child { border-right: none; border-bottom: 2px dashed var(--border); }
+            #board-stage {
+                width: min(calc(100% - 8px), calc((100dvh - 120px) / 2 - 40px), 200px);
+            }
         }
 
         .cell {
-            width: var(--cell-size); height: var(--cell-size);
-            display: flex; justify-content: center; align-items: center;
-            font-size: calc(var(--cell-size) * 0.55); cursor: pointer; position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             user-select: none;
+            position: relative;
+            font-size: 1.8em; /* scales with board size */
+            transition: background 0.12s;
+            border: 1px solid rgba(0,0,0,0.06);
         }
-        .cell.light { background-color: var(--cell-light); }
-        .cell.dark { background-color: var(--cell-dark); }
-        
-        /* Board Highlights */
-        .cell.selected { background-color: rgba(26, 115, 232, 0.3) !important; box-shadow: inset 0 0 0 4px var(--accent-cyan); }
-        .cell.valid-move { background-color: rgba(26, 115, 232, 0.2) !important; box-shadow: inset 0 0 15px var(--accent-cyan); cursor: pointer; }
-        .cell.valid-move::after { content: ""; width: 20px; height: 20px; background: var(--accent-cyan); border-radius: 50%; opacity: 0.8; }
-        .cell.hovered-node { border: 4px solid var(--accent-cyan); z-index: 10; }
+        .cell.light { background: var(--cell-light); }
+        .cell.dark  { background: var(--cell-dark); }
 
-        /* RESPONSIVE LAYOUT */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                padding-bottom: 0;
-            }
-            .view-panel {
-                border-right: none;
-                border-bottom: 2px dashed rgba(0,0,0,0.1);
-                min-height: 45vh;
-            }
-            #board-stage {
-                --cell-size: clamp(50px, min(28vw, 25vh), 90px);
-            }
-            .controls {
-                position: relative; bottom: auto; left: auto; transform: none; display: flex;
-                margin: 20px auto; width: 90%; justify-content: center;
-            }
+        .cell.selected   { background: rgba(21, 101, 192, 0.25) !important; box-shadow: inset 0 0 0 3px var(--blue); }
+        .cell.valid-move { background: rgba(21, 101, 192, 0.1)  !important; cursor: pointer; }
+        .cell.valid-move::after {
+            content: '';
+            width: 32%;
+            height: 32%;
+            background: var(--blue);
+            border-radius: 50%;
+            opacity: 0.65;
+            position: absolute;
         }
 
-        /* GRAPH CANVAS */
-        #graphCanvas { width: 100%; height: 100%; display: block; cursor: pointer; }
-
-        /* CONTROLS */
-        .controls {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 15px;
-            background: #ffffff; padding: 10px 20px; border-radius: 8px;
-            border: 2px solid var(--text-main);
-            z-index: 50;
-            box-shadow: 5px 5px 0 rgba(0,0,0,0.8);
-            transform: translateX(-50%) rotate(1deg);
+        /* ── CANVAS ── */
+        #graphCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
         }
-        button {
-            background: #ffffff; color: var(--text-main); border: 2px solid var(--text-main); padding: 12px 24px;
-            border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem;
-            box-shadow: 3px 3px 0 var(--text-main); font-family: 'Architects Daughter', cursive;
-        }
-        button:hover { background: #f1f5f9; transform: translateY(-2px); box-shadow: 4px 4px 0 var(--text-main); }
 
-        /* WIN MODAL */
+        /* ── WIN MODAL ── */
         #win-modal {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: none; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 100;
+            position: fixed; inset: 0;
+            background: rgba(255,255,255,0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            gap: 20px;
         }
-        .win-text { font-size: clamp(3rem, 10vw, 5rem); color: var(--accent-cyan); font-weight: 900; margin-bottom: 20px; text-shadow: none; text-align: center; }
-
+        #win-modal .win-word {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(3rem, 12vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: var(--blue);
+            text-transform: uppercase;
+        }
+        #win-modal .win-sub {
+            font-size: 1rem;
+            color: var(--muted);
+        }
+        #win-modal .reset-btn {
+            font-size: 1rem;
+            padding: 10px 28px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Knight Cycle (3x3)</h1>
-        <div class="subtitle">White goes to <span style="color:var(--base-red)">RED</span> nodes. Black goes to <span style="color:var(--base-green)">GREEN</span> nodes.</div>
-    </div>
-
-    <div class="container">
-        <div class="view-panel">
-            <div class="label">Spatial (Board)</div>
-            <div id="board-stage"></div>
-        </div>
-
-        <div class="view-panel">
-            <div class="label">Topological (Octagon)</div>
-            <canvas id="graphCanvas"></canvas>
+<div class="header">
+    <div>
+        <div class="header-title">Knight Cycle (3×3)</div>
+        <div class="subtitle">
+            White → <span class="red">RED</span> nodes &nbsp;·&nbsp; Black → <span class="blue">BLUE</span> nodes
         </div>
     </div>
+    <button class="reset-btn" onclick="game.reset()">Reset</button>
+</div>
 
-    <div class="controls">
-        <button onclick="game.reset()">Reset Pieces</button>
+<div class="panels">
+    <div class="panel" id="board-panel">
+        <div class="panel-label">Board</div>
+        <div id="board-stage"></div>
     </div>
+    <div class="panel" id="graph-panel">
+        <div class="panel-label">Graph</div>
+        <canvas id="graphCanvas"></canvas>
+    </div>
+</div>
 
-    <div id="win-modal">
-        <div class="win-text">SOLVED</div>
-        <button onclick="game.reset()">Play Again</button>
-    </div>
+<div id="win-modal">
+    <div class="win-word">Solved!</div>
+    <div class="win-sub">Knights swapped successfully.</div>
+    <button class="reset-btn" onclick="game.reset()">Play Again</button>
+</div>
 
 <script>
 class KnightGame {
     constructor() {
-        this.boardEl = document.getElementById('board-stage');
-        this.canvas = document.getElementById('graphCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        
-        this.size = 3; 
-        this.cells = [];
-        this.grid = new Array(9).fill(null);
-        
-        // Game State
-        this.selectedIdx = -1;
-        this.validMoves = [];
-        this.nodes = [];
-        this.edges = [];
+        this.boardEl   = document.getElementById('board-stage');
+        this.canvas    = document.getElementById('graphCanvas');
+        this.ctx       = this.canvas.getContext('2d');
+        this.cells     = [];
+        this.grid      = new Array(9).fill(null);
+        this.selectedIdx  = -1;
+        this.validMoves   = [];
+        this.nodes        = [];
+        this.edges        = [];
         this.hoveredNodeIdx = -1;
 
-        // Colors
+        // White starts at top corners (0,2), should end at bottom corners (6,8)
+        // Black starts at bottom corners (6,8), should end at top corners (0,2)
+        this.whiteGoal = [6, 8]; // red nodes = white destination
+        this.blackGoal = [0, 2]; // blue nodes = black destination
+
         this.colors = {
-            green: '#34a853',
-            red: '#ea4335',
-            cyan: '#1a73e8',
-            pink: '#ea4335',
-            dark: '#cccccc',
-            light: '#ffffff'
+            red:  '#e53935',
+            blue: '#1565c0',
+            black: '#111111',
+            lightGray: '#e8e8e8',
+            white: '#ffffff',
         };
 
-        // Hardcoded Home Bases
-        this.whiteStart = [0, 2]; // Top corners
-        this.blackStart = [6, 8]; // Bottom corners
-
         this.init();
-        
         window.addEventListener('resize', () => this.resizeCanvas());
-        
-        // Canvas Interaction
-        this.canvas.addEventListener('mousedown', (e) => this.handleCanvasClick(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
-        
+        this.canvas.addEventListener('mousedown', e => this.handleCanvasClick(e));
+        this.canvas.addEventListener('mousemove', e => this.handleCanvasHover(e));
+        // Touch support for graph canvas
+        this.canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            this.handleCanvasClick({ clientX: t.clientX, clientY: t.clientY });
+        }, { passive: false });
         this.resizeCanvas();
         this.loop();
     }
 
     init() {
-        this.createGraphStructure(); 
-        this.createBoard();          
-        this.resetPieces();          
-        this.initGraphNodes();       
+        this.createGraphStructure();
+        this.createBoard();
+        this.resetPieces();
+        this.initGraphNodes();
         document.getElementById('win-modal').style.display = 'none';
+        this.updateVisuals(); // render pieces immediately on load
     }
 
     reset() {
         this.resetPieces();
         this.selectedIdx = -1;
         this.validMoves = [];
+        this.hoveredNodeIdx = -1;
         this.updateVisuals();
         document.getElementById('win-modal').style.display = 'none';
     }
 
-    // --- LOGIC ---
-
     createGraphStructure() {
         this.edges = [];
-        for(let i=0; i<9; i++) {
-            const x = i % 3;
-            const y = Math.floor(i / 3);
-            const moves = [
-                {dx:1, dy:2}, {dx:1, dy:-2}, {dx:-1, dy:2}, {dx:-1, dy:-2},
-                {dx:2, dy:1}, {dx:2, dy:-1}, {dx:-2, dy:1}, {dx:-2, dy:-1}
-            ];
-
-            moves.forEach(m => {
-                const nx = x + m.dx;
-                const ny = y + m.dy;
-                if(nx >= 0 && nx < 3 && ny >= 0 && ny < 3) {
-                    const target = ny * 3 + nx;
-                    if(i < target) this.edges.push({source: i, target: target});
+        for (let i = 0; i < 9; i++) {
+            const x = i % 3, y = Math.floor(i / 3);
+            [{ dx:1,dy:2},{dx:1,dy:-2},{dx:-1,dy:2},{dx:-1,dy:-2},
+             {dx:2,dy:1},{dx:2,dy:-1},{dx:-2,dy:1},{dx:-2,dy:-1}].forEach(m => {
+                const nx = x + m.dx, ny = y + m.dy;
+                if (nx >= 0 && nx < 3 && ny >= 0 && ny < 3) {
+                    const t = ny * 3 + nx;
+                    if (i < t) this.edges.push({ source: i, target: t });
                 }
             });
         }
@@ -267,71 +318,45 @@ class KnightGame {
 
     resetPieces() {
         this.grid.fill(null);
-        this.grid[0] = 'W'; 
-        this.grid[2] = 'W';
-        this.grid[6] = 'B';
-        this.grid[8] = 'B';
+        this.grid[0] = 'W'; this.grid[2] = 'W';
+        this.grid[6] = 'B'; this.grid[8] = 'B';
     }
 
     getValidMoves(idx) {
-        const x = idx % 3;
-        const y = Math.floor(idx / 3);
-        const moves = [];
-        const jumps = [
-            {dx:1, dy:2}, {dx:1, dy:-2}, {dx:-1, dy:2}, {dx:-1, dy:-2},
-            {dx:2, dy:1}, {dx:2, dy:-1}, {dx:-2, dy:1}, {dx:-2, dy:-1}
-        ];
-
-        jumps.forEach(m => {
-            const nx = x + m.dx;
-            const ny = y + m.dy;
-            if(nx >= 0 && nx < 3 && ny >= 0 && ny < 3) {
-                const target = ny * 3 + nx;
-                if(this.grid[target] === null) moves.push(target);
-            }
-        });
-        return moves;
+        const x = idx % 3, y = Math.floor(idx / 3);
+        return [{ dx:1,dy:2},{dx:1,dy:-2},{dx:-1,dy:2},{dx:-1,dy:-2},
+                {dx:2,dy:1},{dx:2,dy:-1},{dx:-2,dy:1},{dx:-2,dy:-1}]
+            .map(m => { const nx = x+m.dx, ny = y+m.dy; return (nx>=0&&nx<3&&ny>=0&&ny<3) ? ny*3+nx : -1; })
+            .filter(t => t >= 0 && this.grid[t] === null);
     }
 
     handleInput(idx) {
-        if(this.validMoves.includes(idx)) {
-            // Move
+        if (this.validMoves.includes(idx)) {
             this.grid[idx] = this.grid[this.selectedIdx];
             this.grid[this.selectedIdx] = null;
             this.selectedIdx = -1;
             this.validMoves = [];
             this.checkWin();
-        } 
-        else if(this.grid[idx] !== null) {
-            // Select
+        } else if (this.grid[idx] !== null) {
             this.selectedIdx = idx;
             this.validMoves = this.getValidMoves(idx);
-        } 
-        else {
-            // Deselect
+        } else {
             this.selectedIdx = -1;
             this.validMoves = [];
         }
         this.updateVisuals();
     }
 
-    // --- DOM BOARD ---
-
     createBoard() {
         this.boardEl.innerHTML = '';
         this.cells = [];
-        for(let i=0; i<9; i++) {
+        for (let i = 0; i < 9; i++) {
             const div = document.createElement('div');
-            const x = i % 3;
-            const y = Math.floor(i / 3);
-            
+            const x = i % 3, y = Math.floor(i / 3);
             div.className = `cell ${(x + y) % 2 === 0 ? 'light' : 'dark'}`;
             div.onclick = () => this.handleInput(i);
-            
-            // Sync Hover
             div.onmouseenter = () => { this.hoveredNodeIdx = i; };
             div.onmouseleave = () => { this.hoveredNodeIdx = -1; };
-
             this.boardEl.appendChild(div);
             this.cells.push(div);
         }
@@ -339,122 +364,123 @@ class KnightGame {
 
     updateVisuals() {
         this.cells.forEach((cell, i) => {
-            cell.classList.remove('selected', 'valid-move', 'hovered-node');
+            // Reset classes but keep light/dark
+            const base = (i%3 + Math.floor(i/3)) % 2 === 0 ? 'light' : 'dark';
+            cell.className = `cell ${base}`;
             cell.innerHTML = '';
-            
-            // Sync Hover from graph
-            if(i === this.hoveredNodeIdx) cell.classList.add('hovered-node');
 
-            // Render Pieces
-            if(this.grid[i] === 'W') cell.innerHTML = '<span style="color:#ffffff; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000">♘</span>';
-            if(this.grid[i] === 'B') cell.innerHTML = '<span style="color:#202124;">♞</span>';
-            if(i === 4) cell.innerHTML = '<span style="font-size:1rem; opacity:0.3; color:#000">X</span>'; 
+            if (i === this.hoveredNodeIdx) cell.style.outline = `3px solid ${this.colors.blue}`;
+            else cell.style.outline = '';
 
-            if(i === this.selectedIdx) cell.classList.add('selected');
-            if(this.validMoves.includes(i)) cell.classList.add('valid-move');
+            // Pieces
+            if (this.grid[i] === 'W') {
+                cell.innerHTML = `<span style="color:#ffffff;text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000">♘</span>`;
+            } else if (this.grid[i] === 'B') {
+                cell.innerHTML = `<span style="color:#111111;">♞</span>`;
+            } else if (i === 4) {
+                cell.innerHTML = `<span style="font-size:0.5em;opacity:0.25;font-family:monospace">×</span>`;
+            }
+
+            if (i === this.selectedIdx) cell.classList.add('selected');
+            if (this.validMoves.includes(i)) cell.classList.add('valid-move');
         });
     }
 
     checkWin() {
-        if(this.grid[0] === 'B' && this.grid[2] === 'B' &&
-           this.grid[6] === 'W' && this.grid[8] === 'W') {
+        if (this.grid[6]==='W' && this.grid[8]==='W' &&
+            this.grid[0]==='B' && this.grid[2]==='B') {
             setTimeout(() => {
                 document.getElementById('win-modal').style.display = 'flex';
-            }, 200);
+            }, 250);
         }
     }
-
-    // --- CANVAS GRAPH ---
 
     resizeCanvas() {
         const dpr = window.devicePixelRatio || 1;
         const rect = this.canvas.parentElement.getBoundingClientRect();
-        this.canvas.width = rect.width * dpr;
+        this.canvas.width  = rect.width  * dpr;
         this.canvas.height = rect.height * dpr;
-        this.canvas.style.width = `${rect.width}px`;
+        this.canvas.style.width  = `${rect.width}px`;
         this.canvas.style.height = `${rect.height}px`;
-        this.ctx.scale(dpr, dpr);
-        
-        this.logicalWidth = rect.width;
-        this.logicalHeight = rect.height;
-        this.initGraphNodes(); 
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.logicalW = rect.width;
+        this.logicalH = rect.height;
+        this.initGraphNodes();
     }
 
     initGraphNodes() {
-        const cx = this.logicalWidth / 2;
-        const cy = this.logicalHeight / 2;
-        this.nodes = [];
-        
-        // THE CYCLE ORDER: 0 -> 5 -> 6 -> 1 -> 8 -> 3 -> 2 -> 7 -> 0
+        const W = this.logicalW, H = this.logicalH;
+        if (!W || !H) return;
+        // label strip at top = ~30px, bottom 10px
+        const cx = W / 2;
+        const cy = (H + 30) / 2;
+        const minDim = Math.min(W, H - 30);
+        const radius    = minDim * 0.36;
+        const nodeR     = Math.max(14, Math.min(28, minDim * 0.075));
+        const centerR   = Math.max(11, Math.min(22, minDim * 0.055));
+
+        // Cycle order around the octagon
         const cycleOrder = [0, 5, 6, 1, 8, 3, 2, 7];
-        const minDim = Math.min(this.logicalWidth, this.logicalHeight);
-        const radius = minDim * 0.35;
-        const nodeRadius = Math.max(15, Math.min(30, minDim * 0.08));
-        const centerRadius = Math.max(12, Math.min(25, minDim * 0.06));
 
-        // Place nodes in an Octagon
-        cycleOrder.forEach((nodeId, i) => {
-            // Rotate so 0 is at top (-PI/2)
-            const angle = (i / 8) * Math.PI * 2 - (Math.PI / 2);
-            this.nodes.push({
-                id: nodeId,
-                x: cx + Math.cos(angle) * radius,
-                y: cy + Math.sin(angle) * radius,
-                radius: nodeRadius
-            });
+        this.nodes = [];
+        cycleOrder.forEach((id, i) => {
+            const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+            this.nodes.push({ id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, r: nodeR });
         });
-
-        // Place isolated node 4 in center
-        this.nodes.push({ id: 4, x: cx, y: cy, radius: centerRadius });
-        
-        // Sort nodes by ID so index lookup works later
-        this.nodes.sort((a,b) => a.id - b.id);
+        // Centre node (4 = blocked square)
+        this.nodes.push({ id: 4, x: cx, y: cy, r: centerR });
+        this.nodes.sort((a, b) => a.id - b.id);
     }
 
     handleCanvasClick(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        this.nodes.forEach(n => {
-            const dist = Math.sqrt((x - n.x)**2 + (y - n.y)**2);
-            if(dist < n.radius + 5) {
-                this.handleInput(n.id);
-            }
-        });
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        for (const n of this.nodes) {
+            if (Math.hypot(x - n.x, y - n.y) < n.r + 6) { this.handleInput(n.id); return; }
+        }
     }
 
     handleCanvasHover(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
         let found = -1;
-        this.nodes.forEach(n => {
-            const dist = Math.sqrt((x - n.x)**2 + (y - n.y)**2);
-            if(dist < n.radius) found = n.id;
-        });
-        
-        this.hoveredNodeIdx = found;
-        this.updateVisuals(); 
+        for (const n of this.nodes) {
+            if (Math.hypot(x - n.x, y - n.y) < n.r + 4) { found = n.id; break; }
+        }
+        if (found !== this.hoveredNodeIdx) {
+            this.hoveredNodeIdx = found;
+            this.updateVisuals();
+        }
     }
 
-    // --- RENDER LOOP ---
-
     loop() {
-        this.ctx.clearRect(0,0, this.logicalWidth || this.canvas.width, this.logicalHeight || this.canvas.height);
+        const W = this.logicalW, H = this.logicalH;
+        this.ctx.clearRect(0, 0, W, H);
+        if (!W || !H || !this.nodes.length) { requestAnimationFrame(() => this.loop()); return; }
         this.drawEdges();
         this.drawNodes();
         requestAnimationFrame(() => this.loop());
     }
 
     drawEdges() {
-        this.ctx.strokeStyle = "rgba(0,0,0,0.2)";
-        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.lineCap = 'round';
         this.edges.forEach(e => {
             const n1 = this.nodes.find(n => n.id === e.source);
             const n2 = this.nodes.find(n => n.id === e.target);
-            
+            if (!n1 || !n2) return;
+
+            // Highlight edge if both endpoints are selected/valid
+            const connected = (n1.id === this.selectedIdx && this.validMoves.includes(n2.id)) ||
+                              (n2.id === this.selectedIdx && this.validMoves.includes(n1.id));
+            if (connected) {
+                this.ctx.strokeStyle = `rgba(21,101,192,0.5)`;
+                this.ctx.lineWidth = 2.5;
+            } else {
+                this.ctx.strokeStyle = 'rgba(0,0,0,0.13)';
+                this.ctx.lineWidth = 1.5;
+            }
             this.ctx.beginPath();
             this.ctx.moveTo(n1.x, n1.y);
             this.ctx.lineTo(n2.x, n2.y);
@@ -465,68 +491,64 @@ class KnightGame {
     drawNodes() {
         this.nodes.forEach(n => {
             const i = n.id;
-            const isHover = (i === this.hoveredNodeIdx);
-            const isSelected = (i === this.selectedIdx);
-            const isValid = this.validMoves.includes(i);
-            const piece = this.grid[i];
+            const piece     = this.grid[i];
+            const isHover   = i === this.hoveredNodeIdx;
+            const isSelected= i === this.selectedIdx;
+            const isValid   = this.validMoves.includes(i);
 
-            // --- COLOR LOGIC (FIXED) ---
-            let strokeColor = this.colors.light;
-            let strokeWidth = 2;
-
-            if (this.whiteStart.includes(i)) {
-                strokeColor = this.colors.green; // Hex code for green
-                strokeWidth = 4;
-            } else if (this.blackStart.includes(i)) {
-                strokeColor = this.colors.red;   // Hex code for red
-                strokeWidth = 4;
-            }
-
-            // Draw Base Circle
+            // Background fill
             this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, n.radius, 0, Math.PI*2);
-            this.ctx.fillStyle = this.colors.dark;
+            this.ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+
+            let fill = this.colors.lightGray;
+            if (isSelected) fill = 'rgba(21,101,192,0.2)';
+            else if (isValid) fill = 'rgba(21,101,192,0.12)';
+            else if (isHover) fill = this.colors.white;
+            this.ctx.fillStyle = fill;
             this.ctx.fill();
-            
-            // Selection / Valid Overrides
-            if(isValid) {
-                this.ctx.fillStyle = "rgba(26, 115, 232, 0.3)";
-                this.ctx.strokeStyle = this.colors.cyan;
-                this.ctx.lineWidth = 2;
-            } else if(isSelected) {
-                this.ctx.fillStyle = "rgba(234, 67, 53, 0.3)";
-                this.ctx.strokeStyle = this.colors.pink;
-                this.ctx.lineWidth = 3;
-            } else if(isHover) {
-                this.ctx.fillStyle = this.colors.light;
-                this.ctx.strokeStyle = "#000";
-                this.ctx.lineWidth = 2;
-            } else {
-                // Apply the colored rings here
-                this.ctx.strokeStyle = strokeColor;
-                this.ctx.lineWidth = strokeWidth;
-            }
-            
+
+            // Border ring
+            let stroke = 'rgba(0,0,0,0.25)', lw = 1.5;
+            if (isSelected) { stroke = this.colors.blue; lw = 3; }
+            else if (isValid) { stroke = this.colors.blue; lw = 2.5; }
+            else if (this.whiteGoal.includes(i)) { stroke = this.colors.red; lw = 3; }
+            else if (this.blackGoal.includes(i)) { stroke = this.colors.blue; lw = 3; }
+            else if (isHover) { stroke = this.colors.black; lw = 2; }
+
+            this.ctx.strokeStyle = stroke;
+            this.ctx.lineWidth = lw;
             this.ctx.stroke();
 
-            // Draw Text/Piece
-            this.ctx.textAlign = "center";
-            this.ctx.textBaseline = "middle";
-            
-            if(piece) {
-                this.ctx.font = `${Math.floor(n.radius * 1.3)}px Arial`;
-                this.ctx.fillStyle = piece === 'W' ? '#ffffff' : '#202124';
-                this.ctx.shadowColor = piece === 'W' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
-                this.ctx.shadowBlur = piece === 'W' ? 2 : 0;
-                this.ctx.fillText(piece === 'W' ? '♘' : '♞', n.x, n.y + n.radius * 0.1);
+            // Valid move dot
+            if (isValid && !piece) {
+                this.ctx.beginPath();
+                this.ctx.arc(n.x, n.y, n.r * 0.3, 0, Math.PI * 2);
+                this.ctx.fillStyle = `rgba(21,101,192,0.5)`;
+                this.ctx.fill();
+            }
+
+            // Text / piece
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            if (piece) {
+                this.ctx.font = `${Math.floor(n.r * 1.3)}px Arial`;
+                if (piece === 'W') {
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                    this.ctx.shadowBlur = 2;
+                } else {
+                    this.ctx.fillStyle = this.colors.black;
+                    this.ctx.shadowBlur = 0;
+                }
+                this.ctx.fillText(piece === 'W' ? '♘' : '♞', n.x, n.y + n.r * 0.08);
                 this.ctx.shadowBlur = 0;
             } else if (i === 4) {
-                this.ctx.font = `${Math.floor(n.radius * 0.6)}px monospace`;
-                this.ctx.fillStyle = "rgba(0,0,0,0.3)";
-                this.ctx.fillText("X", n.x, n.y);
+                this.ctx.font = `${Math.floor(n.r * 0.55)}px Roboto Mono, monospace`;
+                this.ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                this.ctx.fillText('×', n.x, n.y);
             } else {
-                this.ctx.font = `${Math.floor(n.radius * 0.5)}px 'Architects Daughter'`;
-                this.ctx.fillStyle = "rgba(0,0,0,0.5)";
+                this.ctx.font = `${Math.floor(n.r * 0.5)}px Architects Daughter, cursive`;
+                this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
                 this.ctx.fillText(i, n.x, n.y);
             }
         });
