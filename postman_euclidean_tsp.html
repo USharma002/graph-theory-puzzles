@@ -85,7 +85,34 @@
             .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
             .intel-box { display: none; }
         }
-        canvas { position: absolute; top:0; left:0; z-index: 0; }
+        /* --- MOBILE LAYOUT --- */
+        .mobile-topbar {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(29, 53, 87, 0.95); border-bottom: 2px solid var(--accent);
+            padding: 10px 16px; z-index: 20; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+        }
+        .mobile-topbar h1 { font-size: 1.2rem; margin: 0; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        
+        .mobile-bar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(29, 53, 87, 0.95); border-top: 2px solid var(--accent);
+            padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+            gap: 10px; z-index: 20; box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+            align-items: center; backdrop-filter: blur(5px); flex-wrap: wrap;
+        }
+        .mobile-bar button {
+            flex: 1 1 calc(25% - 10px); padding: 10px 5px; font-size: 0.8rem; margin: 0; min-width: 60px;
+        }
+        .mobile-bar .btn-math { width: auto; height: auto; border-radius: 4px; padding: 10px; }
+
+        @media (max-width: 768px) {
+            .ui-layer { display: none !important; }
+            .mobile-topbar, .mobile-bar { display: flex; }
+            .math-panel { top: 70px; right: 10px; left: 10px; width: auto; z-index: 30; }
+        }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; display: block; cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -122,6 +149,27 @@
                 </li>
             </ul>
         </div>
+    </div>
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar" id="mobileTopbar">
+        <div>
+            <h1>ROUTE PLANNER</h1>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: #a8dadc; font-weight: bold; letter-spacing: 1px;">ODOMETER</div>
+            <div style="font-size: 1.2rem; font-family: 'Courier New', monospace; font-weight: bold; color: #fff;">
+                <span id="mobile-dist-display">000.0</span> km
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bar" id="mobileBar">
+        <button class="btn-check" onclick="game.checkWin()">✓ FINISH</button>
+        <button onclick="game.reset()">CLEAR</button>
+        <button onclick="game.newLevel()">NEW MAP</button>
+        <button class="btn-circle" onclick="game.openMathModal()">?</button>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -182,16 +230,39 @@ class TSPGame {
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
 
     updateSafeBounds() {
-        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
-        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
         const isMobile = window.innerWidth <= 768;
-        if(isMobile) {
-            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+        let topBarHeight = 0;
+        let bottomBarHeight = 0;
+        let sidePanelWidth = 350; // Default for desktop right panel
+
+        if (isMobile) {
+            topBarHeight = (document.getElementById('mobileTopbar').offsetHeight || 60) + 20; // +20 for padding
+            bottomBarHeight = (document.getElementById('mobileBar').offsetHeight || 70) + 20; // +20 for padding
+            sidePanelWidth = 0; // No side panels on mobile
         } else {
-            let minX = lRect.right + 60; let maxX = rRect.left - 60;
-            if(maxX <= minX) maxX = minX + 200;
-            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+            const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+            const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
+            
+            // Desktop specific calculations
+            let minX = lRect.right + 60;
+            let maxX = rRect.left - 60;
+            if(maxX <= minX) maxX = minX + 200; // Fallback if panels overlap or are too close
+            
+            this.safeBounds = {
+                minX: minX,
+                maxX: maxX,
+                minY: 60, // Desktop top padding
+                maxY: this.canvas.height - 60 // Desktop bottom padding
+            };
+            return; // Exit if desktop, as mobile logic is separate
         }
+
+        this.safeBounds = {
+            minX: 40, // Left padding for mobile
+            maxX: this.canvas.width - 40, // Right padding for mobile
+            minY: topBarHeight,
+            maxY: this.canvas.height - bottomBarHeight
+        };
     }
 
     newLevel() {
@@ -280,7 +351,11 @@ class TSPGame {
         return Math.round(d / 10);
     }
 
-    updateUI() { document.getElementById('distVal').innerText = this.calcCurrentDist(); }
+    updateUI() {
+        const currentDist = this.calcCurrentDist();
+        document.getElementById('distVal').innerText = currentDist;
+        document.getElementById('mobile-dist-display').innerText = currentDist.toFixed(1).padStart(5, '0');
+    }
 
     openMathModal() { document.getElementById('mathOptVal').innerText = this.optDist; document.getElementById('mathModal').style.display = 'flex'; }
 

@@ -85,15 +85,47 @@
             box-shadow: 0 0 10px #fff;
         }
 
-        /* STATUS OVERLAY */
         #status-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: none;
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 100;
         }
-        .status-title { font-size: 4rem; color: #fff; text-shadow: 0 0 40px var(--neon-blue); margin-bottom: 20px; }
-        .status-desc { font-size: 1.2rem; color: #ccc; max-width: 600px; text-align: center; margin-bottom: 40px; line-height: 1.6; }
+        .status-title { font-size: 3.5rem; color: #fff; text-shadow: 0 0 40px var(--neon-blue); margin-bottom: 20px; text-align: center;}
+        .status-desc { font-size: 1.1rem; color: #ccc; max-width: 600px; text-align: center; margin-bottom: 30px; line-height: 1.6; padding: 0 15px;}
+        
+        /* --- MOBILE LAYOUT --- */
+        .mobile-topbar {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(5, 5, 5, 0.95); border-bottom: 2px solid var(--neon-blue);
+            padding: 10px 16px; z-index: 20; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.2); backdrop-filter: blur(5px);
+        }
+        .mobile-topbar h1 { font-size: 1.2rem; letter-spacing: 2px; text-shadow: 0 0 10px var(--neon-blue); margin: 0; }
+        .mobile-status { font-size: 0.7rem; color: #aaa; letter-spacing: 1px; }
+        .mobile-level { color: var(--neon-pink); font-weight: bold; font-size: 1.2rem; text-shadow: 0 0 10px var(--neon-pink); }
+
+        .mobile-bar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(5, 5, 5, 0.95); border-top: 2px solid var(--neon-green);
+            padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+            gap: 10px; z-index: 20; box-shadow: 0 -4px 15px rgba(0, 255, 157, 0.2);
+            align-items: center; backdrop-filter: blur(5px);
+        }
+        .mobile-bar button {
+            flex: 1; padding: 10px 5px; font-size: 0.8rem; margin: 0;
+        }
+        .mobile-bar .btn-math {
+            position: relative; right: auto; bottom: auto;
+            flex: 0 0 45px; width: 45px; height: 45px; 
+        }
+
+        @media (max-width: 640px) {
+            .hud-top, .level-badge, .controls, .btn-math { display: none !important; }
+            .mobile-topbar, .mobile-bar { display: flex; }
+            .math-panel { top: 70px; right: 10px; left: 10px; width: auto; }
+            .status-title { font-size: 2.5rem; }
+        }
 
         canvas { display: block; cursor: crosshair; }
     </style>
@@ -106,6 +138,15 @@
     </div>
 
     <div class="level-badge" id="level-num">LVL 01</div>
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar" id="mobileTopbar">
+        <div>
+            <h1>NEON TRACE</h1>
+            <div class="mobile-status" id="mobile-level-name">SEQUENCE: INITIALIZED</div>
+        </div>
+        <div class="mobile-level" id="mobile-level-num">01</div>
+    </div>
 
     <div class="math-panel" id="math-panel">
         <div class="math-title">GRAPH ANALYSIS</div>
@@ -132,7 +173,14 @@
         <button onclick="game.resetLevel()">RESET</button>
     </div>
     
-    <button class="btn-math" onclick="game.toggleMath()">?</button>
+    <button class="btn-math" id="desktopMathBtn" onclick="game.toggleMath()">?</button>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bar" id="mobileBar">
+        <button class="btn-impossible" onclick="game.reportImpossible()">⚠ IMPOSSIBLE</button>
+        <button onclick="game.resetLevel()">RESET</button>
+        <button class="btn-math" style="display:flex" onclick="game.toggleMath()">?</button>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -262,12 +310,23 @@ class NeonGame {
 
     scaleLevel() {
         const data = this.levels[this.currentLevelIdx];
-        const padding = 150; 
-        const availableW = this.canvas.width - padding;
-        const availableH = this.canvas.height - padding;
+        
+        // Calculate safe bounds
+        const isMobile = window.innerWidth <= 640;
+        let topPadding = 150;
+        let bottomPadding = 150;
+        
+        if (isMobile) {
+            topPadding = (document.getElementById('mobileTopbar').offsetHeight || 60) + 40;
+            bottomPadding = (document.getElementById('mobileBar').offsetHeight || 70) + 40;
+        }
+
+        const availableW = this.canvas.width - 100; // side padding
+        const availableH = this.canvas.height - topPadding - bottomPadding;
         const scale = Math.min(availableW, availableH) / 100;
+        
         const offsetX = (this.canvas.width - (100 * scale)) / 2;
-        const offsetY = (this.canvas.height - (100 * scale)) / 2;
+        const offsetY = topPadding + (availableH - (100 * scale)) / 2;
 
         this.nodes = data.nodes.map(n => ({
             id: n.id,
@@ -280,8 +339,14 @@ class NeonGame {
         this.currentLevelIdx = idx;
         const data = this.levels[idx];
         
+        // Desktop updates
         document.getElementById('level-num').innerText = `LVL 0${idx+1}`;
         document.getElementById('level-name').innerText = `SEQUENCE: ${data.name}`;
+        
+        // Mobile updates
+        document.getElementById('mobile-level-num').innerText = `0${idx+1}`;
+        document.getElementById('mobile-level-name').innerText = `SEQ: ${data.name}`;
+        
         document.getElementById('status-overlay').style.display = 'none';
         
         this.scaleLevel();

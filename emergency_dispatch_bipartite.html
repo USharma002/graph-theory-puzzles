@@ -88,12 +88,47 @@
             display: inline-block; margin: 20px 0; color: var(--success-green); border-color: var(--success-green);
         }
 
+        .mobile-topbar, .mobile-bar { display: none; }
+
+        @media (max-width: 768px) {
+            .ui-layer { display: none; }
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px 20px; box-sizing: border-box;
+                border-bottom: 2px solid var(--asphalt); z-index: 20;
+                justify-content: space-between; align-items: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-bar {
+                display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px; box-sizing: border-box;
+                border-top: 2px solid var(--asphalt); z-index: 20;
+                gap: 10px; justify-content: space-around; align-items: center;
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.1); padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .mobile-bar button { margin: 0; padding: 8px 6px; font-size: 0.85rem; flex: 1; }
+        }
+
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
+
+    <div class="mobile-topbar" id="mobileTopbar">
+        <h1 style="margin:0; font-size:1.2rem; text-decoration:none; color:var(--rescue-orange);">Dispatch Desk</h1>
+        <div style="font-size: 1rem; font-weight: bold; color: var(--asphalt);">
+            Saved: <span id="mobileSavedCount" style="font-size:1.2rem;">0</span> <span style="color:#888; font-size:0.9rem;">/ <span id="mobileTotalCount">0</span></span>
+        </div>
+    </div>
+
+    <div class="mobile-bar" id="mobileBottomBar">
+        <button class="btn-check" onclick="game.checkWin()">VERIFY</button>
+        <button onclick="game.reset()">Clear</button>
+        <button onclick="game.newLevel()">New</button>
+        <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.showSolution()">i</button>
+    </div>
 
     <div class="ui-layer">
         <div class="notebook-panel" id="leftPanel">
@@ -199,15 +234,23 @@ class BipartiteGame {
         
         const count = 6; 
         
-        const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
-        const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+        const isMobile = window.innerWidth <= 768;
+        let safeXMin, safeXMax, safeYMin, safeYMax;
 
-        let safeXMin = leftPanel.right + 100;
-        let safeXMax = rightPanel.left - 100;
-        let safeYMin = 80;
-        let safeYMax = this.canvas.height - 80;
-
-        if(safeXMax <= safeXMin) { safeXMin = 50; safeXMax = this.canvas.width - 50; }
+        if(isMobile) {
+            safeXMin = 30;
+            safeXMax = this.canvas.width - 30;
+            safeYMin = 80;
+            safeYMax = this.canvas.height - 80;
+        } else {
+            const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
+            const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+            safeXMin = leftPanel.right + 100;
+            safeXMax = rightPanel.left - 100;
+            safeYMin = 80;
+            safeYMax = this.canvas.height - 80;
+            if(safeXMax <= safeXMin) { safeXMin = 50; safeXMax = this.canvas.width - 50; }
+        }
 
         const colLeft = safeXMin + (safeXMax - safeXMin) * 0.2;
         const colRight = safeXMin + (safeXMax - safeXMin) * 0.8;
@@ -243,6 +286,7 @@ class BipartiteGame {
 
         this.maxMatchSize = count; // By design
         document.getElementById('totalCount').innerText = count;
+        if(document.getElementById('mobileTotalCount')) document.getElementById('mobileTotalCount').innerText = count;
         this.updateUI();
     }
 
@@ -346,6 +390,13 @@ class BipartiteGame {
         counter.innerText = saved;
         if(saved === this.maxMatchSize) counter.classList.add('success');
         else counter.classList.remove('success');
+        
+        const mCounter = document.getElementById('mobileSavedCount');
+        if(mCounter) {
+            mCounter.innerText = saved;
+            if(saved === this.maxMatchSize) mCounter.style.color = 'var(--success-green)';
+            else mCounter.style.color = '';
+        }
     }
 
     openMathModal() {

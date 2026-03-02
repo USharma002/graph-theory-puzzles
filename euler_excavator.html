@@ -6,14 +6,15 @@
     <title>Snow City: Dashboard Edition</title>
     <style>
         :root {
-            --bg-deep: #0f172a;
-            --panel-glass: rgba(30, 41, 59, 0.75);
-            --border-glass: rgba(255, 255, 255, 0.1);
-            --accent-blue: #38bdf8;
-            --accent-green: #4ade80;
-            --accent-gold: #fbbf24;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
+            --bg-deep: #fdfbf7;
+            --panel-glass: #ffffff;
+            --border-glass: #dddddd;
+            --accent-blue: #1a73e8;
+            --accent-green: #34a853;
+            --accent-gold: #fbc02d;
+            --accent-red: #ea4335;
+            --text-main: #202124;
+            --text-muted: #5f6368;
             --sidebar-width: 320px;
         }
 
@@ -21,7 +22,9 @@
             margin: 0;
             overflow: hidden;
             background-color: var(--bg-deep);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 30px 30px;
+            font-family: 'Architects Daughter', cursive, 'Inter', sans-serif;
             color: var(--text-main);
         }
 
@@ -30,13 +33,12 @@
         /* --- PANELS --- */
         .glass-panel {
             background: var(--panel-glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
+            border: 2px solid var(--text-main);
+            border-radius: 8px;
             padding: 20px;
             pointer-events: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.8);
+            transform: rotate(-1deg);
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -55,10 +57,10 @@
         /* Headers & Tags */
         .panel-header {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 4px;
+            border-bottom: 2px dashed var(--border-glass); padding-bottom: 12px; margin-bottom: 4px;
         }
-        h1, h2 { margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent-blue); font-weight: 800; }
-        .grid-tag { font-size: 0.7rem; background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); padding: 4px 8px; border-radius: 6px; font-weight: 700; }
+        h1, h2 { margin: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent-blue); font-weight: 800; font-family: 'Architects Daughter', cursive; }
+        .grid-tag { font-size: 0.8rem; background: var(--text-main); color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 700; }
 
         /* Stats */
         .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -95,42 +97,42 @@
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            background: rgba(15, 23, 42, 0.6);
+            background: #ffffff;
             color: var(--text-main);
-            border: 1px solid var(--border-glass);
+            border: 2px solid var(--text-main);
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: 5px;
             font-family: inherit;
-            font-weight: 600;
+            font-weight: bold;
             font-size: 0.85rem;
             cursor: pointer;
             outline: none;
             transition: all 0.2s ease;
+            box-shadow: 2px 2px 0 var(--text-main);
         }
         select:hover {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+            background: #f1f5f9;
         }
         select:focus {
             border-color: var(--accent-blue);
         }
         /* Dark options for dropdown */
-        option { background-color: #0f172a; color: white; padding: 10px; }
+        option { background-color: #ffffff; color: #202124; padding: 10px; }
 
         /* Buttons */
         button {
-            border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;
+            border: 2px solid var(--text-main); border-radius: 5px; padding: 12px; font-weight: bold; cursor: pointer;
             transition: 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;
-            text-transform: uppercase; letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 3px 3px 0 var(--text-main);
+            font-family: 'Architects Daughter', cursive;
         }
-        .btn-primary { background: var(--accent-blue); color: #0f172a; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
-        .btn-primary:active { transform: translateY(0); }
+        .btn-primary { background: var(--accent-blue); color: #ffffff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 4px 4px 0 var(--text-main); }
+        .btn-primary:active { transform: translateY(0); box-shadow: 1px 1px 0 var(--text-main); }
         
-        .btn-icon { background: rgba(255,255,255,0.05); color: var(--text-muted); }
-        .btn-icon:hover { background: rgba(255,255,255,0.1); color: white; }
-        .btn-active { background: var(--accent-gold); color: #0f172a; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
+        .btn-icon { background: #ffffff; color: var(--text-main); }
+        .btn-icon:hover { background: #f1f5f9; }
+        .btn-active { background: var(--accent-gold); color: #202124; }
 
         /* Math Panel */
         #math-panel { display: none; border-left: 3px solid var(--accent-gold); pointer-events: auto; margin-top: auto; }
@@ -144,40 +146,69 @@
         .leaderboard-content::-webkit-scrollbar { width: 4px; }
         .leaderboard-content::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 4px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border-glass); position: sticky; top: 0; background: rgba(15, 23, 42, 0.95); z-index: 2; }
-        td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-main); }
-        .rank-1 { color: var(--accent-gold); font-weight: 700; }
-        .rank-2 { color: #e2e8f0; font-weight: 600; }
-        .rank-3 { color: #b45309; font-weight: 600; }
+        th { text-align: left; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 12px 8px; border-bottom: 2px solid var(--border-glass); position: sticky; top: 0; background: #ffffff; z-index: 2; font-family: 'Architects Daughter', cursive; }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border-glass); color: var(--text-main); font-family: 'Roboto Mono', monospace; font-size: 0.95rem; }
+        .rank-1 { color: var(--accent-gold); font-weight: 700; font-family: 'Architects Daughter', cursive; font-size: 1.2rem; }
+        .rank-2 { color: #5f6368; font-weight: 600; font-family: 'Architects Daughter', cursive; font-size: 1.1rem; }
+        .rank-3 { color: #888888; font-weight: 600; font-family: 'Architects Daughter', cursive; font-size: 1.1rem; }
 
         /* Alert Box */
         #alert-box {
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--accent-gold); color: var(--accent-gold);
-            padding: 12px 24px; border-radius: 50px; font-weight: 700; display: none;
-            backdrop-filter: blur(8px); box-shadow: 0 0 25px rgba(251, 191, 36, 0.2);
-            animation: pulse 2s infinite; z-index: 50;
+            background: #fdfbf7; border: 3px solid var(--accent-gold); color: var(--text-main);
+            padding: 12px 24px; border-radius: 5px; font-weight: bold; display: none;
+            box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.8);
+            animation: pulse 2s infinite; z-index: 50; text-align: center;
         }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
 
         /* Game Over Modal */
         #modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 15, 26, 0.95); z-index: 100;
-            justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.6); z-index: 100;
+            justify-content: center; align-items: center; padding: 20px;
         }
         .modal-card {
-            background: #1e293b; width: 380px; padding: 40px; border-radius: 24px;
-            border: 1px solid var(--border-glass); text-align: center;
-            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8);
+            background: #ffffff; width: 100%; max-width: 380px; padding: clamp(20px, 5vw, 40px); border-radius: 8px;
+            border: 2px solid var(--text-main); text-align: center;
+            box-shadow: 10px 10px 0 var(--text-main); transform: rotate(1deg);
         }
-        .score-big { font-size: 4.5rem; font-weight: 900; color: var(--accent-green); line-height: 1; margin: 10px 0; text-shadow: 0 0 30px rgba(74, 222, 128, 0.2); }
+        .score-big { font-size: 4.5rem; font-weight: 900; color: var(--accent-green); line-height: 1; margin: 10px 0; text-shadow: none; font-family: 'Roboto Mono', monospace; }
         input[type="text"] {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass);
-            color: white; padding: 14px; width: 100%; text-align: center; border-radius: 10px;
+            background: #fdfbf7; border: 2px solid var(--text-main);
+            color: var(--text-main); padding: 14px; width: 100%; text-align: center; border-radius: 5px;
             margin: 20px 0 10px 0; font-weight: bold; box-sizing: border-box; font-size: 1rem;
+            font-family: 'Architects Daughter', cursive;
         }
-        input:focus { border-color: var(--accent-blue); outline: none; background: rgba(0,0,0,0.5); }
+        input:focus { border-color: var(--accent-blue); outline: none; background: #ffffff; }
+        
+        /* --- MOBILE LAYOUT --- */
+        .mobile-topbar {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            background: var(--panel-glass);
+            border-bottom: 2px solid var(--text-main);
+            padding: 10px 16px; z-index: 20; align-items: center; justify-content: space-between;
+        }
+        .mobile-bottombar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--panel-glass);
+            border-top: 2px solid var(--text-main);
+            padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+            z-index: 20; gap: 10px; flex-wrap: wrap; text-align: center; justify-content: space-between;
+        }
+        .mobile-bottombar .select-wrapper { margin-bottom: 0; flex-grow: 1; }
+        .mobile-bottombar button { padding: 10px 8px; flex-grow: 1; font-size: 0.75rem; box-shadow: 2px 2px 0 var(--text-main); }
+
+        @media (max-width: 900px) {
+            .sidebar-left, .sidebar-right { display: none !important; }
+            .mobile-topbar, .mobile-bottombar { display: flex; }
+            #math-panel {
+                position: fixed; top: 70px; left: 16px; right: 16px; z-index: 30;
+                background: #ffffff; border: 2px solid var(--text-main);
+                margin: 0; box-shadow: 5px 5px 0 rgba(0,0,0,0.8);
+            }
+            #alert-box { bottom: 85px; font-size: 0.8rem; padding: 8px 16px; width: 80%; }
+        }
     </style>
 </head>
 <body>
@@ -261,6 +292,35 @@
         </div>
     </div>
 
+    <!-- Mobile Top/Bottom Bars -->
+    <div class="mobile-topbar" id="mobileTopbar">
+        <div>
+            <h1>Grid Ops</h1>
+            <span class="grid-tag" id="mobileGridTag">4x4</span>
+        </div>
+        <div style="text-align: right;">
+            <div class="stat-label">Moves / Eff</div>
+            <div class="stat-val"><span id="mobileMovesDisp">0</span> | <span id="mobileEffDisp">100%</span></div>
+        </div>
+    </div>
+
+    <div class="mobile-bottombar" id="mobileBottomBar">
+        <div class="prog-track" style="width:100%; margin-bottom: 5px;"><div class="prog-fill" id="mobileProgBar"></div></div>
+        <div class="select-wrapper" style="max-width: 140px;">
+            <select id="mobileLevelSelect">
+                <option value="2">2x2 Sector</option>
+                <option value="3">3x3 Sector</option>
+                <option value="4" selected>4x4 Sector</option>
+                <option value="5">5x5 Sector</option>
+                <option value="6">6x6 Sector</option>
+                <option value="8">8x8 Sector</option>
+                <option value="10">10x10 Sector</option>
+            </select>
+        </div>
+        <button class="btn-primary" onclick="game.resetCurrentProgress()">↺ Retry</button>
+        <button class="btn-icon" id="mobileMathBtn" onclick="game.toggleMathMode()">?</button>
+    </div>
+
     <div id="alert-box">⚠️ RETURN TO BASE TO FINISH!</div>
 
     <div id="modal-overlay">
@@ -331,17 +391,26 @@ class SnowCityGame {
         window.addEventListener('keydown', (e) => this.handleInput(e));
         
         const sel = document.getElementById('levelSelect');
-        sel.addEventListener('change', (e) => {
-            this.changeLevelSize(e.target.value);
-            sel.blur(); // Remove focus so arrow keys work for game immediately
-        });
+        const mSel = document.getElementById('mobileLevelSelect');
+
+        const changeLvl = (e) => {
+            const val = e.target.value;
+            sel.value = val; mSel.value = val; // Sync both
+            this.changeLevelSize(val);
+            e.target.blur(); // Remove focus so arrow keys work for game immediately
+        };
+
+        sel.addEventListener('change', changeLvl);
+        mSel.addEventListener('change', changeLvl);
         
         // KEY FIX: Prevent Arrow Keys from scrolling options in dropdown
-        sel.addEventListener('keydown', (e) => {
+        const preventScroll = (e) => {
             if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
                 e.preventDefault();
             }
-        });
+        };
+        sel.addEventListener('keydown', preventScroll);
+        mSel.addEventListener('keydown', preventScroll);
     }
 
     resize() {
@@ -350,19 +419,27 @@ class SnowCityGame {
         
         // Dynamic centering
         const sidebarSpace = 360; 
+        const isMobile = window.innerWidth <= 900;
         let availableWidth = this.canvas.width;
+        let availableHeight = this.canvas.height;
         let leftOffset = 0;
+        let topOffset = 0;
 
-        if(this.canvas.width > 1000) {
+        if(!isMobile && this.canvas.width > 1000) {
             availableWidth = this.canvas.width - (sidebarSpace * 2);
             leftOffset = sidebarSpace;
+        } else if (isMobile) {
+            const topH = document.getElementById('mobileTopbar').offsetHeight || 60;
+            const botH = document.getElementById('mobileBottomBar').offsetHeight || 70;
+            availableHeight = this.canvas.height - topH - botH;
+            topOffset = topH;
         }
 
-        const dim = Math.min(availableWidth, this.canvas.height) * 0.8;
+        const dim = Math.min(availableWidth, availableHeight) * 0.8;
         this.spacing = dim / Math.max(this.gridSize, 2);
         
         this.offsetX = leftOffset + (availableWidth - ((this.gridSize-1) * this.spacing)) / 2;
-        this.offsetY = (this.canvas.height - ((this.gridSize-1) * this.spacing)) / 2;
+        this.offsetY = topOffset + (availableHeight - ((this.gridSize-1) * this.spacing)) / 2;
         
         if(this.nodes.length > 0) this.snapVisuals();
     }
@@ -379,6 +456,7 @@ class SnowCityGame {
     changeLevelSize(val) {
         this.gridSize = parseInt(val);
         document.getElementById('gridTag').innerText = `${this.gridSize}x${this.gridSize}`;
+        document.getElementById('mobileGridTag').innerText = `${this.gridSize}x${this.gridSize}`;
         this.generateLevel();
         this.renderLeaderboard();
     }
@@ -438,8 +516,9 @@ class SnowCityGame {
         this.showMath = !this.showMath;
         const p = document.getElementById('math-panel');
         const b = document.getElementById('mathBtn');
-        if(this.showMath) { p.style.display = 'block'; b.classList.add('btn-active'); }
-        else { p.style.display = 'none'; b.classList.remove('btn-active'); }
+        const mb = document.getElementById('mobileMathBtn');
+        if(this.showMath) { p.style.display = 'block'; b.classList.add('btn-active'); mb.classList.add('btn-active'); }
+        else { p.style.display = 'none'; b.classList.remove('btn-active'); mb.classList.remove('btn-active'); }
     }
 
     handleInput(e) {
@@ -503,11 +582,15 @@ class SnowCityGame {
         const pct = total > 0 ? (cleared/total)*100 : 0;
         
         document.getElementById('progBar').style.width = pct + "%";
+        document.getElementById('mobileProgBar').style.width = pct + "%";
+        
         document.getElementById('movesDisp').innerText = this.moves;
+        document.getElementById('mobileMovesDisp').innerText = this.moves;
         
         let eff = 100;
         if (this.moves > 0) eff = Math.floor((this.edges.length / this.moves) * 100);
         document.getElementById('effDisp').innerText = eff + "%";
+        document.getElementById('mobileEffDisp').innerText = eff + "%";
     }
 
     openWinModal() {
@@ -570,7 +653,7 @@ class SnowCityGame {
             
             tr.innerHTML = `
                 <td class="${rankClass}">#${i+1}</td>
-                <td style="font-weight:600; color:white;">${item.name}</td>
+                <td style="font-weight:600; color:var(--text-main); font-family: 'Architects Daughter', cursive; font-size: 1rem;">${item.name}</td>
                 <td style="font-family:monospace;">${item.score}</td>
                 <td>${"⭐".repeat(item.stars)}</td>
             `;
@@ -600,8 +683,7 @@ class SnowCityGame {
             }
         }
 
-        this.ctx.fillStyle = "#0f172a";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.edges.forEach(e => {
             let n1 = this.nodes[e.u]; let n2 = this.nodes[e.v];
@@ -610,16 +692,16 @@ class SnowCityGame {
 
             this.ctx.beginPath();
             this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2);
-            this.ctx.strokeStyle = e.visited ? "#334155" : "#38bdf8";
+            this.ctx.strokeStyle = e.visited ? "#dddddd" : "#1a73e8";
             this.ctx.lineWidth = e.visited ? 10 : 16;
             this.ctx.lineCap = 'round';
-            if(!e.visited) { this.ctx.shadowBlur=15; this.ctx.shadowColor="rgba(56,189,248,0.5)"; }
+            if(!e.visited) { this.ctx.shadowBlur=0; this.ctx.shadowColor="rgba(26,115,232,0.3)"; }
             this.ctx.stroke();
             this.ctx.shadowBlur=0;
             
             if(e.visited) {
                 this.ctx.beginPath(); this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2);
-                this.ctx.strokeStyle = "#475569"; this.ctx.lineWidth = 2;
+                this.ctx.strokeStyle = "#aaaaaa"; this.ctx.lineWidth = 2;
                 this.ctx.setLineDash([6, 12]); this.ctx.stroke(); this.ctx.setLineDash([]);
             }
         });
@@ -631,11 +713,11 @@ class SnowCityGame {
             if(this.showMath) {
                 let d = this.getDegree(n.id);
                 this.ctx.beginPath(); this.ctx.arc(x, y, 10, 0, Math.PI*2);
-                this.ctx.fillStyle = (d%2!==0) ? "#f87171" : "#4ade80";
+                this.ctx.fillStyle = (d%2!==0) ? "#ea4335" : "#34a853";
                 this.ctx.fill();
             } else {
                 this.ctx.beginPath(); this.ctx.arc(x, y, 5, 0, Math.PI*2);
-                this.ctx.fillStyle = (n.id === this.startNodeIndex) ? "#fbbf24" : "#94a3b8";
+                this.ctx.fillStyle = (n.id === this.startNodeIndex) ? "#fbc02d" : "#5f6368";
                 this.ctx.fill();
             }
         });
@@ -648,7 +730,7 @@ class SnowCityGame {
     }
 
     drawOptimalPaths() {
-        this.ctx.strokeStyle = "#fbbf24"; this.ctx.lineWidth = 3; this.ctx.setLineDash([8, 8]); this.ctx.globalAlpha = 0.6;
+        this.ctx.strokeStyle = "#fbc02d"; this.ctx.lineWidth = 3; this.ctx.setLineDash([8, 8]); this.ctx.globalAlpha = 0.6;
         for(let y=0; y<this.gridSize; y++) {
             if(y===0 || y===this.gridSize-1) {
                 for(let x=0; x<this.gridSize-1; x+=2) this.dashLine(x, y, x+1, y);

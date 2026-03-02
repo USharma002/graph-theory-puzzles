@@ -181,10 +181,14 @@
         }
 
         @media (max-width: 768px) {
-            header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 10px; }
+            header { padding: 10px; gap: 8px; justify-content: center; flex-direction: column; }
             .legend { display: none; }
-            .controls { width: 100%; justify-content: flex-start; }
+            .controls { justify-content: center; gap: 8px; width: 100%; }
             .title { display: none; }
+            select, button { padding: 8px 10px; font-size: 0.8rem; flex: 1 1 auto; }
+            #grid-container { padding: 5px; }
+            .slider-container { width: 100%; justify-content: space-between; margin-top: 5px; }
+            input[type=range] { flex-grow: 1; margin-left: 10px; }
         }
     </style>
 </head>
@@ -228,8 +232,8 @@
 
     <script>
         // --- Configuration & State ---
-        const rows = 25;
-        const cols = 55;
+        let rows = 25;
+        let cols = 55;
         let grid = [];
         let isRunning = false;
         let isGameActive = false; // Game state
@@ -242,6 +246,27 @@
         // Positions
         let startNode = { r: 12, c: 10 };
         let endNode = { r: 12, c: 45 };
+
+        function calculateGridSize() {
+            const container = document.getElementById('grid-container');
+            if (!container) return;
+            const nodeSize = 26; // 25px node + 1px gap
+            let newCols = Math.floor((container.clientWidth - 10) / nodeSize);
+            let newRows = Math.floor((container.clientHeight - 10) / nodeSize);
+            
+            newCols = Math.max(11, newCols);
+            newRows = Math.max(11, newRows);
+            
+            // Bias towards odd numbers for better maze generation
+            if (newCols % 2 === 0) newCols--;
+            if (newRows % 2 === 0) newRows--;
+            
+            cols = newCols;
+            rows = newRows;
+            
+            startNode = { r: Math.floor(rows / 2), c: Math.floor(cols / 5) };
+            endNode = { r: Math.floor(rows / 2), c: Math.floor(cols * 4 / 5) };
+        }
 
         // DOM Elements
         const gridElement = document.getElementById('grid');
@@ -755,7 +780,17 @@
         }
 
         // Start
-        window.onload = initGrid;
+        window.onload = () => {
+            calculateGridSize();
+            initGrid();
+        };
+
+        window.addEventListener('resize', () => {
+            if (!isRunning && !isGameActive) {
+                calculateGridSize();
+                initGrid();
+            }
+        });
 
     </script>
 </body>

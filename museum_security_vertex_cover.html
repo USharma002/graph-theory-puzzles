@@ -86,7 +86,34 @@
             .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
             .intel-box { display: none; }
         }
-        canvas { position: absolute; top:0; left:0; z-index: 0; }
+        /* --- MOBILE LAYOUT --- */
+        .mobile-topbar {
+            display: none; position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(10, 20, 30, 0.95); border-bottom: 2px solid var(--neon-blue);
+            padding: 10px 16px; z-index: 20; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.2); backdrop-filter: blur(5px);
+        }
+        .mobile-topbar h1 { font-size: 1.2rem; margin: 0; color: #fff; text-shadow: 0 0 10px var(--neon-blue); font-family: 'Courier New', monospace;}
+        
+        .mobile-bar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(10, 20, 30, 0.95); border-top: 2px solid var(--neon-blue);
+            padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+            gap: 10px; z-index: 20; box-shadow: 0 -4px 15px rgba(0, 243, 255, 0.2);
+            align-items: center; backdrop-filter: blur(5px); flex-wrap: wrap;
+        }
+        .mobile-bar button {
+            flex: 1 1 calc(25% - 10px); padding: 10px 5px; font-size: 0.8rem; margin: 0; min-width: 60px;
+        }
+        .mobile-bar .btn-math { width: auto; height: auto; border-radius: 4px; padding: 10px; }
+
+        @media (max-width: 768px) {
+            .ui-layer { display: none !important; }
+            .mobile-topbar, .mobile-bar { display: flex; }
+            .math-panel { top: 70px; right: 10px; left: 10px; width: auto; z-index: 30; }
+        }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; display: block; cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -125,6 +152,27 @@
                 </li>
             </ul>
         </div>
+    </div>
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar" id="mobileTopbar">
+        <div>
+            <h1>SECURITY HQ</h1>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: #aaa; font-weight: bold; letter-spacing: 1px;">ACTIVE CAMERAS</div>
+            <div style="font-size: 1.2rem; font-family: 'Courier New', monospace; font-weight: bold; color: var(--neon-blue);">
+                <span id="mobile-cam-display">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Bar -->
+    <div class="mobile-bar" id="mobileBar">
+        <button class="btn-check" onclick="game.checkWin()">✓ VERIFY</button>
+        <button onclick="game.newLevel()">NEW WING</button>
+        <button onclick="game.reset()">CLEAR</button>
+        <button class="btn-circle" onclick="game.openMathModal()">?</button>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -182,16 +230,23 @@ class VertexCoverGame {
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
 
     updateSafeBounds() {
-        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
-        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
         const isMobile = window.innerWidth <= 768;
-        if(isMobile) {
-            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
-        } else {
-            let minX = lRect.right + 60; let maxX = rRect.left - 60;
-            if(maxX <= minX) maxX = minX + 200;
-            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+        let topBarHeight = 0;
+        let bottomBarHeight = 0;
+        let sidePanelWidth = 320;
+
+        if (isMobile) {
+            topBarHeight = (document.getElementById('mobileTopbar').offsetHeight || 60) + 20;
+            bottomBarHeight = (document.getElementById('mobileBar').offsetHeight || 70) + 20;
+            sidePanelWidth = 0;
         }
+
+        this.safeBounds = {
+            minX: isMobile ? 40 : 360, 
+            maxX: this.canvas.width - 40,
+            minY: topBarHeight || 40,
+            maxY: this.canvas.height - bottomBarHeight - 40
+        };
     }
 
     newLevel() {
@@ -289,7 +344,9 @@ class VertexCoverGame {
     updateUI() {
         let cams = this.nodes.filter(n => n.camera).length, vuln = 0;
         this.edges.forEach(e => { if(!this.nodes[e.u].camera && !this.nodes[e.v].camera) vuln++; });
-        document.getElementById('camCount').innerText = cams; document.getElementById('vulnCount').innerText = vuln;
+        document.getElementById('camCount').innerText = cams; 
+        document.getElementById('mobile-cam-display').innerText = cams;
+        document.getElementById('vulnCount').innerText = vuln;
         return vuln;
     }
 

@@ -38,6 +38,18 @@
             padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 120, 0, 0.2);
             box-shadow: 0 10px 40px rgba(0,0,0,0.9); color: var(--text);
             display: flex; flex-direction: column; gap: 12px; width: 340px;
+            max-width: calc(100% - 60px);
+        }
+
+        @media (max-width: 768px) {
+            #ui-container {
+                left: 15px; right: 15px; bottom: 15px; width: auto; max-width: none;
+                padding: 15px; gap: 10px;
+            }
+            .title { font-size: 1rem !important; }
+            .instructions { font-size: 0.8rem; }
+            select, button { padding: 10px; font-size: 0.85rem; }
+            .slider-label { width: 50px; font-size: 0.75rem; }
         }
 
         .title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--primary); }

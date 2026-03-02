@@ -1,9 +1,8 @@
-<!-- START OF FILE road_repair_mst.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gridlock: Civil Engineer</title>
     <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -11,7 +10,6 @@
     <style>
         :root {
             --paper-bg: #fdfbf7;
-            --pencil-gray: #5f6368;
             --construction-orange: #f9a825;
             --construction-yellow: #fbc02d;
             --blueprint-blue: #1565c0;
@@ -21,162 +19,323 @@
             --math-purple: #9334e6;
         }
 
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            margin: 0; overflow: hidden; background-color: var(--paper-bg);
-            font-family: 'Architects Daughter', cursive; color: #202124; user-select: none;
-            background-image: radial-gradient(#ccc 1px, transparent 1px); background-size: 30px 30px; 
+            margin: 0;
+            background-color: var(--paper-bg);
+            font-family: 'Architects Daughter', cursive;
+            color: #202124;
+            user-select: none;
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
         }
 
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 0;
+            touch-action: none;
+        }
+
+        /* ── DESKTOP LAYOUT ── */
         .ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 230px 1fr 260px;
+            grid-template-rows: 100%;
+            grid-template-areas: "left canvas right";
+            padding: 16px;
+            gap: 12px;
         }
 
         .notebook-panel {
-            background: #fff; transform: rotate(-1deg); padding: 25px 30px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
-            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
+            background: #fff;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.12);
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 18px 20px;
         }
 
-        h1 { margin: 0 0 15px 0; font-size: 1.6rem; color: var(--blueprint-blue); text-decoration: underline; }
-        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.2rem; }
-        .cost-display { font-size: 2.2rem; font-weight: bold; color: var(--asphalt); }
+        #leftPanel  { grid-area: left;  transform: rotate(-1deg); }
+        #rightPanel { grid-area: right; transform: rotate(1deg); height: fit-content; align-self: start; }
+
+        h1 { margin: 0 0 12px 0; font-size: 1.4rem; color: var(--blueprint-blue); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 1.1rem; }
+        .cost-display { font-size: 2rem; font-weight: bold; color: var(--asphalt); }
 
         button {
-            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
-            padding: 12px 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%; background: #fff;
+            font-family: 'Architects Daughter', cursive;
+            border: 3px solid var(--asphalt);
+            padding: 10px 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.15s;
+            margin-top: 8px;
+            width: 100%;
+            background: #fff;
         }
-        button:hover { background: #eee; transform: translateY(-2px); }
+        button:hover  { background: #eee; transform: translateY(-2px); }
+        button:active { transform: translateY(1px); }
 
-        .btn-check { background: var(--construction-yellow); color: var(--asphalt); border: 3px solid var(--asphalt); box-shadow: 3px 3px 0 var(--asphalt); }
+        .btn-check {
+            background: var(--construction-yellow);
+            color: var(--asphalt);
+            box-shadow: 3px 3px 0 var(--asphalt);
+        }
         .btn-check:hover { background: var(--construction-orange); }
 
-        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px; }
-        .intel-list { padding-left: 20px; font-size: 1rem; line-height: 1.5; margin: 0; }
-        .intel-list li { margin-bottom: 8px; }
+        .intel-list { padding-left: 18px; font-size: 0.95rem; line-height: 1.5; margin: 0; }
+        .intel-list li { margin-bottom: 6px; }
 
-        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; display: flex; gap: 10px; align-items: center; }
-        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
-        .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
-        
+        .bottom-controls {
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px dashed #ccc;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .info-btn {
+            background: var(--math-purple); color: white; border: none;
+            box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1;
+        }
+        .info-btn:hover { background: #7c1ad3; }
+
         .btn-circle {
-            width: 48px; height: 45px; border-radius: 50%; background: var(--blueprint-blue); color: white; border: none; margin: 0;
-            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
-            display: flex; justify-content: center; align-items: center; box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--blueprint-blue); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.4rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
         }
         .btn-circle:hover { transform: scale(1.08) rotate(5deg); background: #114c9c; }
 
+        /* ── MODALS ── */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+            padding: 16px;
         }
         .clipboard {
-            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            text-align: center; position: relative; transform: rotate(1deg); border-radius: 5px;
+            background: #fff;
+            width: min(560px, 100%);
+            padding: clamp(18px, 5vw, 40px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: rotate(1deg);
+            border-radius: 6px;
+            max-height: 90dvh;
+            overflow-y: auto;
         }
-        .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
-        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
+        .clipboard.math-mode { width: min(720px, 100%); text-align: left; }
+
+        .math-section {
+            background: #f8f9fa;
+            border-left: 5px solid var(--math-purple);
+            padding: 14px; margin: 12px 0;
+            font-size: 0.95rem; line-height: 1.5;
+        }
         .math-section h3 { margin-top: 0; color: var(--math-purple); }
+
         .stamp-result {
-            font-size: 3rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; transform: rotate(-12deg);
-            border: 5px solid; padding: 10px 30px; border-radius: 10px; display: inline-block; margin: 20px 0; opacity: 0.9;
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            transform: rotate(-12deg);
+            border: 5px solid;
+            padding: 8px 24px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 16px 0;
+            opacity: 0.9;
         }
         .stamp-pass { color: var(--success-green); border-color: var(--success-green); }
         .stamp-fail { color: var(--fail-red); border-color: var(--fail-red); }
 
-        @media (max-width: 768px) {
-            .ui-layer { flex-direction: column; padding: 10px; }
-            .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
-            .intel-box { display: none; }
+        /* ── MOBILE TOP BAR ── */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #fff;
+            border-bottom: 2px solid #ddd;
+            padding: 10px 16px;
+            z-index: 20;
+            pointer-events: auto;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        canvas { position: absolute; top:0; left:0; z-index: 0; }
+        .mobile-topbar h1 { margin: 0; font-size: 1.1rem; }
+        .mobile-cost { font-size: 1.5rem; font-weight: bold; color: var(--asphalt); }
+
+        /* ── MOBILE BOTTOM BAR ── */
+        .mobile-bar {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #fff;
+            border-top: 2px solid #ddd;
+            padding: 8px 10px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            gap: 6px;
+            z-index: 20;
+            pointer-events: auto;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        .mobile-bar button {
+            flex: 1;
+            margin: 0;
+            padding: 10px 4px;
+            font-size: 0.8rem;
+            border-width: 2px;
+        }
+        .mobile-bar .btn-circle {
+            flex: 0 0 40px;
+            width: 40px; height: 40px;
+            font-size: 1.2rem;
+        }
+
+        /* ── TABLET: hide right panel ── */
+        @media (max-width: 1024px) {
+            .ui-layer {
+                grid-template-columns: 210px 1fr;
+                grid-template-areas: "left canvas";
+            }
+            #rightPanel { display: none; }
+        }
+
+        /* ── SMALL DESKTOP: slightly compact ── */
+        @media (min-width: 641px) and (max-width: 1200px) {
+            .notebook-panel { padding: 12px 14px; }
+            h1 { font-size: 1.15rem; }
+            .cost-display { font-size: 1.6rem; }
+            button { padding: 8px 10px; font-size: 0.88rem; }
+        }
+
+        /* ── MOBILE: hide side UI, show top/bottom bars ── */
+        @media (max-width: 640px) {
+            .ui-layer { display: none; }
+            .mobile-topbar { display: flex; }
+            .mobile-bar { display: flex; }
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
 
-    <div class="ui-layer">
-        <div class="notebook-panel" id="leftPanel">
-            <h1>Budget Tracker</h1>
-            <div class="stat-row"><span>Total Cost:</span></div>
-            <div class="stat-row"><span class="cost-display" id="userCost">$0</span></div>
-            <hr style="border: 1px dashed #ccc; margin: 15px 0;">
-            <button class="btn-check" onclick="game.checkWin()">SUBMIT PLAN</button>
-            <button onclick="game.reset()">Reset Roads</button>
-            <button onclick="game.newLevel()">New Region</button>
-            <div class="bottom-controls">
-                <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
-                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
-            </div>
-        </div>
+<canvas id="gameCanvas"></canvas>
 
-        <div class="notebook-panel intel-box" id="rightPanel">
-            <h1>Work Order</h1>
-            <ul class="intel-list">
-                <li><b>Goal:</b> Connect <b>ALL</b> cities to the power grid.</li>
-                <li><b>Action:</b> Click broken paths to repair them.</li>
-                <li><b>Rules:</b>
-                    <ol style="padding-left:20px; margin-top:5px;">
-                        <li>No city can be left isolated.</li>
-                        <li>Do it for the <b>lowest possible cost</b>.</li>
-                        <li>Avoid redundant loops (cycles).</li>
-                    </ol>
-                </li>
-            </ul>
+<!-- Desktop / Tablet panels -->
+<div class="ui-layer">
+    <div class="notebook-panel" id="leftPanel">
+        <h1>Budget Tracker</h1>
+        <div class="stat-row"><span>Total Cost:</span></div>
+        <div class="stat-row"><span class="cost-display" id="userCost">$0</span></div>
+        <hr style="border:1px dashed #ccc; margin:12px 0;">
+        <button class="btn-check" onclick="game.checkWin()">SUBMIT PLAN</button>
+        <button onclick="game.reset()">Reset Roads</button>
+        <button onclick="game.newLevel()">New Region</button>
+        <div class="bottom-controls">
+            <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+            <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="modal">
-        <div class="clipboard">
-            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Inspection Report</h2>
-            <div id="stamp" class="stamp-result stamp-pass">APPROVED</div>
-            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Sample text.</p>
-            <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px;">
-                <div>Your Cost: <b id="endUserCost">$0</b></div>
-                <div>Optimal Cost: <b id="endOptCost">$0</b></div>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-check" onclick="game.newLevel()">Next Job</button>
-                <button onclick="document.getElementById('modal').style.display='none'">Refine Plan</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="mathModal">
-        <div class="clipboard math-mode">
-            <h2 style="font-family:'Architects Daughter'; text-align:center;">Minimum Spanning Trees (MST)</h2>
-            <div class="math-section">
-                <h3>Problem Statement</h3>
-                <p>Given a connected, undirected graph \( G = (V, E) \) with edge weights \( w(e) \), find a subset of edges \( T \subseteq E \) that connects all vertices and minimizes total weight.</p>
-                <p>$$ \text{minimize } \sum_{e \in T} w(e) $$</p>
-                <p>This subset \( T \) is always a tree (no cycles) and spans the graph.</p>
-            </div>
-            <div class="math-section">
-                <h3>Kruskal's Algorithm</h3>
-                <p>The optimal strategy (Greedy) to solve this is:</p>
-                <ol>
-                    <li>Sort all edges by weight from smallest to largest.</li>
-                    <li>Iterate through sorted edges and add an edge only if it doesn't form a cycle with already selected edges.</li>
-                    <li>Stop when \( |V| - 1 \) edges are added.</li>
+    <div class="notebook-panel" id="rightPanel">
+        <h1>Work Order</h1>
+        <ul class="intel-list">
+            <li><b>Goal:</b> Connect <b>ALL</b> cities to the power grid.</li>
+            <li><b>Action:</b> Click broken paths to repair them.</li>
+            <li><b>Rules:</b>
+                <ol style="padding-left:18px; margin-top:5px;">
+                    <li>No city can be left isolated.</li>
+                    <li>Do it for the <b>lowest possible cost</b>.</li>
+                    <li>Avoid redundant loops (cycles).</li>
                 </ol>
-                <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">MST Cost: <span id="mathOptVal" style="color:var(--math-purple)">$0</span></p>
-            </div>
-            <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Site</button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Mobile top bar -->
+<div class="mobile-topbar" id="mobileTopbar">
+    <h1>🏗️ Budget Tracker</h1>
+    <span class="mobile-cost" id="userCostMobile">$0</span>
+</div>
+
+<!-- Mobile bottom bar -->
+<div class="mobile-bar" id="mobileBar">
+    <button class="btn-check" onclick="game.checkWin()">SUBMIT</button>
+    <button onclick="game.reset()">Reset</button>
+    <button onclick="game.newLevel()">New Map</button>
+    <button class="info-btn" onclick="game.openMathModal()">Theory</button>
+    <button class="btn-circle" onclick="game.animateSolution()">i</button>
+</div>
+
+<!-- Result modal -->
+<div class="modal-overlay" id="modal">
+    <div class="clipboard">
+        <h2 id="modalTitle" style="font-size:clamp(1.3rem,5vw,2rem); margin:0; font-family:'Architects Daughter';">Inspection Report</h2>
+        <div id="stamp" class="stamp-result stamp-pass">APPROVED</div>
+        <p id="modalMsg" style="font-size:clamp(0.95rem,3.5vw,1.3rem); color:#555; margin-bottom:20px; font-family:'Architects Daughter';">Sample text.</p>
+        <div style="display:flex; justify-content:space-around; font-size:clamp(0.85rem,3vw,1.2rem); margin-bottom:20px; border-top:2px dashed #ddd; padding-top:16px; flex-wrap:wrap; gap:8px;">
+            <div>Your Cost: <b id="endUserCost">$0</b></div>
+            <div>Optimal Cost: <b id="endOptCost">$0</b></div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-check" onclick="game.newLevel()">Next Job</button>
+            <button onclick="document.getElementById('modal').style.display='none'">Refine Plan</button>
         </div>
     </div>
+</div>
+
+<!-- Math modal -->
+<div class="modal-overlay" id="mathModal">
+    <div class="clipboard math-mode">
+        <h2 style="font-family:'Architects Daughter'; text-align:center; font-size:clamp(1.1rem,4vw,1.7rem);">Minimum Spanning Trees (MST)</h2>
+        <div class="math-section">
+            <h3>Problem Statement</h3>
+            <p>Given a connected, undirected graph \( G = (V, E) \) with edge weights \( w(e) \), find a subset \( T \subseteq E \) connecting all vertices with minimum total weight.</p>
+            <p>$$ \text{minimize } \sum_{e \in T} w(e) $$</p>
+        </div>
+        <div class="math-section">
+            <h3>Kruskal's Algorithm</h3>
+            <ol>
+                <li>Sort all edges by weight (smallest first).</li>
+                <li>Add an edge only if it doesn't create a cycle.</li>
+                <li>Stop when \( |V| - 1 \) edges are added.</li>
+            </ol>
+            <p style="text-align:center; font-weight:bold;">MST Cost: <span id="mathOptVal" style="color:var(--math-purple)">$0</span></p>
+        </div>
+        <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Site</button>
+    </div>
+</div>
 
 <script>
 class UnionFind {
     constructor(n) { this.parent = Array.from({length: n}, (_, i) => i); }
-    find(i) {
-        if (this.parent[i] === i) return i;
-        this.parent[i] = this.find(this.parent[i]); return this.parent[i];
-    }
+    find(i) { return this.parent[i] === i ? i : (this.parent[i] = this.find(this.parent[i])); }
     union(i, j) {
-        const rootI = this.find(i), rootJ = this.find(j);
-        if (rootI !== rootJ) { this.parent[rootI] = rootJ; return true; }
-        return false;
+        const ri = this.find(i), rj = this.find(j);
+        if (ri === rj) return false;
+        this.parent[ri] = rj; return true;
     }
 }
 
@@ -184,118 +343,138 @@ class RoadGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.nodes = []; this.edges =[]; this.optimalEdges = new Set(); 
+        this.nodes = []; this.edges = []; this.optimalEdges = new Set();
         this.optimalCost = 0; this.showSolution = false;
-        this.nodeRadius = 35; this.hoverEdge = null; this.frame = 0;
-        this.safeBounds = {minX:0, maxX:0, minY:0, maxY:0};
+        this.hoverEdge = null; this.frame = 0;
+        this.safeBounds = {};
 
         window.addEventListener('resize', () => { this.resize(); this.updateSafeBounds(); });
-        this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
-        this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
+        this.canvas.addEventListener('mousemove', e => this.handleHover(e));
+        this.canvas.addEventListener('mousedown', e => this.handleClick(e));
+        this.canvas.addEventListener('touchstart', e => this.handleTouch(e), { passive: false });
+        this.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
         this.resize();
         setTimeout(() => this.newLevel(), 50);
         this.loop();
     }
 
-    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+    get nodeRadius() {
+        return Math.max(18, Math.min(35, Math.min(window.innerWidth, window.innerHeight) * 0.042));
+    }
+
+    isMobile() { return window.innerWidth <= 640; }
+    isTablet() { return window.innerWidth > 640 && window.innerWidth <= 1024; }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
 
     updateSafeBounds() {
-        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
-        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
-        const isMobile = window.innerWidth <= 768;
-        if(isMobile) {
-            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+        if (this.isMobile()) {
+            const topH = document.getElementById('mobileTopbar').offsetHeight || 54;
+            const botH = document.getElementById('mobileBar').offsetHeight || 64;
+            this.safeBounds = { minX: 32, maxX: this.canvas.width - 32, minY: topH + 24, maxY: this.canvas.height - botH - 24 };
+        } else if (this.isTablet()) {
+            const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+            this.safeBounds = { minX: lRect.right + 40, maxX: this.canvas.width - 30, minY: 40, maxY: this.canvas.height - 40 };
         } else {
-            let minX = lRect.right + 60; let maxX = rRect.left - 60;
-            if(maxX <= minX) maxX = minX + 200;
-            this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
+            const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+            const rRect = document.getElementById('rightPanel').getBoundingClientRect();
+            let minX = lRect.right + 50, maxX = rRect.left - 50;
+            if (maxX <= minX) maxX = minX + 200;
+            this.safeBounds = { minX, maxX, minY: 50, maxY: this.canvas.height - 50 };
         }
     }
 
     newLevel() {
-        this.nodes = []; this.edges =[]; this.frame = 0; this.showSolution = false;
+        this.nodes = []; this.edges = []; this.frame = 0; this.showSolution = false;
         document.getElementById('modal').style.display = 'none';
         this.updateSafeBounds();
-        
-        const count = Math.floor(Math.random() * 3) + 6; 
+
+        const count = Math.floor(Math.random() * (this.isMobile() ? 2 : 3)) + (this.isMobile() ? 5 : 6);
         const sb = this.safeBounds;
-        const centerX = (sb.minX + sb.maxX) / 2, centerY = (sb.minY + sb.maxY) / 2;
-        const spreadW = (sb.maxX - sb.minX) * 0.8, spreadH = (sb.maxY - sb.minY) * 0.8;
+        const cx = (sb.minX + sb.maxX) / 2, cy = (sb.minY + sb.maxY) / 2;
+        const sw = (sb.maxX - sb.minX) * 0.8, sh = (sb.maxY - sb.minY) * 0.8;
 
-        for(let i=0; i<count; i++) {
-            this.nodes.push({ id: i, x: centerX + (Math.random()-0.5)*spreadW, y: centerY + (Math.random()-0.5)*spreadH, vx: 0, vy: 0, label: String.fromCharCode(65 + i) });
+        for (let i = 0; i < count; i++) {
+            this.nodes.push({ id: i, x: cx + (Math.random()-0.5)*sw, y: cy + (Math.random()-0.5)*sh, vx: 0, vy: 0, label: String.fromCharCode(65+i) });
         }
 
-        let indices = Array.from({length: count}, (_, i) => i);
-        indices.sort(() => Math.random() - 0.5);
-        for(let i=0; i<count-1; i++) this.addEdge(indices[i], indices[i+1]);
-        
-        for(let k=0; k<count+2; k++) {
+        let idx = Array.from({length: count}, (_, i) => i).sort(() => Math.random()-0.5);
+        for (let i = 0; i < count-1; i++) this.addEdge(idx[i], idx[i+1]);
+        for (let k = 0; k < count+2; k++) {
             let u = Math.floor(Math.random()*count), v = Math.floor(Math.random()*count);
-            if(u !== v) this.addEdge(u, v);
+            if (u !== v) this.addEdge(u, v);
         }
 
-        this.relaxGraph(350); this.updateEdgeCurves(); this.resolveLabelOverlaps(); this.calculateMST(); this.updateUI();
+        this.relaxGraph(350);
+        this.updateEdgeCurves();
+        this.resolveLabelOverlaps();
+        this.calculateMST();
+        this.updateUI();
     }
 
     addEdge(u, v) {
-        if(this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) return;
-        this.edges.push({ id: this.edges.length, u, v, weight: Math.floor(Math.random() * 15) + 5, active: false, cpX: 0, cpY: 0, labelX: 0, labelY: 0, t: 0.5 });
+        if (this.edges.some(e => (e.u===u&&e.v===v)||(e.u===v&&e.v===u))) return;
+        this.edges.push({ id: this.edges.length, u, v, weight: Math.floor(Math.random()*15)+5, active: false, cpX:0, cpY:0, labelX:0, labelY:0, t:0.5 });
     }
 
     relaxGraph(iterations) {
-        const repelK = 150000, springLen = 200, springK = 0.01; 
+        const repelK = 150000, springLen = this.isMobile() ? 120 : 200, springK = 0.01;
         const sb = this.safeBounds;
-        for(let i=0; i<iterations; i++) {
-            for(let a=0; a<this.nodes.length; a++) {
-                for(let b=0; b<this.nodes.length; b++) {
-                    if(a === b) continue;
-                    let dx = this.nodes[a].x - this.nodes[b].x, dy = this.nodes[a].y - this.nodes[b].y;
-                    let dist = Math.sqrt(dx*dx + dy*dy) + 0.1, force = repelK / (dist * dist);
-                    this.nodes[a].vx += (dx/dist)*force; this.nodes[a].vy += (dy/dist)*force;
+        for (let i = 0; i < iterations; i++) {
+            for (let a = 0; a < this.nodes.length; a++) {
+                for (let b = 0; b < this.nodes.length; b++) {
+                    if (a===b) continue;
+                    let dx = this.nodes[a].x-this.nodes[b].x, dy = this.nodes[a].y-this.nodes[b].y;
+                    let dist = Math.sqrt(dx*dx+dy*dy)+0.1, f = repelK/(dist*dist);
+                    this.nodes[a].vx += (dx/dist)*f; this.nodes[a].vy += (dy/dist)*f;
                 }
             }
             this.edges.forEach(e => {
-                let dx = this.nodes[e.v].x - this.nodes[e.u].x, dy = this.nodes[e.v].y - this.nodes[e.u].y;
-                let dist = Math.sqrt(dx*dx + dy*dy), force = (dist - springLen) * springK;
-                this.nodes[e.u].vx += (dx/dist)*force; this.nodes[e.u].vy += (dy/dist)*force;
-                this.nodes[e.v].vx -= (dx/dist)*force; this.nodes[e.v].vy -= (dy/dist)*force;
+                let dx=this.nodes[e.v].x-this.nodes[e.u].x, dy=this.nodes[e.v].y-this.nodes[e.u].y;
+                let dist=Math.sqrt(dx*dx+dy*dy), f=(dist-springLen)*springK;
+                this.nodes[e.u].vx+=(dx/dist)*f; this.nodes[e.u].vy+=(dy/dist)*f;
+                this.nodes[e.v].vx-=(dx/dist)*f; this.nodes[e.v].vy-=(dy/dist)*f;
             });
             this.nodes.forEach(n => {
-                n.x += n.vx; n.y += n.vy; n.vx *= 0.5; n.vy *= 0.5;
-                n.x = Math.max(sb.minX, Math.min(sb.maxX, n.x));
-                n.y = Math.max(sb.minY, Math.min(sb.maxY, n.y));
+                n.x+=n.vx; n.y+=n.vy; n.vx*=0.5; n.vy*=0.5;
+                n.x=Math.max(sb.minX,Math.min(sb.maxX,n.x));
+                n.y=Math.max(sb.minY,Math.min(sb.maxY,n.y));
             });
         }
     }
 
     updateEdgeCurves() {
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
-            const dx = p2.x - p1.x, dy = p2.y - p1.y, dist = Math.sqrt(dx*dx + dy*dy);
-            const offset = (((e.u * 13 + e.v * 7) % 100) / 100 - 0.5) * 40;
-            e.cpX = (p1.x + p2.x)/2 - (dy/dist)*offset; e.cpY = (p1.y + p2.y)/2 + (dx/dist)*offset;
+            const p1=this.nodes[e.u], p2=this.nodes[e.v];
+            const dx=p2.x-p1.x, dy=p2.y-p1.y, dist=Math.sqrt(dx*dx+dy*dy);
+            const offset=(((e.u*13+e.v*7)%100)/100-0.5)*40;
+            e.cpX=(p1.x+p2.x)/2-(dy/dist)*offset;
+            e.cpY=(p1.y+p2.y)/2+(dx/dist)*offset;
             this.updateLabelPos(e);
         });
     }
 
     updateLabelPos(e) {
-        e.labelX = (1-e.t)*(1-e.t)*this.nodes[e.u].x + 2*(1-e.t)*e.t*e.cpX + e.t*e.t*this.nodes[e.v].x;
-        e.labelY = (1-e.t)*(1-e.t)*this.nodes[e.u].y + 2*(1-e.t)*e.t*e.cpY + e.t*e.t*this.nodes[e.v].y;
+        const t=e.t, u=this.nodes[e.u], v=this.nodes[e.v];
+        e.labelX=(1-t)*(1-t)*u.x+2*(1-t)*t*e.cpX+t*t*v.x;
+        e.labelY=(1-t)*(1-t)*u.y+2*(1-t)*t*e.cpY+t*t*v.y;
     }
 
     resolveLabelOverlaps() {
-        for (let iter = 0; iter < 50; iter++) {
-            let moved = false;
-            for (let i = 0; i < this.edges.length; i++) {
-                for (let j = i + 1; j < this.edges.length; j++) {
-                    let e1 = this.edges[i], e2 = this.edges[j];
-                    if (Math.hypot(e1.labelX - e2.labelX, e1.labelY - e2.labelY) < 35) {
-                        let dir = (e1.t < e2.t) ? -1 : 1;
-                        e1.t = Math.max(0.3, Math.min(0.7, e1.t + dir * 0.02));
-                        e2.t = Math.max(0.3, Math.min(0.7, e2.t - dir * 0.02));
-                        this.updateLabelPos(e1); this.updateLabelPos(e2); moved = true;
+        for (let iter=0; iter<50; iter++) {
+            let moved=false;
+            for (let i=0; i<this.edges.length; i++) {
+                for (let j=i+1; j<this.edges.length; j++) {
+                    const e1=this.edges[i], e2=this.edges[j];
+                    if (Math.hypot(e1.labelX-e2.labelX,e1.labelY-e2.labelY)<35) {
+                        const dir=(e1.t<e2.t)?-1:1;
+                        e1.t=Math.max(0.3,Math.min(0.7,e1.t+dir*0.02));
+                        e2.t=Math.max(0.3,Math.min(0.7,e2.t-dir*0.02));
+                        this.updateLabelPos(e1); this.updateLabelPos(e2); moved=true;
                     }
                 }
             }
@@ -304,98 +483,145 @@ class RoadGame {
     }
 
     calculateMST() {
-        const sorted =[...this.edges].sort((a,b) => a.weight - b.weight);
-        const uf = new UnionFind(this.nodes.length);
-        this.optimalCost = 0; this.optimalEdges.clear();
-        for(let e of sorted) if(uf.union(e.u, e.v)) { this.optimalCost += e.weight; this.optimalEdges.add(e.id); }
+        const sorted=[...this.edges].sort((a,b)=>a.weight-b.weight);
+        const uf=new UnionFind(this.nodes.length);
+        this.optimalCost=0; this.optimalEdges.clear();
+        for (const e of sorted) if (uf.union(e.u,e.v)) { this.optimalCost+=e.weight; this.optimalEdges.add(e.id); }
     }
 
-    openMathModal() { document.getElementById('mathOptVal').innerText = "$" + this.optimalCost; document.getElementById('mathModal').style.display = 'flex'; }
+    openMathModal() {
+        document.getElementById('mathOptVal').innerText='$'+this.optimalCost;
+        document.getElementById('mathModal').style.display='flex';
+    }
 
     animateSolution() {
-        this.showSolution = !this.showSolution;
-        if(this.showSolution) this.edges.forEach(e => e.active = this.optimalEdges.has(e.id));
+        this.showSolution=!this.showSolution;
+        if (this.showSolution) this.edges.forEach(e=>e.active=this.optimalEdges.has(e.id));
         else this.reset();
         this.updateUI();
     }
 
-    handleHover(e) {
-        if(this.showSolution) return;
-        const rect = this.canvas.getBoundingClientRect();
-        let nearest = null, minD = 45;
-        this.edges.forEach(edge => {
-            if(Math.hypot((e.clientX - rect.left) - edge.labelX, (e.clientY - rect.top) - edge.labelY) < minD) { minD = Math.hypot((e.clientX - rect.left) - edge.labelX, (e.clientY - rect.top) - edge.labelY); nearest = edge; }
-        });
-        this.hoverEdge = nearest; this.canvas.style.cursor = this.hoverEdge ? 'pointer' : 'default';
+    getPos(clientX, clientY) {
+        const r=this.canvas.getBoundingClientRect();
+        return { x: clientX-r.left, y: clientY-r.top };
     }
 
-    handleClick(e) { if(this.showSolution) return; if(this.hoverEdge) { this.hoverEdge.active = !this.hoverEdge.active; this.updateUI(); } }
+    getNearestEdge(x, y) {
+        const hitR = this.isMobile() ? 55 : 45;
+        let nearest=null, minD=hitR;
+        this.edges.forEach(e => {
+            const d=Math.hypot(x-e.labelX,y-e.labelY);
+            if (d<minD) { minD=d; nearest=e; }
+        });
+        return nearest;
+    }
 
-    reset() { this.edges.forEach(e => e.active = false); this.showSolution = false; this.updateUI(); }
+    handleHover(e) {
+        if (this.showSolution) return;
+        const p=this.getPos(e.clientX,e.clientY);
+        this.hoverEdge=this.getNearestEdge(p.x,p.y);
+        this.canvas.style.cursor=this.hoverEdge?'pointer':'default';
+    }
+
+    handleClick(e) {
+        if (this.showSolution||!this.hoverEdge) return;
+        this.hoverEdge.active=!this.hoverEdge.active;
+        this.updateUI();
+    }
+
+    handleTouch(e) {
+        e.preventDefault();
+        if (this.showSolution) return;
+        const t=e.touches[0], p=this.getPos(t.clientX,t.clientY);
+        const edge=this.getNearestEdge(p.x,p.y);
+        if (edge) { edge.active=!edge.active; this.updateUI(); }
+    }
+
+    reset() { this.edges.forEach(e=>e.active=false); this.showSolution=false; this.updateUI(); }
 
     checkWin() {
-        const userCost = this.edges.reduce((sum, e) => e.active ? sum + e.weight : sum, 0);
-        const uf = new UnionFind(this.nodes.length);
-        this.edges.forEach(e => { if(e.active) uf.union(e.u, e.v); });
-        const isConnected = this.nodes.every(n => uf.find(n.id) === uf.find(0));
+        const userCost=this.edges.reduce((s,e)=>e.active?s+e.weight:s,0);
+        const uf=new UnionFind(this.nodes.length);
+        this.edges.forEach(e=>{ if(e.active) uf.union(e.u,e.v); });
+        const connected=this.nodes.every(n=>uf.find(n.id)===uf.find(0));
 
-        const stamp = document.getElementById('stamp'), title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
-        if(!isConnected) {
-            stamp.className = "stamp-result stamp-fail"; stamp.innerText = "ISOLATED";
-            title.innerText = "Plan Rejected"; msg.innerText = "Some cities are not connected to the grid.";
-        } else if (userCost > this.optimalCost) {
-            stamp.className = "stamp-result stamp-fail"; stamp.style.color = "#f9a825"; stamp.style.borderColor = "#f9a825";
-            stamp.innerText = "OVERBUDGET"; title.innerText = "Too Expensive"; msg.innerText = "You connected them, but wasted taxpayer money.";
+        const stamp=document.getElementById('stamp');
+        const title=document.getElementById('modalTitle');
+        const msg=document.getElementById('modalMsg');
+        stamp.style.color=''; stamp.style.borderColor='';
+
+        if (!connected) {
+            stamp.className='stamp-result stamp-fail'; stamp.innerText='ISOLATED';
+            title.innerText='Plan Rejected'; msg.innerText='Some cities are not connected to the grid.';
+        } else if (userCost>this.optimalCost) {
+            stamp.className='stamp-result stamp-fail';
+            stamp.style.color='#f9a825'; stamp.style.borderColor='#f9a825';
+            stamp.innerText='OVERBUDGET'; title.innerText='Too Expensive'; msg.innerText='You connected them, but wasted taxpayer money.';
         } else {
-            stamp.className = "stamp-result stamp-pass"; stamp.innerText = "APPROVED";
-            title.innerText = "Engineering Masterpiece"; msg.innerText = "You found the Minimum Spanning Tree perfectly.";
+            stamp.className='stamp-result stamp-pass'; stamp.innerText='APPROVED';
+            title.innerText='Engineering Masterpiece'; msg.innerText='You found the Minimum Spanning Tree perfectly.';
         }
-        document.getElementById('endUserCost').innerText = "$" + userCost; document.getElementById('endOptCost').innerText = "$" + this.optimalCost;
-        document.getElementById('modal').style.display = 'flex';
+        document.getElementById('endUserCost').innerText='$'+userCost;
+        document.getElementById('endOptCost').innerText='$'+this.optimalCost;
+        document.getElementById('modal').style.display='flex';
     }
 
-    updateUI() { document.getElementById('userCost').innerText = "$" + this.edges.reduce((sum, e) => e.active ? sum + e.weight : sum, 0); }
+    updateUI() {
+        const cost=this.edges.reduce((s,e)=>e.active?s+e.weight:s,0);
+        document.getElementById('userCost').innerText='$'+cost;
+        document.getElementById('userCostMobile').innerText='$'+cost;
+    }
 
     loop() {
-        this.frame++; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.frame++;
+        const ctx=this.ctx, nr=this.nodeRadius;
+        const lR=this.isMobile()?15:18;
+        const lF=this.isMobile()?12:16;
+        const nF=Math.round(nr*0.68);
+
+        ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
 
         this.edges.forEach(e => {
-            const p1 = this.nodes[e.u], p2 = this.nodes[e.v], isHover = (this.hoverEdge === e);
-            this.ctx.lineCap = "round";
+            const p1=this.nodes[e.u], p2=this.nodes[e.v], isHover=(this.hoverEdge===e);
+            ctx.lineCap='round';
 
-            if(this.showSolution && this.optimalEdges.has(e.id)) {
-                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                this.ctx.strokeStyle = "rgba(46, 125, 50, 0.3)"; this.ctx.lineWidth = 25; this.ctx.setLineDash([]); this.ctx.stroke();
+            if (this.showSolution&&this.optimalEdges.has(e.id)) {
+                ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
+                ctx.strokeStyle='rgba(46,125,50,0.3)'; ctx.lineWidth=this.isMobile()?16:25; ctx.setLineDash([]); ctx.stroke();
             }
 
-            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-            if(e.active) {
-                this.ctx.strokeStyle = "#37474f"; this.ctx.lineWidth = 14; this.ctx.setLineDash([]); this.ctx.stroke();
-                this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.quadraticCurveTo(e.cpX, e.cpY, p2.x, p2.y);
-                this.ctx.strokeStyle = "#fbc02d"; this.ctx.lineWidth = 2; this.ctx.setLineDash([15, 15]); this.ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
+            if (e.active) {
+                ctx.strokeStyle='#37474f'; ctx.lineWidth=this.isMobile()?9:14; ctx.setLineDash([]); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo(e.cpX,e.cpY,p2.x,p2.y);
+                ctx.strokeStyle='#fbc02d'; ctx.lineWidth=2; ctx.setLineDash([15,15]); ctx.stroke();
             } else {
-                this.ctx.strokeStyle = isHover ? "#1565c0" : "#bbb"; this.ctx.lineWidth = isHover ? 6 : 4; this.ctx.setLineDash([8, 12]); this.ctx.stroke();
+                ctx.strokeStyle=isHover?'#1565c0':'#bbb'; ctx.lineWidth=isHover?5:3; ctx.setLineDash([8,12]); ctx.stroke();
             }
 
-            this.ctx.beginPath(); this.ctx.arc(e.labelX, e.labelY, 18, 0, Math.PI*2);
-            this.ctx.fillStyle = "#fff"; this.ctx.fill();
-            this.ctx.strokeStyle = (e.active || (this.showSolution && this.optimalEdges.has(e.id))) ? "#333" : "#ccc";
-            this.ctx.lineWidth = 2; this.ctx.setLineDash([]); this.ctx.stroke();
-            this.ctx.fillStyle = "#000"; this.ctx.font = "bold 16px 'Architects Daughter'"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
-            this.ctx.fillText("$"+e.weight, e.labelX, e.labelY);
+            ctx.beginPath(); ctx.arc(e.labelX,e.labelY,lR,0,Math.PI*2);
+            ctx.fillStyle='#fff'; ctx.fill();
+            ctx.strokeStyle=(e.active||(this.showSolution&&this.optimalEdges.has(e.id)))?'#333':'#ccc';
+            ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+            ctx.fillStyle='#000'; ctx.font=`bold ${lF}px 'Architects Daughter'`;
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('$'+e.weight,e.labelX,e.labelY);
         });
 
         this.nodes.forEach(n => {
-            const pulse = Math.sin(this.frame * 0.05 + n.id) * 2;
-            this.ctx.beginPath(); this.ctx.arc(n.x, n.y, this.nodeRadius + pulse, 0, Math.PI*2);
-            this.ctx.fillStyle = "#fff"; this.ctx.fill();
-            this.ctx.strokeStyle = "#1565c0"; this.ctx.lineWidth = 3; this.ctx.setLineDash([]); this.ctx.stroke();
-            this.ctx.fillStyle = "#1565c0"; this.ctx.font = "bold 24px 'Architects Daughter'"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
-            this.ctx.fillText(n.label, n.x, n.y);
+            const pulse=Math.sin(this.frame*0.05+n.id)*2;
+            ctx.beginPath(); ctx.arc(n.x,n.y,nr+pulse,0,Math.PI*2);
+            ctx.fillStyle='#fff'; ctx.fill();
+            ctx.strokeStyle='#1565c0'; ctx.lineWidth=3; ctx.setLineDash([]); ctx.stroke();
+            ctx.fillStyle='#1565c0'; ctx.font=`bold ${nF}px 'Architects Daughter'`;
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(n.label,n.x,n.y);
         });
-        requestAnimationFrame(() => this.loop());
+
+        requestAnimationFrame(()=>this.loop());
     }
 }
+
 const game = new RoadGame();
 </script>
 </body>

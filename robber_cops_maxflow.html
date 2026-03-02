@@ -82,11 +82,27 @@
             border: 5px solid; padding: 10px 20px; border-radius: 10px; display: inline-block; margin: 20px 0; opacity: 0.8;
         }
 
+        .mobile-topbar { display: none; }
+        .mobile-bar { display: none; }
+
         /* Mobile Optimization */
         @media (max-width: 768px) {
-            .ui-layer { flex-direction: column; padding: 10px; }
-            .notebook-panel { width: 100%; transform: none; padding: 15px; margin-bottom: 10px; }
-            .intel-box { display: none; }
+            .ui-layer { display: none; }
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px 20px; box-sizing: border-box;
+                border-bottom: 2px solid var(--asphalt); z-index: 20;
+                justify-content: space-between; align-items: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-bar {
+                display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px; box-sizing: border-box;
+                border-top: 2px solid var(--asphalt); z-index: 20;
+                gap: 10px; justify-content: space-around; align-items: center;
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.1); padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .mobile-bar button { margin: 0; padding: 8px 12px; font-size: 0.9rem; flex: 1; }
         }
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
@@ -122,6 +138,20 @@
                 </li>
             </ul>
         </div>
+    </div>
+
+    <div class="mobile-topbar" id="mobileTopbar">
+        <h1 style="margin:0; font-size:1.2rem; text-decoration:none;">Lockdown</h1>
+        <div style="font-size: 1rem; font-weight: bold; color: var(--asphalt);">
+            Budget: <span id="mobileUserCut" style="color: var(--marker-red);">0</span>
+        </div>
+    </div>
+
+    <div class="mobile-bar" id="mobileBottomBar">
+        <button class="btn-check" onclick="game.checkWin()">DEPLOY</button>
+        <button onclick="game.reset()">Clear</button>
+        <button onclick="game.newLevel()">New</button>
+        <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.animateSolution()">i</button>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -182,12 +212,16 @@ class FlowGame {
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
 
     updateSafeBounds() {
-        const lRect = document.getElementById('leftPanel').getBoundingClientRect();
-        const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
         const isMobile = window.innerWidth <= 768;
         if(isMobile) {
-            this.safeBounds = { minX: 40, maxX: this.canvas.width - 40, minY: lRect.bottom + 40, maxY: this.canvas.height - 40 };
+            const topBar = document.getElementById('mobileTopbar');
+            const bottomBar = document.getElementById('mobileBottomBar');
+            const topH = topBar ? topBar.offsetHeight : 60;
+            const botH = bottomBar ? bottomBar.offsetHeight : 60;
+            this.safeBounds = { minX: 30, maxX: this.canvas.width - 30, minY: topH + 30, maxY: this.canvas.height - botH - 30 };
         } else {
+            const lRect = document.getElementById('leftPanel').getBoundingClientRect();
+            const rRect = document.getElementById('rightPanel') ? document.getElementById('rightPanel').getBoundingClientRect() : {left: window.innerWidth};
             let minX = lRect.right + 60; let maxX = rRect.left - 60;
             if(maxX <= minX) maxX = minX + 200;
             this.safeBounds = { minX: minX, maxX: maxX, minY: 60, maxY: this.canvas.height - 60 };
@@ -378,7 +412,11 @@ class FlowGame {
         document.getElementById('modal').style.display = 'flex';
     }
 
-    updateUI() { document.getElementById('userCut').innerText = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0); }
+    updateUI() { 
+        const cost = this.edges.reduce((sum, e) => e.blocked ? sum + e.capacity : sum, 0);
+        document.getElementById('userCut').innerText = cost; 
+        document.getElementById('mobileUserCut').innerText = cost;
+    }
 
     loop() {
         this.frame++; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

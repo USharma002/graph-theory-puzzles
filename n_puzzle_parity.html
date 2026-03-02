@@ -4,22 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>N-Puzzle Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f7f6;
+            --bg: #fdfbf7;
             --panel-bg: #ffffff;
-            --primary: #6c5ce7;
+            --primary: #1a73e8;
             --secondary: #a29bfe;
-            --danger: #ff7675;
-            --success: #00b894;
-            --text-main: #2d3436;
-            --text-muted: #636e72;
-            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --danger: #ea4335;
+            --success: #34a853;
+            --text-main: #202124;
+            --text-muted: #5f6368;
+            --shadow: 5px 5px 0 rgba(0,0,0,0.8);
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Architects Daughter', cursive, sans-serif;
             background: var(--bg);
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 30px 30px;
             color: var(--text-main);
             margin: 0;
             height: 100vh;
@@ -42,56 +45,61 @@
         .controls-island {
             background: white;
             padding: 12px 25px;
-            border-radius: 50px;
+            border-radius: 8px;
+            border: 2px solid var(--text-main);
             box-shadow: var(--shadow);
             display: flex;
             gap: 15px;
             margin-bottom: 30px;
             z-index: 10;
+            transform: rotate(-1deg);
         }
 
         select, button {
             padding: 12px 24px;
-            border: 1px solid #dfe6e9;
-            border-radius: 30px;
-            font-weight: 600;
+            border: 2px solid var(--text-main);
+            border-radius: 4px;
+            font-weight: bold;
             font-size: 1rem;
             background: white;
             cursor: pointer;
             font-family: inherit;
             transition: all 0.2s;
             color: var(--text-main);
+            box-shadow: 2px 2px 0 var(--text-main);
         }
         select:focus, button:focus { outline: none; border-color: var(--primary); }
         
-        button.primary-btn { background: var(--primary); color: white; border: none; }
-        button.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3); }
+        button.primary-btn { background: var(--primary); color: white; border: 2px solid var(--text-main); }
+        button.primary-btn:hover { transform: translateY(-2px); box-shadow: 4px 4px 0 var(--text-main); }
         
-        button.danger-btn { background: var(--danger); color: white; border: none; }
-        button.danger-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 118, 117, 0.3); }
+        button.danger-btn { background: var(--danger); color: white; border: 2px solid var(--text-main); }
+        button.danger-btn:hover { transform: translateY(-2px); box-shadow: 4px 4px 0 var(--text-main); }
 
         button.help-btn {
             position: absolute;
             top: 30px;
             right: 30px;
             background: white;
-            border: 2px solid var(--primary);
+            border: 2px solid var(--text-main);
             color: var(--primary);
             z-index: 50;
             display: flex;
             align-items: center;
             gap: 8px;
+            box-shadow: 4px 4px 0 var(--text-main);
+            transform: rotate(2deg);
         }
         button.help-btn:hover { background: var(--primary); color: white; }
 
         /* --- BOARD --- */
         .board-container {
-            background: #2d3436;
+            background: #ffffff;
             padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.25);
-            /* Make board bigger */
-            transform: scale(1.1); 
+            border-radius: 8px;
+            border: 2px solid var(--text-main);
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.8);
+            transform: scale(1.1) rotate(1deg); 
         }
         .board {
             display: grid;
@@ -102,7 +110,8 @@
             width: 100px;
             height: 100px;
             background: white;
-            border-radius: 12px;
+            border-radius: 4px;
+            border: 2px solid var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -112,26 +121,27 @@
             cursor: pointer;
             user-select: none;
             position: relative;
-            box-shadow: inset 0 -6px 0 rgba(0,0,0,0.1);
-            /* GPU acceleration for smooth sliding */
+            box-shadow: 3px 3px 0 var(--text-main);
             will-change: transform; 
             transition: transform 0.2s ease-out;
         }
-        .tile:hover:not(.empty) { filter: brightness(0.95); }
-        .tile.correct { background: #55efc4; color: #006266; }
-        .tile.empty { background: transparent; box-shadow: none; cursor: default; }
+        .tile:hover:not(.empty) { background: #f1f5f9; transform: translateY(-2px); box-shadow: 5px 5px 0 var(--text-main); }
+        .tile.correct { background: #e6f4ea; color: var(--success); }
+        .tile.empty { background: transparent; box-shadow: none; border: 2px dashed #ccc; cursor: default; }
 
         /* Goal Text */
         .goal-text {
             margin-top: 40px;
             text-align: center;
-            color: var(--text-muted);
+            color: var(--text-main);
             font-size: 1.1rem;
             max-width: 400px;
             line-height: 1.6;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
             padding: 15px;
-            border-radius: 12px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            transform: rotate(-1deg);
         }
 
         /* --- SIDEBAR --- */
@@ -139,14 +149,14 @@
             position: fixed;
             top: 0; right: 0; bottom: 0;
             width: 500px;
-            background: white;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+            background: #ffffff;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
             transform: translateX(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             z-index: 40;
             display: flex;
             flex-direction: column;
-            border-left: 1px solid #dfe6e9;
+            border-left: 2px solid var(--text-main);
         }
         .sidebar.open { transform: translateX(0); }
 
@@ -158,10 +168,12 @@
 
         .viz-card {
             background: white;
-            border: 1px solid #dfe6e9;
-            border-radius: 12px;
+            border: 2px solid var(--text-main);
+            border-radius: 8px;
             padding: 20px;
             margin-bottom: 25px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.8);
+            transform: rotate(-1deg);
         }
         
         h3 { 
@@ -202,14 +214,15 @@
         }
         .mini-tile {
             width: 34px; height: 34px;
-            background: #f1f2f6;
-            border: 1px solid #dfe6e9;
-            border-radius: 6px;
+            background: #ffffff;
+            border: 2px solid var(--text-main);
+            border-radius: 4px;
             display: flex; justify-content: center; align-items: center;
             font-weight: bold;
             font-size: 0.9rem;
             position: relative;
             z-index: 5; /* Lower than canvas */
+            box-shadow: 2px 2px 0 var(--text-main);
         }
         .mini-tile.highlight { background: var(--primary); color: white; transform: scale(1.2); border-color: var(--primary); z-index: 6; }
         
@@ -223,8 +236,8 @@
 
         /* --- DROPDOWN EXPLANATION --- */
         .explanation-section {
-            background: #fff8e1;
-            border-left: 4px solid #ffeaa7;
+            background: #fdfbf7;
+            border-left: 4px solid var(--text-main);
             border-radius: 4px;
             margin-top: 15px;
         }
@@ -237,11 +250,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        .dropdown-header:hover { background: rgba(0,0,0,0.02); }
+        .dropdown-header:hover { background: rgba(0,0,0,0.05); }
         .dropdown-body {
             display: none;
             padding: 0 15px 15px 15px;
-            color: #636e72;
+            color: var(--text-muted);
             font-size: 0.9rem;
             line-height: 1.6;
             animation: fadeIn 0.3s;
@@ -259,10 +272,31 @@
         .m-cell.ok { background: #dfe6e9; }
 
         .close-btn { display: none; margin-bottom: 20px; width: 100%; }
+        
+        .mobile-topbar, .mobile-bar { display: none; }
+        
         @media (max-width: 900px) {
-            .sidebar { width: 100%; }
+            .sidebar { width: 100%; z-index: 100; }
             .close-btn { display: block; }
-            .stage { padding-right: 0; }
+            .stage { padding-right: 0; padding-top: 60px; padding-bottom: 120px; }
+            /* Mobile bars */
+            .controls-island { display: none !important; }
+            .help-btn { display: none !important; }
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px; box-sizing: border-box;
+                border-bottom: 2px solid var(--text-main); z-index: 20;
+                justify-content: space-between; align-items: center;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-bar {
+                display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px; box-sizing: border-box;
+                border-top: 2px solid var(--text-main); z-index: 20;
+                gap: 10px; justify-content: space-around; align-items: center; flex-wrap: wrap;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1); padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .mobile-bar select, .mobile-bar button { flex: 1; margin: 0; font-size: 0.85rem; padding: 10px 8px; box-shadow: 2px 2px 0 var(--text-main); }
         }
 
     </style>
@@ -292,6 +326,21 @@
     <div class="goal-text">
         <strong>Goal:</strong> Slide the tiles to order numbers sequentially (1, 2, 3...) from left-to-right, top-to-bottom. <br>The empty space must end up in the bottom-right corner.
     </div>
+</div>
+
+<div class="mobile-topbar">
+    <h1 style="margin:0; font-size:1.2rem; color:var(--primary); font-family:'Architects Daughter', cursive;">N-Puzzle</h1>
+    <button style="padding: 6px 12px; margin: 0; border: 2px solid var(--text-main); font-family:'Architects Daughter', cursive; font-weight:bold; box-shadow:2px 2px 0 var(--text-main);" onclick="toggleSidebar()">📊 Math</button>
+</div>
+
+<div class="mobile-bar">
+    <select id="mobileGridSize">
+        <option value="3,3" selected>3 x 3 (Odd)</option>
+        <option value="4,4">4 x 4 (Even)</option>
+        <option value="2,3">2 x 3 (Odd)</option>
+    </select>
+    <button class="primary-btn" onclick="game.shuffle(true)">Solvable</button>
+    <button class="danger-btn" onclick="game.shuffle(false)">Impossible</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -393,8 +442,19 @@
 
             document.getElementById('gridSize').addEventListener('change', (e) => {
                 const [r, c] = e.target.value.split(',').map(Number);
+                const mGrid = document.getElementById('mobileGridSize');
+                if(mGrid) mGrid.value = e.target.value;
                 this.resize(r, c);
             });
+            
+            const mGridSize = document.getElementById('mobileGridSize');
+            if (mGridSize) {
+                mGridSize.addEventListener('change', (e) => {
+                    const [r, c] = e.target.value.split(',').map(Number);
+                    document.getElementById('gridSize').value = e.target.value;
+                    this.resize(r, c);
+                });
+            }
 
             window.addEventListener('resize', () => {
                 if(document.getElementById('sidebar').classList.contains('open')) {
@@ -515,7 +575,7 @@
                 for(let j=0; j<size; j++) {
                     const d = document.createElement('div');
                     d.className = 'm-cell';
-                    if(i === j) d.style.background = '#2d3436'; 
+                    if(i === j) d.style.background = 'var(--text-main)'; 
                     else if (i < j && nums[i] > nums[j]) d.className += ' inv';
                     else d.className += ' ok';
                     container.appendChild(d);
@@ -559,7 +619,7 @@
 
                         this.ctx.quadraticCurveTo(midX, y - h*2, x2, y);
                         
-                        this.ctx.strokeStyle = 'rgba(255, 118, 117, 0.8)'; 
+                        this.ctx.strokeStyle = 'var(--danger)'; 
                         this.ctx.stroke();
                     }
                 }

@@ -100,12 +100,49 @@
         .stamp-success { color: var(--c-green); border-color: var(--c-green); }
         .stamp-fail { color: var(--c-red); border-color: var(--c-red); }
 
+        .mobile-topbar, .mobile-bar { display: none; }
+
+        @media (max-width: 768px) {
+            .ui-layer { display: none; }
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px 20px; box-sizing: border-box;
+                border-bottom: 2px solid var(--asphalt); z-index: 20;
+                justify-content: space-between; align-items: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-bar {
+                display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+                background: #ffffff; padding: 10px; box-sizing: border-box;
+                border-top: 2px solid var(--asphalt); z-index: 20;
+                gap: 15px; justify-content: center; align-items: center;
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.1); padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .paint-pot { width: 40px; height: 40px; }
+        }
+
         canvas { position: absolute; top:0; left:0; z-index: 0; }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
+
+    <div class="mobile-topbar" id="mobileTopbar">
+        <div style="font-size:1.1rem; font-weight:bold;">Conflicts: <span id="mobileConflictCount" style="color:var(--c-red);">0</span></div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="margin:0; padding:6px 12px; font-size:0.9rem;" onclick="game.newMap()">New</button>
+            <button class="btn" style="margin:0; padding:6px 12px; font-size:0.9rem; background:var(--c-green); color:white; border-color:var(--c-green);" onclick="game.checkWin()">Submit</button>
+        </div>
+    </div>
+
+    <div class="mobile-bar" id="mobileBottomBar">
+        <div class="paint-pot bg-red active" onclick="game.setColor(1)"></div>
+        <div class="paint-pot bg-blue" onclick="game.setColor(2)"></div>
+        <div class="paint-pot bg-green" onclick="game.setColor(3)"></div>
+        <div class="paint-pot bg-yellow" onclick="game.setColor(4)"></div>
+        <div class="paint-pot" style="background:#fff; display:flex; justify-content:center; align-items:center; font-size:1.5rem; color:#aaa;" onclick="game.setColor(0)">x</div>
+    </div>
 
     <div class="ui-layer">
         <div class="top-bar">
@@ -201,14 +238,18 @@ class MapGame {
         document.getElementById('modal').style.display = 'none';
         
         const count = 12 + Math.floor(Math.random() * 8); // 12-20 regions
-        const padding = 100;
+        
+        const isMobile = window.innerWidth <= 768;
+        const paddingTop = isMobile ? 80 : 100;
+        const paddingBottom = isMobile ? 100 : 100;
+        const paddingLeft = isMobile ? 20 : 100;
         
         // 1. Generate Points (Regions)
         for(let i=0; i<count; i++) {
             let safe=false, x, y, attempts=0;
             while(!safe && attempts<100) {
-                x = padding + Math.random() * (this.canvas.width - padding*2);
-                y = padding + Math.random() * (this.canvas.height - padding*2);
+                x = paddingLeft + Math.random() * (this.canvas.width - paddingLeft*2);
+                y = paddingTop + Math.random() * (this.canvas.height - paddingTop - paddingBottom);
                 safe = true;
                 // Minimum distance between regions
                 for(let n of this.nodes) {
@@ -375,6 +416,8 @@ class MapGame {
             }
         }
         document.getElementById('conflictCount').innerText = conflicts;
+        const mCount = document.getElementById('mobileConflictCount');
+        if(mCount) mCount.innerText = conflicts;
         return conflicts;
     }
 
