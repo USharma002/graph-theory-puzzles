@@ -414,24 +414,31 @@ class SnowCityGame {
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = window.innerWidth * dpr;
+        this.canvas.height = window.innerHeight * dpr;
+        this.canvas.style.width = `${window.innerWidth}px`;
+        this.canvas.style.height = `${window.innerHeight}px`;
+        this.ctx.scale(dpr, dpr);
         
+        this.logicalWidth = window.innerWidth;
+        this.logicalHeight = window.innerHeight;
+
         // Dynamic centering
         const sidebarSpace = 360; 
         const isMobile = window.innerWidth <= 900;
-        let availableWidth = this.canvas.width;
-        let availableHeight = this.canvas.height;
+        let availableWidth = this.logicalWidth;
+        let availableHeight = this.logicalHeight;
         let leftOffset = 0;
         let topOffset = 0;
 
-        if(!isMobile && this.canvas.width > 1000) {
-            availableWidth = this.canvas.width - (sidebarSpace * 2);
+        if(!isMobile && this.logicalWidth > 1000) {
+            availableWidth = this.logicalWidth - (sidebarSpace * 2);
             leftOffset = sidebarSpace;
         } else if (isMobile) {
             const topH = document.getElementById('mobileTopbar').offsetHeight || 60;
             const botH = document.getElementById('mobileBottomBar').offsetHeight || 70;
-            availableHeight = this.canvas.height - topH - botH;
+            availableHeight = this.logicalHeight - topH - botH;
             topOffset = topH;
         }
 
@@ -683,8 +690,10 @@ class SnowCityGame {
             }
         }
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
+        this.ctx.clearRect(0,0, this.logicalWidth || this.canvas.width, this.logicalHeight || this.canvas.height);
+        
+        if(this.showMath) this.drawOptimalPaths();
+        
         this.edges.forEach(e => {
             let n1 = this.nodes[e.u]; let n2 = this.nodes[e.v];
             let x1 = this.offsetX + n1.x * this.spacing; let y1 = this.offsetY + n1.y * this.spacing;

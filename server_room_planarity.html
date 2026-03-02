@@ -9,24 +9,25 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root {
-            --bg-deep: #0f172a;
-            --asphalt: #2b2b36;
-            --neon-blue: #22d3ee;
-            --neon-green: #4ade80;
-            --neon-red: #f472b6;
+            --bg-deep: #fdfbf7;
+            --asphalt: #3c4043;
+            --neon-blue: #1a73e8;
+            --neon-green: #34a853;
+            --neon-red: #ea4335;
             --math-purple: #9334e6;
-            --text-light: #f1f5f9;
-            --cell-dark: #1e293b;
-            --cell-light: #334155;
+            --text-light: #202124;
+            --cell-dark: #ffffff;
+            --cell-light: #f1f5f9;
         }
 
         body {
             margin: 0; overflow: hidden;
             background-color: var(--bg-deep);
-            background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
             background-size: 40px 40px;
-            font-family: 'Roboto Mono', monospace;
+            font-family: 'Architects Daughter', cursive;
             color: var(--text-light); user-select: none;
         }
 
@@ -36,56 +37,77 @@
         }
 
         .notebook-panel {
-            background: rgba(15, 23, 42, 0.95);
-            padding: 25px 35px; border: 1px solid var(--neon-blue); border-radius: 8px;
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.1); pointer-events: auto;
+            background: #ffffff;
+            padding: 25px 35px; border: 2px solid var(--asphalt); border-radius: 8px;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.8); pointer-events: auto;
             width: 250px; display: flex; flex-direction: column; z-index: 10;
+            transform: rotate(-1deg);
         }
 
-        h1 { margin: 0 0 15px 0; font-size: 1.5rem; color: var(--neon-blue); text-transform: uppercase; text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        h1 { margin: 0 0 15px 0; font-size: 1.5rem; color: var(--neon-blue); text-transform: uppercase; text-shadow: none; }
         .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.1rem; }
-        .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--neon-red); text-shadow: 0 0 10px rgba(244, 114, 182, 0.5); }
-        .cost-display.clean { color: var(--neon-green); text-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+        .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--neon-red); text-shadow: none; font-family: 'Roboto Mono', monospace;}
+        .cost-display.clean { color: var(--neon-green); text-shadow: none; }
         
         button {
-            font-family: 'Roboto Mono', monospace; border: 1px solid var(--neon-blue);
-            background: transparent; color: var(--neon-blue);
+            font-family: 'Architects Daughter', cursive; border: 2px solid var(--neon-blue);
+            background: #ffffff; color: var(--neon-blue);
             padding: 12px 20px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase;
             cursor: pointer; border-radius: 4px; transition: all 0.2s; margin-top: 10px; width: 100%;
+            box-shadow: 4px 4px 0 var(--text-light);
         }
-        button:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        button:hover { background: #f1f5f9; color: var(--neon-blue); transform: translateY(-2px); box-shadow: 6px 6px 0 var(--text-light); }
 
         .intel-box { right: 20px; height: fit-content; width: 280px;}
         .intel-list { padding-left: 20px; font-size: 0.95rem; line-height: 1.6; margin: 0; }
         .intel-list li { margin-bottom: 8px; }
 
-        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #555; display: flex; gap: 10px; align-items: center; }
+        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 2px dashed #ccc; display: flex; gap: 10px; align-items: center; }
         .info-btn { border-color: var(--math-purple); color: var(--math-purple); margin: 0; flex-grow: 1; }
-        .info-btn:hover { background: var(--math-purple); color: #fff; box-shadow: 0 0 15px var(--math-purple); }
+        .info-btn:hover { background: var(--math-purple); color: #fff; box-shadow: 6px 6px 0 var(--math-purple); }
         
         .btn-circle {
             width: 45px; height: 45px; border-radius: 50%; border-color: var(--neon-green); color: var(--neon-green);
             margin: 0; font-size: 1.4rem; display: flex; justify-content: center; align-items: center; padding: 0; flex-shrink: 0;
+            box-shadow: 3px 3px 0 var(--neon-green); font-family: 'Roboto Mono', monospace; font-weight: bold;
         }
-        .btn-circle:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+        .btn-circle:hover { background: var(--neon-green); color: #000; box-shadow: 6px 6px 0 var(--neon-green); }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 100; display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
         }
         .clipboard {
-            background: #0f172a; width: 600px; padding: 40px; border: 1px solid var(--neon-blue);
-            box-shadow: 0 0 50px rgba(34, 211, 238, 0.2); text-align: center; border-radius: 8px;
+            background: var(--bg-deep); width: 600px; max-width: 95vw; max-height: 80vh; overflow-y: auto; padding: 40px; border: 2px solid var(--asphalt);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; border-radius: 8px; transform: rotate(-1deg);
         }
         .clipboard.math-mode { width: 750px; text-align: left; }
-        .math-section { background: rgba(255,255,255,0.05); border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
         .math-section h3 { margin-top: 0; color: var(--math-purple); }
 
         .stamp-result {
             font-size: 3rem; font-weight: bold; border: 4px solid; padding: 10px 20px; border-radius: 8px;
             display: inline-block; margin: 20px 0; color: var(--neon-green); border-color: var(--neon-green);
-            text-shadow: 0 0 15px var(--neon-green); box-shadow: inset 0 0 15px rgba(74, 222, 128, 0.3), 0 0 15px rgba(74, 222, 128, 0.3);
+            text-shadow: none; font-family: 'Courier New', Courier, monospace; transform: rotate(-5deg);
+        }
+
+        .mobile-topbar, .mobile-bar { display: none; }
+
+        @media (max-width: 768px) {
+            .ui-layer { display: none; }
+            .mobile-topbar {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%;
+                background: #fff; border-bottom: 2px solid var(--asphalt);
+                padding: 10px 15px; box-sizing: border-box; justify-content: space-between; align-items: center;
+                z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-bar {
+                display: flex; position: fixed; bottom: 0; left: 0; width: 100%; gap: 10px;
+                background: #fff; border-top: 2px solid var(--asphalt); padding: 10px; box-sizing: border-box;
+                z-index: 10; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .mobile-bar button { margin: 0; padding: 8px 6px; font-size: 0.85rem; flex: 1; }
         }
 
         canvas { position: absolute; top:0; left:0; z-index: 0; }
@@ -94,6 +116,18 @@
 <body>
 
     <canvas id="gameCanvas"></canvas>
+
+    <div class="mobile-topbar" id="mobileTopbar">
+        <h1 style="margin:0; font-size:1.2rem; text-decoration:none; color:var(--text-light);">Admin</h1>
+        <div style="font-size: 1.1rem; font-weight: bold; color: var(--asphalt);">
+            Collisions: <span id="mobileCrossCount" style="color:var(--neon-red);">0</span>
+        </div>
+    </div>
+
+    <div class="mobile-bar" id="mobileBottomBar">
+        <button onclick="game.newLevel()">New</button>
+        <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.animateSolution()">?</button>
+    </div>
 
     <div class="ui-layer">
         <div class="notebook-panel" id="leftPanel">
@@ -106,7 +140,7 @@
             
             <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
-                <button class="btn-circle" onclick="game.animateSolution()" title="Auto-Resolve">i</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Auto-Resolve">?</button>
             </div>
         </div>
         
@@ -175,13 +209,38 @@ class PlanarityGame {
         this.canvas.addEventListener('mouseup', () => this.handleUp());
 
         this.resize();
+        this.updateSafeBounds();
         setTimeout(() => this.newLevel(), 50);
         this.loop();
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = window.innerWidth * dpr;
+        this.canvas.height = window.innerHeight * dpr;
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
+        this.ctx.scale(dpr, dpr);
+        this.logicalWidth = window.innerWidth;
+        this.logicalHeight = window.innerHeight;
+    }
+
+    updateSafeBounds() {
+        const isMobile = window.innerWidth <= 768;
+        if(isMobile) {
+            const topBar = document.getElementById('mobileTopbar');
+            const bottomBar = document.getElementById('mobileBottomBar');
+            const topH = topBar ? topBar.offsetHeight : 60;
+            const botH = bottomBar ? bottomBar.offsetHeight : 60;
+            this.safeBounds = { minX: 30, maxX: this.logicalWidth - 30, minY: topH + 30, maxY: this.logicalHeight - botH - 30 };
+        } else {
+            const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
+            const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+            this.safeBounds = { minX: leftPanel.right + 80, maxX: rightPanel.left - 80, minY: 100, maxY: this.logicalHeight - 100 };
+            if (this.safeBounds.maxX <= this.safeBounds.minX) {
+                 this.safeBounds.minX = 50; this.safeBounds.maxX = this.logicalWidth - 50;
+            }
+        }
     }
 
     newLevel() {
@@ -192,19 +251,11 @@ class PlanarityGame {
         
         const nNodes = 10;
         
-        const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
-        const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+        const sb = this.safeBounds;
 
-        let safeXMin = leftPanel.right + 80;
-        let safeXMax = rightPanel.left - 80;
-        let safeYMin = 100;
-        let safeYMax = this.canvas.height - 100;
-
-        if(safeXMax <= safeXMin) { safeXMin = 50; safeXMax = this.canvas.width - 50; }
-
-        const cx = (safeXMin + safeXMax) / 2;
-        const cy = (safeYMin + safeYMax) / 2;
-        const radius = Math.min(safeXMax - safeXMin, safeYMax - safeYMin) / 2.5;
+        const cx = (sb.minX + sb.maxX) / 2;
+        const cy = (sb.minY + sb.maxY) / 2;
+        const radius = Math.min(sb.maxX - sb.minX, sb.maxY - sb.minY) / 2.5;
 
         // 1. Generate a mathematically guaranteed Planar Graph (Circle layout)
         // Place nodes in a perfect circle (the "Solution" state)
@@ -255,8 +306,8 @@ class PlanarityGame {
 
         // 2. Scramble the graph within the safe zone for the player
         this.nodes.forEach(n => {
-            n.x = safeXMin + Math.random() * (safeXMax - safeXMin);
-            n.y = safeYMin + Math.random() * (safeYMax - safeYMin);
+            n.x = sb.minX + Math.random() * (sb.maxX - sb.minX);
+            n.y = sb.minY + Math.random() * (sb.maxY - sb.minY);
         });
 
         this.updateIntersections();
@@ -292,11 +343,17 @@ class PlanarityGame {
         
         const countDisplay = document.getElementById('crossCount');
         countDisplay.innerText = crossCount;
+        
+        const mCountDisplay = document.getElementById('mobileCrossCount');
+        if (mCountDisplay) mCountDisplay.innerText = crossCount;
+        
         if(crossCount === 0 && !this.isAnimating) {
             countDisplay.classList.add('clean');
+            if (mCountDisplay) mCountDisplay.style.color = 'var(--neon-green)';
             setTimeout(() => { document.getElementById('modal').style.display = 'flex'; }, 300);
         } else {
             countDisplay.classList.remove('clean');
+            if (mCountDisplay) mCountDisplay.style.color = 'var(--neon-red)';
         }
     }
 
@@ -363,7 +420,7 @@ class PlanarityGame {
     openMathModal() { document.getElementById('mathModal').style.display = 'flex'; }
 
     loop() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.logicalWidth || this.canvas.width, this.logicalHeight || this.canvas.height);
 
         // Draw Cables (Edges)
         this.ctx.lineWidth = 4;
@@ -375,14 +432,13 @@ class PlanarityGame {
             this.ctx.lineTo(p2.x, p2.y);
             
             if(e.cross) {
-                this.ctx.strokeStyle = "#f472b6"; // Accent Pink
-                this.ctx.shadowBlur = 10; this.ctx.shadowColor = "#f472b6";
+                this.ctx.strokeStyle = "#ea4335"; // Marker Red
+                this.ctx.shadowBlur = 0; 
             } else {
-                this.ctx.strokeStyle = "rgba(34, 211, 238, 0.4)"; // Faded Accent Cyan
+                this.ctx.strokeStyle = "#1a73e8"; // Ink Blue
                 this.ctx.shadowBlur = 0;
             }
             this.ctx.stroke();
-            this.ctx.shadowBlur = 0; // reset
         });
 
         // Draw Server Racks (Nodes)
@@ -392,31 +448,38 @@ class PlanarityGame {
             this.ctx.translate(n.x, n.y);
             
             // Server Body
-            this.ctx.fillStyle = "#1e293b";
-            this.ctx.strokeStyle = "#22d3ee";
+            this.ctx.fillStyle = "#1e1e1e";
+            this.ctx.strokeStyle = "#555";
             this.ctx.lineWidth = 2;
-            this.ctx.fillRect(-20, -30, 40, 60);
-            this.ctx.strokeRect(-20, -30, 40, 60);
+            this.ctx.beginPath();
+            this.ctx.roundRect(-20, -30, 40, 60, 4);
+            this.ctx.fill();
+            this.ctx.stroke();
 
-            // Server Slots (lines)
-            this.ctx.fillStyle = "#334155";
-            this.ctx.fillRect(-15, -20, 30, 8);
-            this.ctx.fillRect(-15, -5, 30, 8);
-            this.ctx.fillRect(-15, 10, 30, 8);
+            // Slots
+            this.ctx.fillStyle = "#0a0a0a";
+            this.ctx.fillRect(-14, -22, 28, 10);
+            this.ctx.fillRect(-14, -5, 28, 10);
+            this.ctx.fillRect(-14, 12, 28, 10);
 
-            // Blinking LEDs
-            const blink1 = Math.sin(time/200 + n.id) > 0;
-            const blink2 = Math.sin(time/150 + n.id*2) > 0;
-            const blink3 = Math.sin(time/300 + n.id*3) > 0;
-
-            this.ctx.fillStyle = blink1 ? "#4ade80" : "#14532d";
-            this.ctx.fillRect(-10, -18, 4, 4);
-            
-            this.ctx.fillStyle = blink2 ? "#22d3ee" : "#164e63";
-            this.ctx.fillRect(-10, -3, 4, 4);
-
-            this.ctx.fillStyle = blink3 ? "#4ade80" : "#14532d";
-            this.ctx.fillRect(-10, 12, 4, 4);
+            // Blinking Lights
+            const slotOffsets = [-17, 0, 17];
+            slotOffsets.forEach((y, i) => {
+                let blink = Math.sin(time / 150 + n.id * 3 + i) > 0;
+                this.ctx.fillStyle = blink ? "#00ffcc" : "#003322";
+                if(i === 1) this.ctx.fillStyle = blink ? "#ff0055" : "#330011";
+                
+                this.ctx.beginPath();
+                this.ctx.arc(8, y, 2.5, 0, Math.PI*2);
+                this.ctx.fill();
+                
+                if (blink) {
+                    this.ctx.shadowBlur = 8;
+                    this.ctx.shadowColor = this.ctx.fillStyle;
+                    this.ctx.fill();
+                    this.ctx.shadowBlur = 0;
+                }
+            });
 
             this.ctx.restore();
         });

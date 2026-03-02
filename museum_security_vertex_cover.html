@@ -134,7 +134,7 @@
             <button onclick="game.newLevel()">New Floorplan</button>
             <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
-                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">?</button>
             </div>
         </div>
         
@@ -227,7 +227,16 @@ class VertexCoverGame {
         this.loop();
     }
 
-    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+    resize() { 
+        this.logicalWidth = window.innerWidth;
+        this.logicalHeight = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.logicalWidth * dpr;
+        this.canvas.height = this.logicalHeight * dpr;
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
     updateSafeBounds() {
         const isMobile = window.innerWidth <= 768;
@@ -243,9 +252,9 @@ class VertexCoverGame {
 
         this.safeBounds = {
             minX: isMobile ? 40 : 360, 
-            maxX: this.canvas.width - 40,
+            maxX: this.logicalWidth - 40,
             minY: topBarHeight || 40,
-            maxY: this.canvas.height - bottomBarHeight - 40
+            maxY: this.logicalHeight - bottomBarHeight - 40
         };
     }
 
@@ -370,7 +379,7 @@ class VertexCoverGame {
     }
 
     loop() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.logicalWidth, this.logicalHeight);
 
         this.edges.forEach(e => {
             const p1 = this.nodes[e.u], p2 = this.nodes[e.v], isCovered = (p1.camera || p2.camera);

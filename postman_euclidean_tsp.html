@@ -130,7 +130,7 @@
             <button onclick="game.newLevel()">New Town</button>
             <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
-                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">?</button>
             </div>
         </div>
         
@@ -227,7 +227,16 @@ class TSPGame {
         this.loop();
     }
 
-    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+    resize() { 
+        this.logicalWidth = window.innerWidth; 
+        this.logicalHeight = window.innerHeight; 
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.logicalWidth * dpr;
+        this.canvas.height = this.logicalHeight * dpr;
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
     updateSafeBounds() {
         const isMobile = window.innerWidth <= 768;
@@ -252,16 +261,16 @@ class TSPGame {
                 minX: minX,
                 maxX: maxX,
                 minY: 60, // Desktop top padding
-                maxY: this.canvas.height - 60 // Desktop bottom padding
+                maxY: this.logicalHeight - 60 // Desktop bottom padding
             };
             return; // Exit if desktop, as mobile logic is separate
         }
 
         this.safeBounds = {
             minX: 40, // Left padding for mobile
-            maxX: this.canvas.width - 40, // Right padding for mobile
+            maxX: this.logicalWidth - 40, // Right padding for mobile
             minY: topBarHeight,
-            maxY: this.canvas.height - bottomBarHeight
+            maxY: this.logicalHeight - bottomBarHeight
         };
     }
 
@@ -379,7 +388,7 @@ class TSPGame {
     }
 
     loop() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.logicalWidth, this.logicalHeight);
         const isCycleComplete = this.route.length > 1 && this.route[0] === this.route[this.route.length-1];
 
         if(this.route.length > 1) {
