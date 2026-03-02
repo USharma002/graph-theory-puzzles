@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Theory Demos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #c084fc;
+            --border-color: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%);
+        }
+
+        header { text-align: center; padding: 60px 20px 40px; }
+
+        h1 {
+            font-size: 3rem; font-weight: 800; margin-bottom: 15px;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px 80px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 30px;
+        }
+
+        /* --- CARD STYLING --- */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        /* --- THE AUTOMATIC THUMBNAIL TRICK --- */
+        .card-image-container {
+            position: relative;
+            width: 100%;
+            height: 220px; /* Height of the thumbnail */
+            overflow: hidden;
+            background-color: #000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .thumbnail-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* Make iframe 4x the size of the container */
+            width: 400%;  
+            height: 400%; 
+            /* Shrink it down to 25% so it fits perfectly inside the container */
+            transform: scale(0.25); 
+            transform-origin: top left;
+            border: none;
+            pointer-events: none; /* Prevents interaction inside the thumbnail */
+        }
+
+        /* Transparent overlay so the whole card acts as a clickable link */
+        .click-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+        }
+
+        /* --- CARD CONTENT --- */
+        .card-content { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
+        .card-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; flex-grow: 1; }
+
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag {
+            background-color: rgba(56, 189, 248, 0.1); color: var(--accent-blue);
+            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .tag.math { color: var(--accent-purple); background-color: rgba(192, 132, 252, 0.1); }
+        .tag.hard { color: #f87171; background-color: rgba(248, 113, 113, 0.1); }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+            h1 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Graph Theory Demos</h1>
+        <p>Interactive, cinematic explorations of famous graph theory problems, optimizations, and NP-Hard algorithms.</p>
+    </header>
+
+    <div class="container">
+        <div class="grid" id="portfolio-grid"></div>
+    </div>
+
+    <script>
+        // MATCHED TO YOUR EXACT FILE NAMES FROM THE GOOGLE DRIVE SCREENSHOT
+        const projects =[
+            {
+                title: "IISc Path Finder",
+                description: "Visualize shortest path algorithms dynamically carving through mapping data.",
+                url: "IISc_path_finder.html",
+                tags:["Dijkstra", "Mapping"]
+            },
+            {
+                title: "Grid Path Finder",
+                description: "Classic grid-based pathfinding visualizer and maze generator featuring A*, BFS, and DFS.",
+                url: "Grid_path_finder.html",
+                tags: ["A* Search", "Algorithms"]
+            },
+            {
+                title: "Server Room Untangled",
+                description: "Untangle crossed network cables in a gamified environment based on Kuratowski's Theorem.",
+                url: "server_room_planarity.html",
+                tags:["Planarity", "Math"]
+            },
+            {
+                title: "Robber Blockade",
+                description: "Deploy roadblocks to cut off all escape routes. An interactive lesson on Max-Flow Min-Cut.",
+                url: "robber_cops_maxflow.html",
+                tags:["Network Flow", "Math"]
+            },
+            {
+                title: "Road Repair",
+                description: "Connect isolated cities to the power grid for the lowest possible cost using Kruskal's Algorithm.",
+                url: "road_repair_mst.html",
+                tags:["MST", "Kruskal"]
+            },
+            {
+                title: "Postman's Route",
+                description: "Find the absolute shortest route that visits every house and returns to the start.",
+                url: "postman_euclidean_tsp.html",
+                tags:["TSP", "NP-Hard", "Hard"]
+            },
+            {
+                title: "N-Puzzle Parity",
+                description: "Explore the mathematical concept of permutations and parity in classic sliding tile puzzles.",
+                url: "n_puzzle_parity.html",
+                tags:["Parity", "Permutations", "Math"]
+            },
+            {
+                title: "Museum Security",
+                description: "Place the absolute minimum number of security cameras to monitor every single hallway.",
+                url: "museum_security_vertex_cover.html",
+                tags:["NP-Complete", "Vertex Cover", "Hard"]
+            },
+            {
+                title: "Knight Swap",
+                description: "Visualize knight movements on a chessboard as a graph traversal problem.",
+                url: "knight_swap.html",
+                tags:["Traversal", "Graph"]
+            },
+            {
+                title: "Graph Coloring Map",
+                description: "Color a map ensuring no two adjacent regions share the same color. Explores the Four Color Theorem.",
+                url: "graph_coloring_map.html",
+                tags:["Coloring", "NP-Hard", "Hard"]
+            }
+        ];
+
+        const gridContainer = document.getElementById('portfolio-grid');
+
+        projects.forEach(project => {
+            // HTML for Tags
+            const tagsHtml = project.tags.map(tag => {
+                let lowerTag = tag.toLowerCase();
+                let className = "tag";
+                if(lowerTag === "math" || lowerTag === "hard") className += ` ${lowerTag}`;
+                return `<span class="${className}">${tag}</span>`;
+            }).join('');
+
+            // Card Structure with Scaled Iframe Thumbnail
+            const card = document.createElement('a');
+            card.href = project.url;
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-image-container">
+                    <!-- The iframe loads the actual game, 'loading=lazy' keeps the page fast -->
+                    <iframe src="${project.url}" class="thumbnail-frame" scrolling="no" tabindex="-1" loading="lazy"></iframe>
+                    <!-- Invisible overlay so the iframe doesn't intercept your clicks -->
+                    <div class="click-overlay"></div>
+                </div>
+                <div class="card-content">
+                    <h2 class="card-title">${project.title}</h2>
+                    <p class="card-desc">${project.description}</p>
+                    <div class="tags">
+                        ${tagsHtml}
+                    </div>
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        });
+    </script>
+</body>
+</html>

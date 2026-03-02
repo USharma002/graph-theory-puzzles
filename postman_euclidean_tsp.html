@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postman's Route: TSP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --paper-bg: #fdfbf7;
+            --asphalt: #3c4043;
+            --mail-blue: #1a73e8;
+            --mail-red: #ea4335;
+            --math-purple: #9334e6;
+            --success-green: #34a853;
+        }
+
+        body {
+            margin: 0; overflow: hidden;
+            background-color: var(--paper-bg);
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 30px 30px; 
+            font-family: 'Architects Daughter', cursive;
+            color: #202124; user-select: none;
+        }
+
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
+        }
+
+        .notebook-panel {
+            background: #fff; transform: rotate(-1deg); padding: 25px 35px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
+        }
+
+        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--mail-red); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
+        .cost-display { font-size: 2.2rem; font-weight: bold; color: var(--asphalt); }
+        
+        button {
+            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
+            padding: 12px 20px; font-size: 1.2rem; font-weight: bold;
+            cursor: pointer; border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%;
+        }
+
+        .btn-check { background: var(--mail-blue); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .btn-check:hover { background: #1557b0; transform: translateY(-2px); }
+        .btn-reset { background: #fff; color: var(--asphalt); margin-top: 10px; }
+        .btn-reset:hover { background: #f0f0f0; }
+
+        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px;}
+        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-list li { margin-bottom: 8px; }
+
+        /* Bottom Control Row with i button */
+        .bottom-controls {
+            margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc;
+            display: flex; gap: 10px; align-items: center;
+        }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
+        .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
+        
+        .btn-circle {
+            width: 48px; height: 45px; border-radius: 50%;
+            background: var(--mail-red); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+        }
+        .btn-circle:hover { transform: scale(1.08) rotate(5deg); background: #d93025; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .clipboard {
+            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center; position: relative; transform: rotate(-1deg); border: 1px solid #ddd;
+        }
+        .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
+        .math-section h3 { margin-top: 0; color: var(--math-purple); }
+        .stamp-result {
+            font-size: 3rem; font-weight: bold; font-family: 'Courier New', Courier, monospace;
+            transform: rotate(-15deg); border: 5px solid; padding: 10px 20px; border-radius: 10px;
+            display: inline-block; margin: 20px 0; opacity: 0.8;
+        }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <!-- LEFT PANEL -->
+        <div class="notebook-panel" id="leftPanel">
+            <h1>Odometer</h1>
+            <div class="stat-row"><span>Distance Driven:</span></div>
+            <div class="stat-row"><span class="cost-display"><span id="distVal">0</span> km</span></div>
+            
+            <hr style="border: 1px dashed #ccc; margin: 15px 0;">
+            <button class="btn-check" onclick="game.checkWin()">FINISH SHIFT</button>
+            <button class="btn-reset" onclick="game.reset()">Clear Route</button>
+            <button class="btn-reset" onclick="game.newLevel()">New Town</button>
+            
+            <div class="bottom-controls">
+                <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                <button class="btn-circle" onclick="game.animateSolution()" title="Show Solution">i</button>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANEL -->
+        <div class="notebook-panel intel-box" id="rightPanel">
+            <h1>Delivery Log</h1>
+            <ul class="intel-list">
+                <li><b>Mission:</b> Deliver mail to all houses and return to the start.</li>
+                <li><b>Method:</b> Click houses to map your driving route.</li>
+                <li><b>Rules:</b>
+                    <ol style="padding-left:20px; margin-top:5px;">
+                        <li>You start at the <span style="color:var(--mail-red); font-weight:bold;">Postbox</span>.</li>
+                        <li>You must visit <b>EVERY</b> house.</li>
+                        <li>You must click the Postbox again to end the shift.</li>
+                        <li><b>Right-click</b> to undo your last step.</li>
+                    </ol>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="clipboard">
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Shift Complete</h2>
+            <div id="stamp" class="stamp-result">ROUTE APPROVED</div>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Sample text.</p>
+            <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px; font-family:'Roboto Mono';">
+                <div>Your Distance: <b id="endUserCost">0</b></div>
+                <div>Optimal Distance: <b id="endOptCost">0</b></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-check" onclick="game.newLevel()">Next Town</button>
+                <button class="btn-reset" onclick="document.getElementById('modal').style.display='none'">Redraw</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="mathModal">
+        <div class="clipboard math-mode">
+            <h2 style="font-family:'Architects Daughter'; text-align:center;">Traveling Salesperson Problem (TSP)</h2>
+            <div class="math-section">
+                <h3>Problem Statement</h3>
+                <p>Given a list of destinations and the distances between each pair, what is the shortest possible route that visits each exactly once and returns to the origin?</p>
+                <p>Mathematically, we are looking for the minimum-weight <b>Hamiltonian Cycle</b> in a complete graph.</p>
+                <p>$$ \text{Minimize } \sum_{i=1}^{n} d(v_i, v_{i+1}) $$</p>
+                <p>Where \(v_{n+1} = v_1\) (returning to start).</p>
+            </div>
+            <div class="math-section">
+                <h3>The Explosion of Possibilities</h3>
+                <p>TSP is one of the most famous <b>NP-Hard</b> problems. For just 10 houses, there are <b>362,880</b> possible routes. For 20 houses, there are <b>1.21 × 10<sup>17</sup></b> routes—more than the seconds since the universe began!</p>
+                <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">Optimal Route for this town: <span id="mathOptVal" style="color:var(--math-purple)">0</span> km</p>
+            </div>
+            <button class="btn-reset" onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Map</button>
+        </div>
+    </div>
+
+<script>
+class TSPGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        this.nodes = [];
+        this.route = []; 
+        this.optimalRoute = []; // Stores the exact IDs of the best route
+        this.optDist = 0;
+        
+        this.hoverNode = null;
+        this.mousePos = {x:0, y:0};
+        
+        this.isAnimating = false;
+        this.animTimer = null;
+        
+        window.addEventListener('resize', () => this.resize());
+        this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
+        
+        // Right Click to Undo
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.undo();
+        });
+
+        this.resize();
+        // Give DOM a tiny moment to render UI panels so we can grab their bounding boxes
+        setTimeout(() => this.newLevel(), 50);
+        this.loop();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    newLevel() {
+        if(this.isAnimating) {
+            clearInterval(this.animTimer);
+            this.isAnimating = false;
+        }
+
+        this.nodes = [];
+        this.route = [];
+        document.getElementById('modal').style.display = 'none';
+        
+        const nNodes = 9; // 1 Postbox + 8 Houses
+        
+        // DYNAMIC BOUNDING BOX
+        // Get panel bounds to ensure nodes spawn ONLY in the empty center space
+        const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
+        const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+
+        let safeXMin = leftPanel.right + 60;
+        let safeXMax = rightPanel.left - 60;
+        let safeYMin = 80;
+        let safeYMax = this.canvas.height - 80;
+
+        // Fallback for very small screens
+        if(safeXMax <= safeXMin) {
+            safeXMin = 50; safeXMax = this.canvas.width - 50;
+        }
+
+        const spawnW = safeXMax - safeXMin;
+        const spawnH = safeYMax - safeYMin;
+        
+        // Postbox (ID 0) near the center of the safe zone
+        this.nodes.push({
+            id: 0,
+            x: safeXMin + spawnW/2 + (Math.random()-0.5)*100,
+            y: safeYMin + spawnH/2 + (Math.random()-0.5)*100,
+            isStart: true
+        });
+
+        // Houses
+        for(let i=1; i<nNodes; i++) {
+            let safe = false;
+            let x, y;
+            while(!safe) {
+                x = safeXMin + Math.random() * spawnW;
+                y = safeYMin + Math.random() * spawnH;
+                safe = true;
+                // Minimum distance between houses
+                for(let n of this.nodes) {
+                    if(Math.hypot(n.x - x, n.y - y) < 90) safe = false;
+                }
+            }
+            this.nodes.push({id: i, x: x, y: y, isStart: false});
+        }
+
+        this.route.push(0); // Auto-start at postbox
+        this.optDist = this.calculateOptimal();
+        this.updateUI();
+    }
+
+    dist(n1, n2) {
+        return Math.hypot(n1.x - n2.x, n1.y - n2.y);
+    }
+
+    // Exact TSP Permutation (Calculates distance AND saves the route)
+    calculateOptimal() {
+        let minDist = Infinity;
+        let bestRouteArr = [];
+        const ids = this.nodes.filter(n => !n.isStart).map(n => n.id);
+        
+        const getNode = id => this.nodes.find(n => n.id === id);
+        const node0 = getNode(0);
+
+        const permute = (arr, size) => {
+            if (size === 1) {
+                let d = this.dist(node0, getNode(arr[0]));
+                for(let i=0; i<arr.length-1; i++) {
+                    d += this.dist(getNode(arr[i]), getNode(arr[i+1]));
+                }
+                d += this.dist(getNode(arr[arr.length-1]), node0);
+                
+                if(d < minDist) {
+                    minDist = d;
+                    bestRouteArr = [0, ...arr, 0]; // Store the exact optimal path
+                }
+                return;
+            }
+            for (let i = 0; i < size; i++) {
+                permute(arr, size - 1);
+                let swapIdx = (size % 2 === 1) ? 0 : i;
+                let tmp = arr[swapIdx];
+                arr[swapIdx] = arr[size - 1];
+                arr[size - 1] = tmp;
+            }
+        };
+        
+        permute(ids, ids.length);
+        this.optimalRoute = bestRouteArr;
+        return Math.round(minDist / 10);
+    }
+
+    handleHover(e) {
+        if(this.isAnimating) return;
+        this.mousePos.x = e.clientX;
+        this.mousePos.y = e.clientY;
+        
+        this.hoverNode = null;
+        for(let n of this.nodes) {
+            if(Math.hypot(n.x - this.mousePos.x, n.y - this.mousePos.y) < 30) {
+                this.hoverNode = n; break;
+            }
+        }
+        this.canvas.style.cursor = this.hoverNode ? 'pointer' : 'default';
+    }
+
+    handleClick(e) {
+        if(this.isAnimating) return;
+        if(!this.hoverNode) return;
+        
+        // Left click only (Right click is handled by contextmenu)
+        if(e.button !== 0) return; 
+
+        const isCycleComplete = this.route.length > 1 && this.route[0] === this.route[this.route.length-1];
+        if(isCycleComplete) return;
+
+        const lastVisited = this.route[this.route.length - 1];
+
+        if(this.hoverNode.id === lastVisited && this.hoverNode.id !== 0) {
+            this.undo();
+        } else {
+            if(this.hoverNode.isStart) {
+                if(this.route.length === this.nodes.length) {
+                    this.route.push(0); // Complete cycle
+                }
+            } else {
+                if(!this.route.includes(this.hoverNode.id)) {
+                    this.route.push(this.hoverNode.id);
+                }
+            }
+        }
+        this.updateUI();
+    }
+
+    undo() {
+        if(this.isAnimating) return;
+        if(this.route.length > 1) {
+            // Cannot undo if shift is complete
+            if(this.route[0] === this.route[this.route.length-1]) return;
+            this.route.pop();
+            this.updateUI();
+        }
+    }
+    
+    reset() {
+        if(this.isAnimating) return;
+        this.route = [0];
+        this.updateUI();
+    }
+
+    animateSolution() {
+        if(this.isAnimating) return;
+        this.isAnimating = true;
+        this.route = [0]; // Clear to start
+        this.updateUI();
+
+        let step = 1; // start from second node (index 1)
+        this.animTimer = setInterval(() => {
+            this.route.push(this.optimalRoute[step]);
+            this.updateUI();
+            step++;
+            
+            if(step >= this.optimalRoute.length) {
+                clearInterval(this.animTimer);
+                this.isAnimating = false;
+                setTimeout(() => this.checkWin(), 600);
+            }
+        }, 400); // Wait 400ms between drawing each path
+    }
+
+    calcCurrentDist() {
+        let d = 0;
+        for(let i=0; i<this.route.length-1; i++) {
+            let n1 = this.nodes.find(n => n.id === this.route[i]);
+            let n2 = this.nodes.find(n => n.id === this.route[i+1]);
+            d += this.dist(n1, n2);
+        }
+        return Math.round(d / 10);
+    }
+
+    updateUI() {
+        document.getElementById('distVal').innerText = this.calcCurrentDist();
+    }
+
+    openMathModal() {
+        document.getElementById('mathOptVal').innerText = this.optDist;
+        document.getElementById('mathModal').style.display = 'flex';
+    }
+
+    checkWin() {
+        const isCycleComplete = this.route.length === this.nodes.length + 1 && this.route[this.route.length-1] === 0;
+        const currentDist = this.calcCurrentDist();
+
+        const stamp = document.getElementById('stamp');
+        const title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
+
+        if(!isCycleComplete) {
+            stamp.innerText = "INCOMPLETE"; stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
+            title.innerText = "Undelivered Mail";
+            msg.innerText = "You must visit every house and return to the Postbox!";
+        } else if(currentDist > this.optDist) {
+            stamp.innerText = "INEFFICIENT"; stamp.style.color = "#fbbc04"; stamp.style.borderColor = "#fbbc04";
+            title.innerText = "Too Much Gas";
+            msg.innerText = "You visited everyone, but a shorter route exists. Look for crossing paths—they are mathematically always inefficient!";
+        } else {
+            stamp.innerText = "PERFECT"; stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
+            title.innerText = "Employee of the Month";
+            msg.innerText = "You solved the Traveling Salesperson Problem perfectly!";
+        }
+
+        document.getElementById('endUserCost').innerText = currentDist + " km";
+        document.getElementById('endOptCost').innerText = this.optDist + " km";
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    loop() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Confirmed Route
+        if(this.route.length > 1) {
+            this.ctx.beginPath();
+            let startNode = this.nodes.find(n => n.id === this.route[0]);
+            this.ctx.moveTo(startNode.x, startNode.y);
+            
+            for(let i=1; i<this.route.length; i++) {
+                let n = this.nodes.find(node => node.id === this.route[i]);
+                this.ctx.lineTo(n.x, n.y);
+            }
+            this.ctx.strokeStyle = "#1a73e8"; 
+            this.ctx.lineWidth = 6; this.ctx.lineJoin = "round"; this.ctx.stroke();
+        }
+
+        // Draw Active Line to Mouse (Only if not animating)
+        const isCycleComplete = this.route.length > 1 && this.route[0] === this.route[this.route.length-1];
+        if(!isCycleComplete && this.route.length > 0 && !this.isAnimating) {
+            let lastNode = this.nodes.find(n => n.id === this.route[this.route.length-1]);
+            
+            // Highlight valid hover target
+            let validHover = false;
+            if(this.hoverNode) {
+                if(this.hoverNode.isStart && this.route.length === this.nodes.length) validHover = true;
+                if(!this.hoverNode.isStart && !this.route.includes(this.hoverNode.id)) validHover = true;
+            }
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(lastNode.x, lastNode.y);
+            this.ctx.lineTo(validHover ? this.hoverNode.x : this.mousePos.x, validHover ? this.hoverNode.y : this.mousePos.y);
+            this.ctx.strokeStyle = validHover ? "#1a73e8" : "rgba(26, 115, 232, 0.3)";
+            this.ctx.lineWidth = validHover ? 6 : 4;
+            this.ctx.setLineDash([10, 10]);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+        }
+
+        // Draw Buildings
+        this.nodes.forEach(n => {
+            const isHover = (n === this.hoverNode && !this.isAnimating);
+            const isVisited = this.route.includes(n.id);
+            const isLast = this.route[this.route.length-1] === n.id;
+
+            this.ctx.save();
+            this.ctx.translate(n.x, n.y);
+            
+            if(isHover) this.ctx.scale(1.1, 1.1);
+
+            if(n.isStart) {
+                // Postbox Theme
+                this.ctx.fillStyle = "#ea4335";
+                this.ctx.beginPath(); this.ctx.roundRect(-15, -15, 30, 40, 5); this.ctx.fill();
+                this.ctx.strokeStyle = "#3c4043"; this.ctx.lineWidth = 3; this.ctx.stroke();
+                
+                this.ctx.beginPath(); this.ctx.arc(0, -15, 15, Math.PI, 0); this.ctx.fill(); this.ctx.stroke();
+                
+                // Mail slot
+                this.ctx.fillStyle = "#fff"; this.ctx.fillRect(-8, -10, 16, 4);
+                
+                // Base
+                this.ctx.fillStyle = "#3c4043"; this.ctx.fillRect(-18, 25, 36, 5);
+            } else {
+                // House Theme
+                this.ctx.fillStyle = isVisited ? "#c8e6c9" : "#fff"; 
+                this.ctx.fillRect(-16, -10, 32, 26);
+                this.ctx.strokeStyle = "#3c4043"; this.ctx.lineWidth = 3;
+                this.ctx.strokeRect(-16, -10, 32, 26);
+                
+                // Roof
+                this.ctx.fillStyle = isLast && !isCycleComplete ? "#1a73e8" : "#5c6bc0";
+                this.ctx.beginPath(); this.ctx.moveTo(-22, -10); this.ctx.lineTo(0, -28); this.ctx.lineTo(22, -10); this.ctx.closePath();
+                this.ctx.fill(); this.ctx.stroke();
+                
+                // Door
+                this.ctx.fillStyle = "#8d6e63"; this.ctx.fillRect(-6, 6, 12, 10);
+            }
+            this.ctx.restore();
+        });
+
+        requestAnimationFrame(() => this.loop());
+    }
+}
+const game = new TSPGame();
+</script>
+</body>
+</html>

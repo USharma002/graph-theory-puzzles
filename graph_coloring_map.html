@@ -1,0 +1,509 @@
+<!-- SAVE AS map_coloring_doodle.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Master: 4-Color Theorem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #fdfbf7;
+            --asphalt: #3c4043;
+            --ink-blue: #1a73e8;
+            /* The 4 Colors */
+            --c-red: #ea4335;
+            --c-blue: #4285f4;
+            --c-green: #34a853;
+            --c-yellow: #fbbc04;
+        }
+
+        body {
+            margin: 0; overflow: hidden; background-color: var(--paper-bg);
+            font-family: 'Architects Daughter', cursive;
+            user-select: none; cursor: crosshair;
+        }
+
+        /* --- UI LAYER --- */
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            padding: 20px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+
+        .notebook-panel {
+            background: #fff; transform: rotate(-1deg); padding: 20px 30px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.1); border: 1px solid #ddd;
+            border-radius: 4px; pointer-events: auto; max-width: 300px;
+        }
+
+        h1 { margin: 0 0 10px 0; font-size: 1.5rem; color: var(--asphalt); text-decoration: underline; }
+        p { margin: 0; font-size: 1.1rem; color: #555; line-height: 1.4; }
+
+        /* Palette (Bottom) */
+        .palette-container {
+            pointer-events: auto;
+            background: #fff; padding: 15px 30px;
+            border-radius: 50px; border: 2px solid var(--asphalt);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            align-self: center; margin-bottom: 20px;
+            display: flex; gap: 20px;
+            transform: rotate(1deg);
+        }
+
+        .paint-pot {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: 4px solid #fff; box-shadow: 0 0 0 2px var(--asphalt);
+            cursor: pointer; position: relative; transition: transform 0.2s;
+        }
+        .paint-pot:hover { transform: scale(1.1); }
+        .paint-pot.active { transform: scale(1.2) translateY(-10px); box-shadow: 0 10px 10px rgba(0,0,0,0.2), 0 0 0 2px var(--asphalt); }
+        
+        /* Color Indicators */
+        .bg-red { background: var(--c-red); }
+        .bg-blue { background: var(--c-blue); }
+        .bg-green { background: var(--c-green); }
+        .bg-yellow { background: var(--c-yellow); }
+
+        /* BUTTONS */
+        .btn {
+            font-family: 'Architects Daughter', cursive;
+            border: 2px solid var(--asphalt); background: #fff;
+            padding: 8px 16px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; border-radius: 10px; margin-top: 10px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #eee; transform: scale(1.05); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+        }
+        .clipboard {
+            background: #fff; width: 400px; padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            text-align: center; transform: rotate(-1deg);
+            border-radius: 4px; border: 1px solid #ccc;
+        }
+        .stamp {
+            font-size: 3rem; font-weight: bold; transform: rotate(-10deg);
+            border: 6px solid; padding: 10px 30px; border-radius: 15px;
+            display: inline-block; margin: 20px 0; opacity: 0.9;
+        }
+        .stamp-success { color: var(--c-green); border-color: var(--c-green); }
+        .stamp-fail { color: var(--c-red); border-color: var(--c-red); }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <div class="top-bar">
+            <!-- Left Info -->
+            <div class="notebook-panel">
+                <h1>Cartographer</h1>
+                <p><b>Rule:</b> Adjacent regions cannot have the same color.</p>
+                <div style="margin-top:15px; font-size:1rem; color:#888;">Conflicts: <b id="conflictCount" style="color:var(--c-red); font-size:1.4rem;">0</b></div>
+                <button class="btn" onclick="game.newMap()">New Map</button>
+                <button class="btn" onclick="game.checkWin()">Submit Map</button>
+            </div>
+            
+            <!-- Right Hint -->
+            <div class="notebook-panel" style="transform: rotate(2deg);">
+                <h1>Theory</h1>
+                <p>The <b>Four Color Theorem</b> states that any plane separated into regions needs no more than 4 colors.</p>
+            </div>
+        </div>
+
+        <!-- Bottom Palette -->
+        <div class="palette-container">
+            <div class="paint-pot bg-red active" onclick="game.setColor(1)"></div>
+            <div class="paint-pot bg-blue" onclick="game.setColor(2)"></div>
+            <div class="paint-pot bg-green" onclick="game.setColor(3)"></div>
+            <div class="paint-pot bg-yellow" onclick="game.setColor(4)"></div>
+            <div class="paint-pot" style="background:#fff; display:flex; justify-content:center; align-items:center; font-size:2rem; color:#aaa;" onclick="game.setColor(0)">
+                <span>x</span> <!-- Eraser -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="clipboard">
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0;">Status Report</h2>
+            <div id="stamp" class="stamp">SOLVED</div>
+            <p id="modalMsg" style="font-size: 1.2rem; margin-top:10px;">The map is perfectly colored.</p>
+            <br>
+            <button class="btn" style="font-size:1.2rem; background:var(--c-blue); color:white; border:none;" onclick="game.newMap()">Next Map</button>
+            <button class="btn" onclick="document.getElementById('modal').style.display='none'">Fix It</button>
+        </div>
+    </div>
+
+<script>
+class MapGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        this.nodes = [];
+        this.edges = [];
+        
+        // Colors: 0=None, 1=Red, 2=Blue, 3=Green, 4=Yellow
+        this.palette = ['#ffffff', '#ea4335', '#4285f4', '#34a853', '#fbbc04'];
+        this.selectedColor = 1; // Default Red
+        this.hoverNode = null;
+        this.frame = 0;
+
+        window.addEventListener('resize', () => this.resize());
+        this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if(e.key >= '1' && e.key <= '4') this.setColor(parseInt(e.key));
+            if(e.key === 'x' || e.key === '0') this.setColor(0);
+        });
+
+        this.resize();
+        this.newMap();
+        this.loop();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    setColor(idx) {
+        this.selectedColor = idx;
+        
+        // Update UI
+        const pots = document.querySelectorAll('.paint-pot');
+        pots.forEach((p, i) => {
+            if(i === (idx === 0 ? 4 : idx - 1)) p.classList.add('active');
+            else p.classList.remove('active');
+        });
+    }
+
+    // --- GENERATION: Planar Graph (Delaunay-ish) ---
+    newMap() {
+        this.nodes = [];
+        this.edges = [];
+        document.getElementById('modal').style.display = 'none';
+        
+        const count = 12 + Math.floor(Math.random() * 8); // 12-20 regions
+        const padding = 100;
+        
+        // 1. Generate Points (Regions)
+        for(let i=0; i<count; i++) {
+            let safe=false, x, y, attempts=0;
+            while(!safe && attempts<100) {
+                x = padding + Math.random() * (this.canvas.width - padding*2);
+                y = padding + Math.random() * (this.canvas.height - padding*2);
+                safe = true;
+                // Minimum distance between regions
+                for(let n of this.nodes) {
+                    if(Math.hypot(n.x-x, n.y-y) < 120) safe = false;
+                }
+                attempts++;
+            }
+            // Irregular "Blob" shape parameters
+            const points = [];
+            const rBase = 40 + Math.random() * 20;
+            const segments = 12;
+            for(let j=0; j<segments; j++) {
+                const angle = (j / segments) * Math.PI * 2;
+                // Add noise to radius to make it look like a map territory
+                const r = rBase + (Math.random() - 0.5) * 20;
+                points.push({
+                    dx: Math.cos(angle) * r,
+                    dy: Math.sin(angle) * r
+                });
+            }
+
+            this.nodes.push({ 
+                id: i, x, y, 
+                color: 0, 
+                shape: points,
+                vx:0, vy:0 
+            });
+        }
+
+        // 2. Generate Borders (Edges) - Planar guarantee
+        // Simple strategy: Connect neighbors if line doesn't intersect existing lines
+        // Sort by x to optimize connection search
+        const sorted = [...this.nodes].sort((a,b) => a.x - b.x);
+        
+        for(let i=0; i<count; i++) {
+            let n1 = this.nodes[i];
+            // Find k nearest neighbors
+            let neighbors = this.nodes
+                .map((n, idx) => ({id: idx, dist: Math.hypot(n.x-n1.x, n.y-n1.y)}))
+                .filter(n => n.id !== i)
+                .sort((a,b) => a.dist - b.dist)
+                .slice(0, 6); // Check closest 6
+
+            for(let neigh of neighbors) {
+                let n2 = this.nodes[neigh.id];
+                if(!this.isIntersectingAny(n1, n2)) {
+                    // Triangle check to prevent long slivers crossing others visually
+                    this.addEdge(i, neigh.id);
+                }
+            }
+        }
+        
+        // 3. Relax graph (Physics) to fix visuals
+        this.relaxGraph(100);
+        this.updateConflicts();
+    }
+
+    addEdge(u, v) {
+        // Prevent dupes
+        if(this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) return;
+        this.edges.push({ u, v, clash: false });
+    }
+
+    // Helper: Check if line segment AB intersects any existing edge CD
+    isIntersectingAny(n1, n2) {
+        for(let e of this.edges) {
+            let p3 = this.nodes[e.u];
+            let p4 = this.nodes[e.v];
+            // Don't check edges that share an endpoint
+            if(p3.id === n1.id || p3.id === n2.id || p4.id === n1.id || p4.id === n2.id) continue;
+            
+            if(this.linesIntersect(n1.x, n1.y, n2.x, n2.y, p3.x, p3.y, p4.x, p4.y)) return true;
+        }
+        return false;
+    }
+
+    linesIntersect(a,b,c,d,p,q,r,s) {
+        var det, gamma, lambda;
+        det = (c - a) * (s - q) - (r - p) * (d - b);
+        if (det === 0) return false;
+        lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+        gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+        return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+    }
+
+    relaxGraph(iter) {
+        const centerK = 0.01;
+        const repelK = 20000;
+        const springLen = 150;
+        const springK = 0.02;
+
+        for(let k=0; k<iter; k++) {
+            // Repel
+            for(let i=0; i<this.nodes.length; i++) {
+                for(let j=i+1; j<this.nodes.length; j++) {
+                    let n1 = this.nodes[i];
+                    let n2 = this.nodes[j];
+                    let dx = n1.x - n2.x;
+                    let dy = n1.y - n2.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy) + 1;
+                    let f = repelK / (dist*dist);
+                    n1.vx += (dx/dist)*f; n1.vy += (dy/dist)*f;
+                    n2.vx -= (dx/dist)*f; n2.vy -= (dy/dist)*f;
+                }
+            }
+            // Spring
+            for(let e of this.edges) {
+                let n1 = this.nodes[e.u];
+                let n2 = this.nodes[e.v];
+                let dx = n2.x - n1.x;
+                let dy = n2.y - n1.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                let f = (dist - springLen) * springK;
+                n1.vx += (dx/dist)*f; n1.vy += (dy/dist)*f;
+                n2.vx -= (dx/dist)*f; n2.vy -= (dy/dist)*f;
+            }
+            // Center
+            for(let n of this.nodes) {
+                n.vx += (this.canvas.width/2 - n.x)*centerK;
+                n.vy += (this.canvas.height/2 - n.y)*centerK;
+                n.x += n.vx; n.y += n.vy;
+                n.vx *= 0.8; n.vy *= 0.8; // Friction
+            }
+        }
+    }
+
+    // --- LOGIC ---
+    handleHover(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        this.hoverNode = null;
+        for(let n of this.nodes) {
+            // Simple circular hit detection for the "Territory"
+            if(Math.hypot(n.x - mx, n.y - my) < 50) {
+                this.hoverNode = n;
+            }
+        }
+    }
+
+    handleClick(e) {
+        if(this.hoverNode) {
+            this.hoverNode.color = this.selectedColor;
+            
+            // Juice: Pop effect
+            this.hoverNode.pop = 10;
+            
+            this.updateConflicts();
+        }
+    }
+
+    updateConflicts() {
+        let conflicts = 0;
+        for(let e of this.edges) {
+            let n1 = this.nodes[e.u];
+            let n2 = this.nodes[e.v];
+            
+            if(n1.color !== 0 && n2.color !== 0 && n1.color === n2.color) {
+                e.clash = true;
+                conflicts++;
+            } else {
+                e.clash = false;
+            }
+        }
+        document.getElementById('conflictCount').innerText = conflicts;
+        return conflicts;
+    }
+
+    checkWin() {
+        const conflicts = this.updateConflicts();
+        const uncolored = this.nodes.filter(n => n.color === 0).length;
+
+        const stamp = document.getElementById('stamp');
+        const title = document.getElementById('modalTitle');
+        const msg = document.getElementById('modalMsg');
+
+        if(uncolored > 0) {
+            stamp.className = "stamp stamp-fail";
+            stamp.innerText = "UNFINISHED";
+            title.innerText = "Map Incomplete";
+            msg.innerText = `You missed ${uncolored} regions.`;
+        } else if (conflicts > 0) {
+            stamp.className = "stamp stamp-fail";
+            stamp.innerText = "CONFLICT";
+            title.innerText = "Invalid Borders";
+            msg.innerText = `${conflicts} borders have matching colors on both sides.`;
+        } else {
+            stamp.className = "stamp stamp-success";
+            stamp.innerText = "APPROVED";
+            title.innerText = "Map Complete";
+            msg.innerText = "Theorem proven! Adjacent regions are distinct.";
+        }
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+
+    // --- DRAWING ---
+    loop() {
+        this.frame++;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 1. Draw Connections (Borders)
+        for(let e of this.edges) {
+            let n1 = this.nodes[e.u];
+            let n2 = this.nodes[e.v];
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(n1.x, n1.y);
+            this.ctx.lineTo(n2.x, n2.y);
+            
+            if(e.clash) {
+                // ANGRY RED SQUIGGLE
+                this.ctx.strokeStyle = varCSS('--c-red');
+                this.ctx.lineWidth = 4;
+                this.ctx.setLineDash([]);
+                // Dynamic squiggle
+                this.ctx.save();
+                this.ctx.translate((n1.x+n2.x)/2, (n1.y+n2.y)/2);
+                this.ctx.rotate(Math.atan2(n2.y-n1.y, n2.x-n1.x));
+                this.ctx.beginPath();
+                this.ctx.moveTo(-20, Math.sin(this.frame*0.5)*5);
+                this.ctx.lineTo(0, -Math.sin(this.frame*0.5)*5);
+                this.ctx.lineTo(20, Math.sin(this.frame*0.5)*5);
+                this.ctx.stroke();
+                this.ctx.restore();
+            } else {
+                // Normal Border (Dashed)
+                this.ctx.strokeStyle = "#ccc";
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([5, 5]);
+            }
+            this.ctx.stroke();
+        }
+
+        // 2. Draw Regions (Nodes)
+        for(let n of this.nodes) {
+            this.ctx.save();
+            this.ctx.translate(n.x, n.y);
+            
+            // Pop Animation
+            let scale = 1;
+            if(n.pop && n.pop > 0) {
+                scale = 1 + (n.pop/20);
+                n.pop--;
+            }
+            if(n === this.hoverNode) scale = 1.1;
+            this.ctx.scale(scale, scale);
+
+            // Draw Blob Shape
+            this.ctx.beginPath();
+            if(n.shape && n.shape.length > 0) {
+                this.ctx.moveTo(n.shape[0].dx, n.shape[0].dy);
+                for(let i=1; i<n.shape.length; i++) {
+                    // Smooth curve between points
+                    // Simple polygon for now to match style
+                    this.ctx.lineTo(n.shape[i].dx, n.shape[i].dy);
+                }
+            }
+            this.ctx.closePath();
+
+            // Fill
+            let color = this.palette[n.color];
+            if(n.color === 0) color = "#ffffff"; // Empty
+            
+            this.ctx.fillStyle = color;
+            this.ctx.fill();
+
+            // Outline
+            this.ctx.strokeStyle = "#3c4043"; // Asphalt
+            this.ctx.lineWidth = 3;
+            this.ctx.setLineDash([]);
+            this.ctx.stroke();
+
+            // Inner Shadow/Hatch for style (Optional)
+            if(n.color === 0) {
+                this.ctx.fillStyle = "#eee";
+                this.ctx.font = "20px 'Architects Daughter'";
+                this.ctx.textAlign = "center";
+                this.ctx.textBaseline = "middle";
+                this.ctx.fillText("?", 0, 0);
+            }
+
+            this.ctx.restore();
+        }
+
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+function varCSS(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const game = new MapGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rescue Ops: Bipartite Matching</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --paper-bg: #fdfbf7;
+            --asphalt: #3c4043;
+            --heli-blue: #1a73e8;
+            --rescue-orange: #f05c1d;
+            --success-green: #34a853;
+            --math-purple: #9334e6;
+        }
+
+        body {
+            margin: 0; overflow: hidden;
+            background-color: var(--paper-bg);
+            background-image: linear-gradient(rgba(26, 115, 232, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(26, 115, 232, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px; /* Map grid */
+            font-family: 'Architects Daughter', cursive;
+            color: #202124; user-select: none;
+        }
+
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between;
+        }
+
+        .notebook-panel {
+            background: #fff; transform: rotate(-1deg); padding: 25px 35px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; display: flex; flex-direction: column; z-index: 10;
+        }
+
+        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--rescue-orange); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
+        .cost-display { font-size: 2.2rem; font-weight: bold; color: var(--asphalt); }
+        .cost-display.success { color: var(--success-green); }
+
+        button {
+            font-family: 'Architects Daughter', cursive; border: 3px solid var(--asphalt);
+            padding: 12px 20px; font-size: 1.2rem; font-weight: bold; background:#fff;
+            cursor: pointer; border-radius: 5px; transition: all 0.2s; margin-top: 10px; width: 100%;
+        }
+        button:hover { background: #eee; transform: translateY(-2px); }
+
+        .btn-check { background: var(--success-green); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .btn-check:hover { background: #2b8a41; color:white; }
+
+        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px;}
+        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-list li { margin-bottom: 8px; }
+
+        .bottom-controls { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; display: flex; gap: 10px; align-items: center; }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); margin: 0; flex-grow: 1; }
+        .info-btn:hover { background: #7c1ad3; color: white;}
+        
+        .btn-circle {
+            width: 48px; height: 45px; border-radius: 50%;
+            background: var(--rescue-orange); color: white; border: none; margin: 0;
+            font-family: 'Roboto Mono', monospace; font-size: 1.6rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 3px 3px 0 var(--asphalt); padding: 0; flex-shrink: 0;
+        }
+        .btn-circle:hover { background: #d34b12; color:white; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .clipboard {
+            background: #fff; width: 600px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center; position: relative; transform: rotate(-1deg); border: 1px solid #ddd;
+        }
+        .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
+        .math-section { background: #f8f9fa; border-left: 5px solid var(--math-purple); padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5; }
+        .math-section h3 { margin-top: 0; color: var(--math-purple); }
+        .stamp-result {
+            font-size: 3rem; font-weight: bold; font-family: 'Courier New', Courier, monospace;
+            transform: rotate(-15deg); border: 5px solid; padding: 10px 20px; border-radius: 10px;
+            display: inline-block; margin: 20px 0; color: var(--success-green); border-color: var(--success-green);
+        }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <div class="notebook-panel" id="leftPanel">
+            <h1>Dispatch Desk</h1>
+            <div class="stat-row"><span>Saved Hikers:</span></div>
+            <div class="stat-row">
+                <span class="cost-display" id="savedCount">0</span>
+                <span style="font-size: 1.5rem; color:#888;">/ <span id="totalCount">0</span></span>
+            </div>
+            
+            <hr style="border: 1px dashed #ccc; margin: 15px 0;">
+            <button class="btn-check" onclick="game.checkWin()">VERIFY MANIFEST</button>
+            <button onclick="game.reset()">Clear Assignments</button>
+            <button onclick="game.newLevel()">New Region</button>
+            
+            <div class="bottom-controls">
+                <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+                <button class="btn-circle" onclick="game.showSolution()" title="Calculate Optimal">i</button>
+            </div>
+        </div>
+        
+        <div class="notebook-panel intel-box" id="rightPanel">
+            <h1>S.O.S Protocol</h1>
+            <ul class="intel-list">
+                <li><b>Mission:</b> Rescue all stranded hikers.</li>
+                <li><b>Method:</b> Click a <span style="color:var(--heli-blue); font-weight:bold;">Helipad</span> (Left), then click a <span style="color:var(--rescue-orange); font-weight:bold;">Hiker</span> (Right) to dispatch.</li>
+                <li><b>Rules:</b>
+                    <ol style="padding-left:20px; margin-top:5px;">
+                        <li>Helicopters only have fuel to reach specific hikers (shown by dashed lines).</li>
+                        <li>1 Helicopter can carry exactly 1 Hiker.</li>
+                        <li>Re-assign flights if you run into a bottleneck!</li>
+                    </ol>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="clipboard">
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0; font-family:'Architects Daughter';">Mission Complete</h2>
+            <div id="stamp" class="stamp-result">ALL SAFE</div>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px; font-family:'Architects Daughter';">Excellent logistics, Commander.</p>
+            <button class="btn-check" onclick="game.newLevel()">Next Sector</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="mathModal">
+        <div class="clipboard math-mode">
+            <h2 style="font-family:'Architects Daughter'; text-align:center;">Maximum Bipartite Matching</h2>
+            <div class="math-section">
+                <h3>Problem Statement</h3>
+                <p>A <b>Bipartite Graph</b> is a network divided into two distinct sets (e.g., Helicopters and Hikers) where connections only go from one set to the other, never within the same set.</p>
+                <p>A <b>Matching</b> is a subset of edges where no two edges share the same node. The goal is to find a matching with the largest possible number of edges.</p>
+            </div>
+            <div class="math-section">
+                <h3>Real World Applications</h3>
+                <p>This exact algorithm (often solved via the <i>Hopcroft-Karp algorithm</i>) is what powers the modern world! It is used by:</p>
+                <ul>
+                    <li><b>Uber / Lyft:</b> Matching available drivers to waiting riders.</li>
+                    <li><b>Medical Boards:</b> Matching graduating doctors to hospital residencies.</li>
+                    <li><b>Dating Apps:</b> Matching compatible users based on shared preferences.</li>
+                </ul>
+                <p style="text-align:center; font-weight:bold; font-size: 1.2rem; margin-top:15px;">Max possible rescues in this sector: <span id="mathOptVal" style="color:var(--math-purple)">0</span></p>
+            </div>
+            <button onclick="document.getElementById('mathModal').style.display='none'" style="width:100%; border-color:var(--asphalt);">Return to Map</button>
+        </div>
+    </div>
+
+<script>
+class BipartiteGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        this.leftNodes = []; // Helicopters
+        this.rightNodes = []; // Hikers
+        this.edges = []; // Potential routes
+        
+        this.selectedLeft = null; // Currently clicked Helipad
+        this.hoverNode = null;
+        this.maxMatchSize = 0;
+        
+        window.addEventListener('resize', () => this.resize());
+        this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
+
+        this.resize();
+        setTimeout(() => this.newLevel(), 50);
+        this.loop();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    newLevel() {
+        this.leftNodes = [];
+        this.rightNodes = [];
+        this.edges = [];
+        this.selectedLeft = null;
+        document.getElementById('modal').style.display = 'none';
+        
+        const count = 6; 
+        
+        const leftPanel = document.getElementById('leftPanel').getBoundingClientRect();
+        const rightPanel = document.getElementById('rightPanel').getBoundingClientRect();
+
+        let safeXMin = leftPanel.right + 100;
+        let safeXMax = rightPanel.left - 100;
+        let safeYMin = 80;
+        let safeYMax = this.canvas.height - 80;
+
+        if(safeXMax <= safeXMin) { safeXMin = 50; safeXMax = this.canvas.width - 50; }
+
+        const colLeft = safeXMin + (safeXMax - safeXMin) * 0.2;
+        const colRight = safeXMin + (safeXMax - safeXMin) * 0.8;
+        const yStep = (safeYMax - safeYMin) / (count - 1);
+
+        // Generate Nodes
+        for(let i=0; i<count; i++) {
+            let yNoiseL = (Math.random() - 0.5) * 30;
+            let yNoiseR = (Math.random() - 0.5) * 30;
+            
+            this.leftNodes.push({ id: 'L'+i, idx: i, x: colLeft, y: safeYMin + i*yStep + yNoiseL, type: 'heli', match: null });
+            this.rightNodes.push({ id: 'R'+i, idx: i, x: colRight, y: safeYMin + i*yStep + yNoiseR, type: 'hiker', match: null });
+        }
+
+        // Generate Edges ensuring a perfect matching exists, plus random noise
+        let rIndices = Array.from({length:count}, (_,i)=>i);
+        rIndices.sort(() => Math.random() - 0.5);
+        
+        // Add Guaranteed perfect matching
+        for(let i=0; i<count; i++) {
+            this.edges.push({ u: this.leftNodes[i], v: this.rightNodes[rIndices[i]] });
+        }
+        
+        // Add random confounding edges
+        for(let i=0; i<count*1.5; i++) {
+            let u = this.leftNodes[Math.floor(Math.random()*count)];
+            let v = this.rightNodes[Math.floor(Math.random()*count)];
+            // Prevent duplicates
+            if(!this.edges.some(e => e.u.id === u.id && e.v.id === v.id)) {
+                this.edges.push({ u, v });
+            }
+        }
+
+        this.maxMatchSize = count; // By design
+        document.getElementById('totalCount').innerText = count;
+        this.updateUI();
+    }
+
+    handleHover(e) {
+        const mx = e.clientX, my = e.clientY;
+        this.hoverNode = null;
+        
+        const allNodes = [...this.leftNodes, ...this.rightNodes];
+        for(let n of allNodes) {
+            if(Math.hypot(n.x - mx, n.y - my) < 35) {
+                this.hoverNode = n; break;
+            }
+        }
+        this.canvas.style.cursor = this.hoverNode ? 'pointer' : 'default';
+    }
+
+    handleClick(e) {
+        if(!this.hoverNode) {
+            this.selectedLeft = null;
+            return;
+        }
+
+        if(this.hoverNode.type === 'heli') {
+            // Select Heli or Deselect if already selected
+            if(this.selectedLeft === this.hoverNode) {
+                this.selectedLeft = null;
+            } else {
+                this.selectedLeft = this.hoverNode;
+            }
+        } 
+        else if (this.hoverNode.type === 'hiker' && this.selectedLeft) {
+            // Check if edge exists
+            const edgeExists = this.edges.some(e => e.u.id === this.selectedLeft.id && e.v.id === this.hoverNode.id);
+            if(edgeExists) {
+                // If either has a match, break the old ties
+                if(this.selectedLeft.match) this.selectedLeft.match.match = null;
+                if(this.hoverNode.match) this.hoverNode.match.match = null;
+
+                // Create new Match
+                this.selectedLeft.match = this.hoverNode;
+                this.hoverNode.match = this.selectedLeft;
+                
+                this.selectedLeft = null; // Auto deselect after assigning
+                this.updateUI();
+            }
+        }
+    }
+
+    reset() {
+        this.leftNodes.forEach(n => n.match = null);
+        this.rightNodes.forEach(n => n.match = null);
+        this.selectedLeft = null;
+        this.updateUI();
+    }
+
+    // Automates the perfect matching (since we know the edges were built with one)
+    showSolution() {
+        this.reset();
+        
+        // Quick greedy + augmenting path simulation visually
+        // Because of JS complexity, we'll just run Hopcroft-Karp logic behind the scenes to assign `match`
+        let uMatch = new Array(this.leftNodes.length).fill(-1);
+        let vMatch = new Array(this.rightNodes.length).fill(-1);
+        
+        let adj = Array.from({length: this.leftNodes.length}, () => []);
+        this.edges.forEach(e => { adj[e.u.idx].push(e.v.idx); });
+
+        const dfs = (u, visited) => {
+            for(let v of adj[u]) {
+                if(!visited[v]) {
+                    visited[v] = true;
+                    if(vMatch[v] < 0 || dfs(vMatch[v], visited)) {
+                        uMatch[u] = v;
+                        vMatch[v] = u;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        for(let i=0; i<this.leftNodes.length; i++) {
+            let visited = new Array(this.rightNodes.length).fill(false);
+            dfs(i, visited);
+        }
+
+        // Apply results to objects
+        for(let i=0; i<this.leftNodes.length; i++) {
+            if(uMatch[i] !== -1) {
+                this.leftNodes[i].match = this.rightNodes[uMatch[i]];
+                this.rightNodes[uMatch[i]].match = this.leftNodes[i];
+            }
+        }
+        this.updateUI();
+        setTimeout(() => this.checkWin(), 500);
+    }
+
+    updateUI() {
+        let saved = this.rightNodes.filter(n => n.match !== null).length;
+        const counter = document.getElementById('savedCount');
+        counter.innerText = saved;
+        if(saved === this.maxMatchSize) counter.classList.add('success');
+        else counter.classList.remove('success');
+    }
+
+    openMathModal() {
+        document.getElementById('mathOptVal').innerText = this.maxMatchSize;
+        document.getElementById('mathModal').style.display = 'flex';
+    }
+
+    checkWin() {
+        let saved = this.rightNodes.filter(n => n.match !== null).length;
+        const stamp = document.getElementById('stamp');
+        const title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
+
+        if(saved < this.maxMatchSize) {
+            stamp.innerText = "S.O.S ACTIVE"; stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
+            title.innerText = "Hikers Left Behind!";
+            msg.innerText = `You only rescued ${saved} out of ${this.maxMatchSize} hikers. Try changing your assignments!`;
+        } else {
+            stamp.innerText = "ALL CLEAR"; stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
+            title.innerText = "Mission Complete";
+            msg.innerText = "Perfect logistics! Every helicopter was assigned perfectly.";
+        }
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    loop() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Potential Edges (Dashed)
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = "rgba(60, 64, 67, 0.2)"; // faint gray
+        this.ctx.setLineDash([8, 8]);
+        this.edges.forEach(e => {
+            // Only draw if neither node is matched to each other
+            if(e.u.match !== e.v) {
+                // Highlight edges for the selected Heli
+                if(e.u === this.selectedLeft || e.u === this.hoverNode || e.v === this.hoverNode) {
+                    this.ctx.strokeStyle = "rgba(26, 115, 232, 0.5)";
+                    this.ctx.lineWidth = 4;
+                } else {
+                    this.ctx.strokeStyle = "rgba(60, 64, 67, 0.2)";
+                    this.ctx.lineWidth = 2;
+                }
+                this.ctx.beginPath();
+                this.ctx.moveTo(e.u.x, e.u.y);
+                this.ctx.lineTo(e.v.x, e.v.y);
+                this.ctx.stroke();
+            }
+        });
+        this.ctx.setLineDash([]);
+
+        // Draw Matched Edges (Solid Green)
+        this.ctx.lineWidth = 8;
+        this.ctx.strokeStyle = "#34a853";
+        this.leftNodes.forEach(n => {
+            if(n.match) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(n.x, n.y);
+                this.ctx.lineTo(n.match.x, n.match.y);
+                this.ctx.stroke();
+            }
+        });
+
+        // Draw Nodes
+        const allNodes = [...this.leftNodes, ...this.rightNodes];
+        allNodes.forEach(n => {
+            const isHover = (n === this.hoverNode);
+            const isSelected = (n === this.selectedLeft);
+            const isMatched = (n.match !== null);
+
+            this.ctx.save();
+            this.ctx.translate(n.x, n.y);
+            if(isHover || isSelected) this.ctx.scale(1.15, 1.15);
+
+            if(n.type === 'heli') {
+                // Helipad Theme
+                this.ctx.beginPath(); this.ctx.arc(0, 0, 25, 0, Math.PI*2);
+                this.ctx.fillStyle = isSelected ? "#fff" : (isMatched ? "#c8e6c9" : "#e8f0fe");
+                this.ctx.fill();
+                this.ctx.strokeStyle = isSelected ? "#1a73e8" : "#3c4043";
+                this.ctx.lineWidth = isSelected ? 4 : 3;
+                this.ctx.stroke();
+                
+                // Draw "H"
+                this.ctx.fillStyle = isMatched ? "#2e7d32" : "#1a73e8";
+                this.ctx.font = "bold 24px Arial";
+                this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
+                this.ctx.fillText("H", 0, 2);
+            } else {
+                // Hiker Theme
+                this.ctx.beginPath(); this.ctx.arc(0, 0, 20, 0, Math.PI*2);
+                this.ctx.fillStyle = isMatched ? "#34a853" : "#fce8e6";
+                this.ctx.fill();
+                this.ctx.strokeStyle = "#3c4043";
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+
+                if(!isMatched) {
+                    // Draw little person stick figure
+                    this.ctx.strokeStyle = "#ea4335"; this.ctx.lineWidth = 3;
+                    this.ctx.beginPath(); this.ctx.arc(0, -6, 4, 0, Math.PI*2); this.ctx.stroke(); // head
+                    this.ctx.beginPath(); this.ctx.moveTo(0, -2); this.ctx.lineTo(0, 8); // body
+                    this.ctx.moveTo(-8, 2); this.ctx.lineTo(8, -2); // arms waving
+                    this.ctx.moveTo(0, 8); this.ctx.lineTo(-5, 15); // leg
+                    this.ctx.moveTo(0, 8); this.ctx.lineTo(5, 15); // leg
+                    this.ctx.stroke();
+                } else {
+                    // Draw Checkmark
+                    this.ctx.strokeStyle = "#fff"; this.ctx.lineWidth = 4;
+                    this.ctx.beginPath(); this.ctx.moveTo(-6, 0); this.ctx.lineTo(-2, 6); this.ctx.lineTo(8, -6); this.ctx.stroke();
+                }
+            }
+            this.ctx.restore();
+        });
+
+        requestAnimationFrame(() => this.loop());
+    }
+}
+const game = new BipartiteGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON TRACE: Integrity Check</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-orange: #ff9d00;
+            --neon-green: #00ff9d;
+            --glass: rgba(10, 10, 10, 0.9);
+            --text-color: #fff;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text-color);
+            user-select: none;
+        }
+
+        /* --- UI LAYOUT --- */
+        .hud-top {
+            position: absolute; top: 20px; left: 20px; pointer-events: none;
+        }
+        h1 {
+            margin: 0; font-size: 2.5rem; letter-spacing: 6px;
+            text-shadow: 0 0 20px var(--neon-blue); color: var(--neon-blue);
+            font-weight: 900;
+        }
+        .subtitle { font-size: 1rem; opacity: 0.8; letter-spacing: 2px; margin-top: 5px; }
+
+        .level-badge {
+            position: absolute; top: 20px; right: 20px;
+            font-size: 2rem; font-weight: bold;
+            text-shadow: 0 0 15px var(--neon-pink); color: var(--neon-pink);
+        }
+
+        /* MATH PANEL (Top Right) */
+        .math-panel {
+            position: absolute; top: 80px; right: 20px; width: 300px;
+            background: var(--glass); border: 1px solid #333;
+            padding: 20px; border-radius: 8px; display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); pointer-events: auto;
+        }
+        .math-title { color: var(--neon-orange); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; font-size: 1.1rem; }
+        .math-text { font-size: 0.85rem; line-height: 1.5; color: #ccc; margin-bottom: 15px; }
+        .node-counter { font-weight: bold; font-size: 1rem; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+
+        /* CONTROLS (Bottom) */
+        .controls {
+            position: absolute; bottom: 40px; width: 100%;
+            display: flex; justify-content: center; gap: 30px; pointer-events: auto;
+        }
+
+        button {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 15px 40px;
+            font-family: inherit; font-size: 1.2rem; font-weight: bold;
+            text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-green), inset 0 0 10px rgba(0, 255, 157, 0.1);
+            transition: all 0.2s;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        button:hover { background: var(--neon-green); color: black; box-shadow: 0 0 30px var(--neon-green); }
+        
+        .btn-impossible {
+            border-color: var(--neon-orange); color: var(--neon-orange);
+            box-shadow: 0 0 10px var(--neon-orange), inset 0 0 10px rgba(255, 157, 0, 0.1);
+        }
+        .btn-impossible:hover { background: var(--neon-orange); color: black; box-shadow: 0 0 30px var(--neon-orange); }
+
+        .btn-math {
+            position: absolute; bottom: 40px; right: 40px;
+            width: 50px; height: 50px; padding: 0; border-radius: 50%;
+            clip-path: none; font-size: 1.5rem; border-color: #fff; color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        /* STATUS OVERLAY */
+        #status-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .status-title { font-size: 4rem; color: #fff; text-shadow: 0 0 40px var(--neon-blue); margin-bottom: 20px; }
+        .status-desc { font-size: 1.2rem; color: #ccc; max-width: 600px; text-align: center; margin-bottom: 40px; line-height: 1.6; }
+
+        canvas { display: block; cursor: crosshair; }
+    </style>
+</head>
+<body>
+
+    <div class="hud-top">
+        <h1>NEON TRACE</h1>
+        <div class="subtitle" id="level-name">SEQUENCE: INITIALIZED</div>
+    </div>
+
+    <div class="level-badge" id="level-num">LVL 01</div>
+
+    <div class="math-panel" id="math-panel">
+        <div class="math-title">GRAPH ANALYSIS</div>
+        <div class="math-text">
+            <strong>The Law of Odd Nodes:</strong><br>
+            A path is possible IF AND ONLY IF the count of Odd Nodes is <strong>0</strong> or <strong>2</strong>.
+            <br><br>
+            <span style="color:var(--neon-green)">● Green Nodes</span> = Even Degree (Safe)<br>
+            <span style="color:var(--neon-orange)">● Orange Nodes</span> = Odd Degree (Start/End)
+        </div>
+        <div class="node-counter">
+            ODD NODES: <span id="odd-count" style="color:var(--neon-blue); font-size:1.5rem;">0</span>
+        </div>
+    </div>
+
+    <div id="status-overlay">
+        <div class="status-title" id="status-title">COMPLETE</div>
+        <div class="status-desc" id="status-desc">Sequence Verified.</div>
+        <button onclick="game.nextLevel()">NEXT LEVEL >></button>
+    </div>
+
+    <div class="controls">
+        <button class="btn-impossible" onclick="game.reportImpossible()">⚠ IMPOSSIBLE</button>
+        <button onclick="game.resetLevel()">RESET</button>
+    </div>
+    
+    <button class="btn-math" onclick="game.toggleMath()">?</button>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+class NeonGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // --- PRECISE LEVEL DATA ---
+        this.levels = [
+            {
+                name: "THE HOUSE",
+                nodes: [
+                    {id: 0, x: 30, y: 40}, // Top Left
+                    {id: 1, x: 70, y: 40}, // Top Right
+                    {id: 2, x: 30, y: 80}, // Bot Left
+                    {id: 3, x: 70, y: 80}, // Bot Right
+                    {id: 4, x: 50, y: 20}  // Roof Peak
+                ],
+                edges: [
+                    [0,1], [1,3], [3,2], [2,0], // Box
+                    [0,4], [1,4], // Roof
+                    [0,3], [1,2]  // X Cross
+                ],
+                // Degrees: 
+                // 0(TL): 4 (TR, BL, Peak, BR) -> Even
+                // 1(TR): 4 (TL, BR, Peak, BL) -> Even
+                // 2(BL): 3 (TL, BR, TR) -> ODD
+                // 3(BR): 3 (TR, BL, TL) -> ODD
+                // 4(Peak): 2 (TL, TR) -> Even
+                // Odd Nodes: 2. POSSIBLE.
+                startNode: 2 
+            },
+            {
+                name: "THE ENVELOPE",
+                nodes: [
+                    {id: 0, x: 20, y: 30}, // TL
+                    {id: 1, x: 80, y: 30}, // TR
+                    {id: 2, x: 20, y: 70}, // BL
+                    {id: 3, x: 80, y: 70}, // BR
+                    {id: 4, x: 50, y: 50}  // Center
+                ],
+                edges: [
+                    [0,1], [1,3], [3,2], [2,0], // Outer Box
+                    [0,4], [1,4], [2,4], [3,4]  // X to center
+                ],
+                // Corners are degree 3. Center is degree 4.
+                // Odd Nodes: 4. IMPOSSIBLE.
+                startNode: 0
+            },
+            {
+                name: "THE SATELLITE",
+                nodes: [
+                    {id: 0, x: 30, y: 30}, // Box TL
+                    {id: 1, x: 70, y: 30}, // Box TR
+                    {id: 2, x: 70, y: 70}, // Box BR
+                    {id: 3, x: 30, y: 70}, // Box BL
+                    {id: 4, x: 10, y: 50}, // Left Wing Tip
+                    {id: 5, x: 90, y: 50}  // Right Wing Tip
+                ],
+                edges: [
+                    [0,1], [1,2], [2,3], [3,0], // Box
+                    [0,4], [3,4], // Left Wing
+                    [1,5], [2,5], // Right Wing
+                    [0,2]         // **THE DIAGONAL FIX**
+                ],
+                // Degrees:
+                // 0 (TL): TR, BL, LT, BR(diag) -> 4 (Even)
+                // 1 (TR): TL, BR, RT -> 3 (Odd)
+                // 2 (BR): TR, BL, RT, TL(diag) -> 4 (Even)
+                // 3 (BL): BR, TL, LT -> 3 (Odd)
+                // 4 (LT): TL, BL -> 2 (Even)
+                // 5 (RT): TR, BR -> 2 (Even)
+                // Odd Nodes: 2 (TR and BL). POSSIBLE.
+                startNode: 1 
+            },
+            {
+                name: "THE GEM", 
+                nodes: [
+                    {id: 0, x: 50, y: 10}, // Top
+                    {id: 1, x: 90, y: 50}, // Right
+                    {id: 2, x: 50, y: 90}, // Bottom
+                    {id: 3, x: 10, y: 50}, // Left
+                    {id: 4, x: 50, y: 50}  // Center
+                ],
+                edges: [
+                    [0,1], [1,2], [2,3], [3,0], // Outer Diamond
+                    [0,4], [1,4], [2,4], [3,4]  // Inner Cross
+                ],
+                // Outer nodes degree 3. Center degree 4.
+                // Odd Nodes: 4. IMPOSSIBLE.
+                startNode: 0
+            }
+        ];
+
+        this.currentLevelIdx = 0;
+        this.nodes = [];
+        this.edges = [];
+        this.visitedEdgeCount = 0;
+        this.currentNode = -1;
+        this.isDragging = false;
+        this.mousePos = {x:0, y:0};
+        this.showMath = false;
+        this.revealOddNodes = false;
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        // Input
+        this.canvas.addEventListener('mousedown', e => this.handleStart(e));
+        this.canvas.addEventListener('mousemove', e => this.handleMove(e));
+        this.canvas.addEventListener('mouseup', e => this.handleEnd(e));
+        this.canvas.addEventListener('touchstart', e => { e.preventDefault(); this.handleStart(e.touches[0]); }, {passive:false});
+        this.canvas.addEventListener('touchmove', e => { e.preventDefault(); this.handleMove(e.touches[0]); }, {passive:false});
+        this.canvas.addEventListener('touchend', e => { e.preventDefault(); this.handleEnd(e); }, {passive:false});
+
+        this.loadLevel(0);
+        this.loop();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.scaleLevel();
+    }
+
+    scaleLevel() {
+        const data = this.levels[this.currentLevelIdx];
+        const padding = 150; 
+        const availableW = this.canvas.width - padding;
+        const availableH = this.canvas.height - padding;
+        const scale = Math.min(availableW, availableH) / 100;
+        const offsetX = (this.canvas.width - (100 * scale)) / 2;
+        const offsetY = (this.canvas.height - (100 * scale)) / 2;
+
+        this.nodes = data.nodes.map(n => ({
+            id: n.id,
+            x: offsetX + n.x * scale,
+            y: offsetY + n.y * scale
+        }));
+    }
+
+    loadLevel(idx) {
+        this.currentLevelIdx = idx;
+        const data = this.levels[idx];
+        
+        document.getElementById('level-num').innerText = `LVL 0${idx+1}`;
+        document.getElementById('level-name').innerText = `SEQUENCE: ${data.name}`;
+        document.getElementById('status-overlay').style.display = 'none';
+        
+        this.scaleLevel();
+        
+        // Map edges using indices
+        this.edges = data.edges.map(e => ({u: e[0], v: e[1], visited: false}));
+        
+        this.visitedEdgeCount = 0;
+        this.currentNode = -1; 
+        this.isDragging = false;
+        this.revealOddNodes = false;
+        
+        this.calculateMathStats();
+    }
+
+    calculateMathStats() {
+        // Dynamic Degree Calculation
+        const degrees = new Array(this.nodes.length).fill(0);
+        this.edges.forEach(e => {
+            degrees[e.u]++;
+            degrees[e.v]++;
+        });
+        
+        const oddCount = degrees.filter(d => d % 2 !== 0).length;
+        this.isImpossibleMath = (oddCount !== 0 && oddCount !== 2); // Store strict math truth
+
+        document.getElementById('odd-count').innerText = oddCount;
+        document.getElementById('odd-count').style.color = this.isImpossibleMath ? "var(--neon-orange)" : "var(--neon-green)";
+        
+        // Tag nodes
+        this.nodes.forEach((n, i) => {
+            n.isOdd = degrees[i] % 2 !== 0;
+        });
+    }
+
+    resetLevel() { this.loadLevel(this.currentLevelIdx); }
+    nextLevel() { this.loadLevel((this.currentLevelIdx + 1) % this.levels.length); }
+    toggleMath() { this.showMath = !this.showMath; document.getElementById('math-panel').style.display = this.showMath ? 'block' : 'none'; }
+
+    reportImpossible() {
+        const overlay = document.getElementById('status-overlay');
+        const title = document.getElementById('status-title');
+        const desc = document.getElementById('status-desc');
+        const btn = overlay.querySelector('button');
+
+        overlay.style.display = 'flex';
+
+        if(this.isImpossibleMath) {
+            title.innerText = "VERIFIED";
+            title.style.color = "var(--neon-green)";
+            title.style.textShadow = "0 0 40px var(--neon-green)";
+            desc.innerHTML = `Correct. This graph has <strong style="color:var(--neon-orange)">${document.getElementById('odd-count').innerText} Odd Nodes</strong>.<br>It cannot be traced continuously.`;
+            this.revealOddNodes = true; 
+            btn.innerText = "NEXT LEVEL >>";
+            btn.onclick = () => { this.nextLevel(); };
+        } else {
+            title.innerText = "INCORRECT";
+            title.style.color = "var(--neon-orange)";
+            title.style.textShadow = "0 0 40px var(--neon-orange)";
+            desc.innerHTML = `This graph is <strong>POSSIBLE</strong>.<br>It has ${document.getElementById('odd-count').innerText} Odd Nodes. Look for a path starting at an odd node.`;
+            btn.innerText = "TRY AGAIN";
+            btn.onclick = () => { overlay.style.display = 'none'; };
+        }
+    }
+
+    // --- INPUT ---
+    getMousePos(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    dist(p1, p2) { return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2)); }
+
+    handleStart(e) {
+        const pos = this.getMousePos(e);
+        this.mousePos = pos;
+        if(this.currentNode === -1) {
+            this.nodes.forEach((n, i) => { if(this.dist(pos, n) < 30) { this.currentNode = i; this.isDragging = true; } });
+        } else {
+            if(this.dist(pos, this.nodes[this.currentNode]) < 30) this.isDragging = true;
+        }
+    }
+
+    handleMove(e) {
+        const pos = this.getMousePos(e);
+        this.mousePos = pos;
+        if(!this.isDragging || this.currentNode === -1) return;
+
+        this.nodes.forEach((n, i) => {
+            if(i === this.currentNode) return;
+            if(this.dist(pos, n) < 30) {
+                const edgeIdx = this.edges.findIndex(e => (e.u === this.currentNode && e.v === i) || (e.u === i && e.v === this.currentNode));
+                if(edgeIdx !== -1 && !this.edges[edgeIdx].visited) {
+                    this.edges[edgeIdx].visited = true;
+                    this.currentNode = i;
+                    this.visitedEdgeCount++;
+                    this.checkWin();
+                    if(navigator.vibrate) navigator.vibrate(15);
+                }
+            }
+        });
+    }
+    handleEnd(e) { this.isDragging = false; }
+
+    checkWin() {
+        if(this.visitedEdgeCount === this.edges.length) {
+            const overlay = document.getElementById('status-overlay');
+            const title = document.getElementById('status-title');
+            const desc = document.getElementById('status-desc');
+            const btn = overlay.querySelector('button');
+            title.innerText = "COMPLETE"; title.style.color = "var(--neon-blue)";
+            desc.innerText = "Sequence Verified. System Online.";
+            btn.innerText = "NEXT LEVEL >>";
+            btn.onclick = () => { this.nextLevel(); };
+            overlay.style.display = 'flex';
+        }
+    }
+
+    draw() {
+        this.ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-color');
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Edges
+        this.edges.forEach(e => {
+            const start = this.nodes[e.u]; const end = this.nodes[e.v];
+            this.ctx.lineCap = "round"; this.ctx.beginPath();
+            this.ctx.moveTo(start.x, start.y); this.ctx.lineTo(end.x, end.y);
+            
+            if(e.visited) {
+                this.ctx.lineWidth = 10; this.ctx.strokeStyle = "rgba(0, 243, 255, 0.2)"; 
+                this.ctx.shadowBlur = 20; this.ctx.shadowColor = "var(--neon-blue)";
+                this.ctx.stroke();
+                this.ctx.lineWidth = 4; this.ctx.strokeStyle = "#fff";
+                this.ctx.shadowBlur = 0; this.ctx.stroke();
+            } else {
+                this.ctx.lineWidth = 6; this.ctx.strokeStyle = "#222";
+                this.ctx.shadowBlur = 0; this.ctx.stroke();
+            }
+        });
+
+        // Drag Line
+        if(this.isDragging && this.currentNode !== -1) {
+            const start = this.nodes[this.currentNode];
+            this.ctx.beginPath(); this.ctx.moveTo(start.x, start.y); this.ctx.lineTo(this.mousePos.x, this.mousePos.y);
+            this.ctx.lineWidth = 2; this.ctx.strokeStyle = "var(--neon-green)";
+            this.ctx.setLineDash([5, 5]); this.ctx.stroke(); this.ctx.setLineDash([]);
+        }
+
+        // Nodes
+        this.nodes.forEach((n, i) => {
+            this.ctx.beginPath();
+            this.ctx.arc(n.x, n.y, 8, 0, Math.PI*2);
+            if(i === this.currentNode) {
+                this.ctx.fillStyle = "#fff"; this.ctx.shadowBlur = 20; this.ctx.shadowColor = "#fff";
+            } else {
+                this.ctx.fillStyle = "#444"; this.ctx.shadowBlur = 0;
+                // REVEAL LOGIC
+                if(this.showMath || this.revealOddNodes) {
+                    if(n.isOdd) {
+                        this.ctx.fillStyle = "var(--neon-orange)";
+                        this.ctx.shadowBlur = 10; this.ctx.shadowColor = "var(--neon-orange)";
+                    } else if (this.showMath) {
+                        this.ctx.fillStyle = "var(--neon-green)";
+                    }
+                }
+            }
+            this.ctx.fill();
+        });
+    }
+
+    loop() { this.draw(); requestAnimationFrame(() => this.loop()); }
+}
+const game = new NeonGame();
+</script>
+</body>
+</html>

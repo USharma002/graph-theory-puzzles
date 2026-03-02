@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3x3 Knight Octagon</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f472b6;
+            --base-green: #4ade80;
+            --base-red: #f87171;
+            --text-main: #f1f5f9;
+            --cell-dark: #1e293b;
+            --cell-light: #334155;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-deep);
+            font-family: 'Segoe UI', sans-serif;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-cyan); }
+        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 5px; }
+
+        /* CONTAINER */
+        .container {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        /* PANELS */
+        .view-panel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+
+        .label {
+            position: absolute; top: 20px; left: 20px;
+            font-size: 0.7rem; font-weight: bold; color: #64748b;
+            text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
+        }
+
+        /* 3x3 BOARD */
+        #board-stage {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 4px;
+            background: #475569;
+            border: 4px solid #475569;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            width: 100px; height: 100px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3.5rem; cursor: pointer; position: relative;
+            user-select: none;
+        }
+        .cell.light { background-color: var(--cell-light); }
+        .cell.dark { background-color: var(--cell-dark); }
+        
+        /* Board Highlights */
+        .cell.selected { background-color: rgba(244, 114, 182, 0.3) !important; box-shadow: inset 0 0 0 4px var(--accent-pink); }
+        .cell.valid-move { background-color: rgba(34, 211, 238, 0.2) !important; box-shadow: inset 0 0 15px var(--accent-cyan); cursor: pointer; }
+        .cell.valid-move::after { content: ""; width: 20px; height: 20px; background: var(--accent-cyan); border-radius: 50%; opacity: 0.8; }
+        .cell.hovered-node { border: 4px solid var(--accent-cyan); z-index: 10; }
+
+        /* GRAPH CANVAS */
+        #graphCanvas { width: 100%; height: 100%; cursor: pointer; }
+
+        /* CONTROLS */
+        .controls {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px;
+            background: rgba(15, 23, 42, 0.9); padding: 10px 20px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        button {
+            background: var(--accent-cyan); color: #0f172a; border: none; padding: 12px 24px;
+            border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+        }
+        button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+        /* WIN MODAL */
+        #win-modal {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .win-text { font-size: 4rem; color: var(--accent-cyan); font-weight: 900; margin-bottom: 20px; text-shadow: 0 0 30px var(--accent-cyan); }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Knight Cycle (3x3)</h1>
+        <div class="subtitle">White goes to <span style="color:var(--base-red)">RED</span> nodes. Black goes to <span style="color:var(--base-green)">GREEN</span> nodes.</div>
+    </div>
+
+    <div class="container">
+        <div class="view-panel">
+            <div class="label">Spatial (Board)</div>
+            <div id="board-stage"></div>
+        </div>
+
+        <div class="view-panel">
+            <div class="label">Topological (Octagon)</div>
+            <canvas id="graphCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="game.reset()">Reset Pieces</button>
+    </div>
+
+    <div id="win-modal">
+        <div class="win-text">SOLVED</div>
+        <button onclick="game.reset()">Play Again</button>
+    </div>
+
+<script>
+class KnightGame {
+    constructor() {
+        this.boardEl = document.getElementById('board-stage');
+        this.canvas = document.getElementById('graphCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        this.size = 3; 
+        this.cells = [];
+        this.grid = new Array(9).fill(null);
+        
+        // Game State
+        this.selectedIdx = -1;
+        this.validMoves = [];
+        this.nodes = [];
+        this.edges = [];
+        this.hoveredNodeIdx = -1;
+
+        // Colors
+        this.colors = {
+            green: '#4ade80',
+            red: '#f87171',
+            cyan: '#22d3ee',
+            pink: '#f472b6',
+            dark: '#1e293b',
+            light: '#334155'
+        };
+
+        // Hardcoded Home Bases
+        this.whiteStart = [0, 2]; // Top corners
+        this.blackStart = [6, 8]; // Bottom corners
+
+        this.init();
+        
+        window.addEventListener('resize', () => this.resizeCanvas());
+        
+        // Canvas Interaction
+        this.canvas.addEventListener('mousedown', (e) => this.handleCanvasClick(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
+        
+        this.resizeCanvas();
+        this.loop();
+    }
+
+    init() {
+        this.createGraphStructure(); 
+        this.createBoard();          
+        this.resetPieces();          
+        this.initGraphNodes();       
+        document.getElementById('win-modal').style.display = 'none';
+    }
+
+    reset() {
+        this.resetPieces();
+        this.selectedIdx = -1;
+        this.validMoves = [];
+        this.updateVisuals();
+        document.getElementById('win-modal').style.display = 'none';
+    }
+
+    // --- LOGIC ---
+
+    createGraphStructure() {
+        this.edges = [];
+        for(let i=0; i<9; i++) {
+            const x = i % 3;
+            const y = Math.floor(i / 3);
+            const moves = [
+                {dx:1, dy:2}, {dx:1, dy:-2}, {dx:-1, dy:2}, {dx:-1, dy:-2},
+                {dx:2, dy:1}, {dx:2, dy:-1}, {dx:-2, dy:1}, {dx:-2, dy:-1}
+            ];
+
+            moves.forEach(m => {
+                const nx = x + m.dx;
+                const ny = y + m.dy;
+                if(nx >= 0 && nx < 3 && ny >= 0 && ny < 3) {
+                    const target = ny * 3 + nx;
+                    if(i < target) this.edges.push({source: i, target: target});
+                }
+            });
+        }
+    }
+
+    resetPieces() {
+        this.grid.fill(null);
+        this.grid[0] = 'W'; 
+        this.grid[2] = 'W';
+        this.grid[6] = 'B';
+        this.grid[8] = 'B';
+    }
+
+    getValidMoves(idx) {
+        const x = idx % 3;
+        const y = Math.floor(idx / 3);
+        const moves = [];
+        const jumps = [
+            {dx:1, dy:2}, {dx:1, dy:-2}, {dx:-1, dy:2}, {dx:-1, dy:-2},
+            {dx:2, dy:1}, {dx:2, dy:-1}, {dx:-2, dy:1}, {dx:-2, dy:-1}
+        ];
+
+        jumps.forEach(m => {
+            const nx = x + m.dx;
+            const ny = y + m.dy;
+            if(nx >= 0 && nx < 3 && ny >= 0 && ny < 3) {
+                const target = ny * 3 + nx;
+                if(this.grid[target] === null) moves.push(target);
+            }
+        });
+        return moves;
+    }
+
+    handleInput(idx) {
+        if(this.validMoves.includes(idx)) {
+            // Move
+            this.grid[idx] = this.grid[this.selectedIdx];
+            this.grid[this.selectedIdx] = null;
+            this.selectedIdx = -1;
+            this.validMoves = [];
+            this.checkWin();
+        } 
+        else if(this.grid[idx] !== null) {
+            // Select
+            this.selectedIdx = idx;
+            this.validMoves = this.getValidMoves(idx);
+        } 
+        else {
+            // Deselect
+            this.selectedIdx = -1;
+            this.validMoves = [];
+        }
+        this.updateVisuals();
+    }
+
+    // --- DOM BOARD ---
+
+    createBoard() {
+        this.boardEl.innerHTML = '';
+        this.cells = [];
+        for(let i=0; i<9; i++) {
+            const div = document.createElement('div');
+            const x = i % 3;
+            const y = Math.floor(i / 3);
+            
+            div.className = `cell ${(x + y) % 2 === 0 ? 'light' : 'dark'}`;
+            div.onclick = () => this.handleInput(i);
+            
+            // Sync Hover
+            div.onmouseenter = () => { this.hoveredNodeIdx = i; };
+            div.onmouseleave = () => { this.hoveredNodeIdx = -1; };
+
+            this.boardEl.appendChild(div);
+            this.cells.push(div);
+        }
+    }
+
+    updateVisuals() {
+        this.cells.forEach((cell, i) => {
+            cell.classList.remove('selected', 'valid-move', 'hovered-node');
+            cell.innerHTML = '';
+            
+            // Sync Hover from graph
+            if(i === this.hoveredNodeIdx) cell.classList.add('hovered-node');
+
+            // Render Pieces
+            if(this.grid[i] === 'W') cell.innerHTML = '<span style="color:#fff; text-shadow: 0 0 10px rgba(255,255,255,0.5)">♘</span>';
+            if(this.grid[i] === 'B') cell.innerHTML = '<span style="color:#0f172a; text-shadow: 0 0 2px #fff">♞</span>';
+            if(i === 4) cell.innerHTML = '<span style="font-size:1rem; opacity:0.3; color:#fff">X</span>'; 
+
+            if(i === this.selectedIdx) cell.classList.add('selected');
+            if(this.validMoves.includes(i)) cell.classList.add('valid-move');
+        });
+    }
+
+    checkWin() {
+        if(this.grid[0] === 'B' && this.grid[2] === 'B' &&
+           this.grid[6] === 'W' && this.grid[8] === 'W') {
+            setTimeout(() => {
+                document.getElementById('win-modal').style.display = 'flex';
+            }, 200);
+        }
+    }
+
+    // --- CANVAS GRAPH ---
+
+    resizeCanvas() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
+        this.initGraphNodes(); 
+    }
+
+    initGraphNodes() {
+        const cx = this.canvas.width / 2;
+        const cy = this.canvas.height / 2;
+        this.nodes = [];
+        
+        // THE CYCLE ORDER: 0 -> 5 -> 6 -> 1 -> 8 -> 3 -> 2 -> 7 -> 0
+        const cycleOrder = [0, 5, 6, 1, 8, 3, 2, 7];
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+
+        // Place nodes in an Octagon
+        cycleOrder.forEach((nodeId, i) => {
+            // Rotate so 0 is at top (-PI/2)
+            const angle = (i / 8) * Math.PI * 2 - (Math.PI / 2);
+            this.nodes.push({
+                id: nodeId,
+                x: cx + Math.cos(angle) * radius,
+                y: cy + Math.sin(angle) * radius,
+                radius: 30
+            });
+        });
+
+        // Place isolated node 4 in center
+        this.nodes.push({ id: 4, x: cx, y: cy, radius: 25 });
+        
+        // Sort nodes by ID so index lookup works later
+        this.nodes.sort((a,b) => a.id - b.id);
+    }
+
+    handleCanvasClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        this.nodes.forEach(n => {
+            const dist = Math.sqrt((x - n.x)**2 + (y - n.y)**2);
+            if(dist < n.radius + 5) {
+                this.handleInput(n.id);
+            }
+        });
+    }
+
+    handleCanvasHover(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        let found = -1;
+        this.nodes.forEach(n => {
+            const dist = Math.sqrt((x - n.x)**2 + (y - n.y)**2);
+            if(dist < n.radius) found = n.id;
+        });
+        
+        this.hoveredNodeIdx = found;
+        this.updateVisuals(); 
+    }
+
+    // --- RENDER LOOP ---
+
+    loop() {
+        this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
+        this.drawEdges();
+        this.drawNodes();
+        requestAnimationFrame(() => this.loop());
+    }
+
+    drawEdges() {
+        this.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        this.ctx.lineWidth = 2;
+        this.edges.forEach(e => {
+            const n1 = this.nodes.find(n => n.id === e.source);
+            const n2 = this.nodes.find(n => n.id === e.target);
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(n1.x, n1.y);
+            this.ctx.lineTo(n2.x, n2.y);
+            this.ctx.stroke();
+        });
+    }
+
+    drawNodes() {
+        this.nodes.forEach(n => {
+            const i = n.id;
+            const isHover = (i === this.hoveredNodeIdx);
+            const isSelected = (i === this.selectedIdx);
+            const isValid = this.validMoves.includes(i);
+            const piece = this.grid[i];
+
+            // --- COLOR LOGIC (FIXED) ---
+            let strokeColor = this.colors.light;
+            let strokeWidth = 2;
+
+            if (this.whiteStart.includes(i)) {
+                strokeColor = this.colors.green; // Hex code for green
+                strokeWidth = 4;
+            } else if (this.blackStart.includes(i)) {
+                strokeColor = this.colors.red;   // Hex code for red
+                strokeWidth = 4;
+            }
+
+            // Draw Base Circle
+            this.ctx.beginPath();
+            this.ctx.arc(n.x, n.y, n.radius, 0, Math.PI*2);
+            this.ctx.fillStyle = this.colors.dark;
+            this.ctx.fill();
+            
+            // Selection / Valid Overrides
+            if(isValid) {
+                this.ctx.fillStyle = "rgba(34, 211, 238, 0.3)";
+                this.ctx.strokeStyle = this.colors.cyan;
+                this.ctx.lineWidth = 2;
+            } else if(isSelected) {
+                this.ctx.fillStyle = "rgba(244, 114, 182, 0.3)";
+                this.ctx.strokeStyle = this.colors.pink;
+                this.ctx.lineWidth = 3;
+            } else if(isHover) {
+                this.ctx.fillStyle = this.colors.light;
+                this.ctx.strokeStyle = "#fff";
+                this.ctx.lineWidth = 2;
+            } else {
+                // Apply the colored rings here
+                this.ctx.strokeStyle = strokeColor;
+                this.ctx.lineWidth = strokeWidth;
+            }
+            
+            this.ctx.stroke();
+
+            // Draw Text/Piece
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            
+            if(piece) {
+                this.ctx.font = "30px Arial";
+                this.ctx.fillStyle = piece === 'W' ? '#fff' : '#000';
+                this.ctx.shadowColor = piece === 'W' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.fillText(piece === 'W' ? '♘' : '♞', n.x, n.y);
+                this.ctx.shadowBlur = 0;
+            } else if (i === 4) {
+                this.ctx.font = "14px monospace";
+                this.ctx.fillStyle = "rgba(255,255,255,0.1)";
+                this.ctx.fillText("X", n.x, n.y);
+            } else {
+                this.ctx.font = "12px monospace";
+                this.ctx.fillStyle = "rgba(255,255,255,0.3)";
+                this.ctx.fillText(i, n.x, n.y);
+            }
+        });
+    }
+}
+
+const game = new KnightGame();
+</script>
+</body>
+</html>

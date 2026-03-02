@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Security: Vertex Cover</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --paper-bg: #fdfbf7;
+            --asphalt: #3c4043;
+            --ink-blue: #1a73e8;
+            --marker-red: #ea4335;
+            --success-green: #34a853;
+            --math-purple: #9334e6;
+        }
+
+        body {
+            margin: 0; overflow: hidden;
+            background-color: var(--paper-bg);
+            font-family: 'Architects Daughter', cursive;
+            color: #202124; user-select: none;
+        }
+
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            padding: 20px; box-sizing: border-box;
+            display: flex; justify-content: space-between;
+        }
+
+        .notebook-panel {
+            background: #fff; transform: rotate(-1deg);
+            padding: 25px 35px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid #ddd; border-radius: 4px;
+            pointer-events: auto; width: 250px; 
+            display: flex; flex-direction: column; z-index: 10;
+        }
+
+        h1 { margin: 0 0 15px 0; font-size: 1.8rem; color: var(--asphalt); text-decoration: underline; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; font-size: 1.3rem; }
+        .cost-display { font-size: 2.5rem; font-weight: bold; color: var(--ink-blue); }
+        
+        button {
+            font-family: 'Architects Daughter', cursive;
+            border: 3px solid var(--asphalt);
+            padding: 12px 10px; font-size: 1.1rem; font-weight: bold;
+            cursor: pointer;
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; 
+            transition: all 0.2s; margin-top: 10px; width: 100%;
+        }
+
+        .btn-check { background: var(--success-green); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .btn-check:hover { background: #2b8a41; transform: scale(1.02) rotate(1deg); }
+        .btn-reset { background: #fff; color: var(--asphalt); margin-top: 10px; }
+        .btn-reset:hover { background: #f0f0f0; }
+        .btn-solution { background: var(--ink-blue); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .btn-solution:hover { background: #1557b0; transform: scale(1.02) rotate(1deg); }
+
+        .intel-box { transform: rotate(1deg); right: 20px; height: fit-content; width: 280px;}
+        .intel-list { padding-left: 20px; font-size: 1.1rem; line-height: 1.5; margin: 0; }
+        .intel-list li { margin-bottom: 8px; }
+
+        .info-container { margin-top: auto; padding-top: 20px; border-top: 1px dashed #ccc; }
+        .info-btn { background: var(--math-purple); color: white; border: none; box-shadow: 3px 3px 0 var(--asphalt); }
+        .info-btn:hover { background: #7c1ad3; transform: scale(1.02); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(2px);
+        }
+        .clipboard {
+            background: #fff; width: 600px; padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center; position: relative; transform: rotate(1deg); border-radius: 5px;
+        }
+
+        .clipboard.math-mode { width: 750px; text-align: left; font-family: 'Roboto', sans-serif; }
+        .math-section {
+            background: #f8f9fa; border-left: 5px solid var(--math-purple);
+            padding: 15px; margin: 15px 0; font-size: 1rem; line-height: 1.5;
+        }
+        .math-section h3 { margin-top: 0; color: var(--math-purple); }
+        .stamp-result {
+            font-size: 3.5rem; font-weight: bold; transform: rotate(-12deg);
+            border: 6px solid; padding: 10px 30px; border-radius: 15px;
+            display: inline-block; margin: 20px 0; opacity: 0.9;
+        }
+
+        canvas { position: absolute; top:0; left:0; z-index: 0; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <div class="notebook-panel" id="left-panel">
+            <h1>Security HQ</h1>
+            <div class="stat-row"><span>Cameras Placed:</span></div>
+            <div class="stat-row"><span class="cost-display" id="camCount">0</span></div>
+            <div class="stat-row" style="font-size: 1rem; color: #666;">
+                <span>Unsecured Halls:</span>
+                <span id="vulnCount" style="color:var(--marker-red); font-weight:bold;">0</span>
+            </div>
+            <hr style="border: 1px dashed #ccc; margin: 15px 0;">
+            <button class="btn-check" onclick="game.checkWin()">ACTIVATE SYSTEM</button>
+            <button class="btn-reset" onclick="game.reset()">Clear Cameras</button>
+            <button class="btn-solution" onclick="game.showSolution()">Give Solution</button>
+            <button class="btn-reset" onclick="game.newLevel()">New Floorplan</button>
+            
+            <div class="info-container">
+                <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
+            </div>
+        </div>
+        
+        <div class="notebook-panel intel-box" id="right-panel">
+            <h1>The Blueprint</h1>
+            <ul class="intel-list">
+                <li><b>Mission:</b> Protect the museum art.</li>
+                <li><b>Method:</b> Click round pedestals to install a Security Camera.</li>
+                <li><b>Rules:</b>
+                    <ol style="padding-left:20px; margin-top:5px;">
+                        <li>A camera watches all connected hallways.</li>
+                        <li><b>ALL</b> red dashed hallways must turn secure (solid green).</li>
+                        <li>Use the <b>absolute minimum</b> number of cameras.</li>
+                    </ol>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="clipboard">
+            <h2 id="modalTitle" style="font-size: 2rem; margin:0;">Security Audit</h2>
+            <div id="stamp" class="stamp-result">SECURE</div>
+            <p id="modalMsg" style="font-size: 1.4rem; color: #555; margin-bottom:30px;">Sample text.</p>
+            <div style="display:flex; justify-content: space-around; font-size: 1.3rem; margin-bottom: 30px; border-top: 2px dashed #ddd; padding-top: 20px;">
+                <div>Your Cameras: <b id="endUserCost">0</b></div>
+                <div>Optimal Minimum: <b id="endOptCost">0</b></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-check" onclick="game.newLevel()">Next Floor</button>
+                <button class="btn-reset" onclick="document.getElementById('modal').style.display='none'">Adjust</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="mathModal">
+        <div class="clipboard math-mode">
+            <h2 style="font-family:'Architects Daughter'; text-align:center;">Minimum Vertex Cover Problem</h2>
+            <div class="math-section">
+                <h3>Problem Statement</h3>
+                <p>A <b>Vertex Cover</b> of a graph \( G = (V, E) \) is a subset of vertices \( V' \subseteq V \) such that for every edge \( (u, v) \in E \), either \( u \in V' \) or \( v \in V' \).</p>
+                <p><strong>Goal:</strong> Find a vertex cover of minimum size.</p>
+                <p>$$ \text{Minimize } |V'| \text{ such that } \forall (u,v) \in E, (u \in V' \lor v \in V') $$</p>
+            </div>
+            <div class="math-section">
+                <h3>Computational Complexity</h3>
+                <p>The Minimum Vertex Cover problem is a classic <b>NP-Complete</b> problem. This means for large maps, there is no known fast formula to find the perfect answer, and computers must systematically check combinations!</p>
+                <p style="text-align:center; font-weight:bold; font-size: 1.2rem;">Optimal Cameras for this floor: <span id="mathOptVal" style="color:var(--math-purple)">0</span></p>
+            </div>
+            <button class="btn-reset" onclick="document.getElementById('mathModal').style.display='none'" style="width:100%">Return to Game</button>
+        </div>
+    </div>
+
+<script>
+class VertexCoverGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.nodes = [];
+        this.edges = []; 
+        this.optSize = 0;
+        this.optMask = 0;
+        this.hoverNode = null;
+        this.animating = false;
+        this.animInterval = null;
+        this.safeBounds = {minX: 0, maxX: 0, minY: 0, maxY: 0};
+        
+        window.addEventListener('resize', () => {
+            this.resize();
+            this.updateSafeBounds();
+        });
+        this.canvas.addEventListener('mousemove', (e) => this.handleHover(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleClick(e));
+
+        this.resize();
+        this.newLevel();
+        this.loop();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    updateSafeBounds() {
+        const lRect = document.getElementById('left-panel').getBoundingClientRect();
+        const rRect = document.getElementById('right-panel').getBoundingClientRect();
+        
+        // Ensure graph only generates between the two UI panels
+        let minX = lRect.right + 50;
+        let maxX = rRect.left - 50;
+        if (maxX <= minX) maxX = minX + 200; // Fallback for very small screens
+
+        this.safeBounds = {
+            minX: minX,
+            maxX: maxX,
+            minY: 80,
+            maxY: this.canvas.height - 80
+        };
+    }
+
+    newLevel() {
+        clearInterval(this.animInterval);
+        this.animating = false;
+        this.nodes = [];
+        this.edges = [];
+        document.getElementById('modal').style.display = 'none';
+        
+        this.updateSafeBounds();
+        const nNodes = 12; 
+
+        // Generate nodes strictly inside the safe bounds
+        for(let i=0; i<nNodes; i++) {
+            this.nodes.push({
+                id: i, 
+                x: this.safeBounds.minX + Math.random() * (this.safeBounds.maxX - this.safeBounds.minX),
+                y: this.safeBounds.minY + Math.random() * (this.safeBounds.maxY - this.safeBounds.minY),
+                vx: 0, vy: 0, camera: false
+            });
+        }
+
+        // Generate edges (Delaunay-ish)
+        const sorted = [...this.nodes].sort((a,b) => a.x - b.x);
+        for(let i=0; i<nNodes; i++) {
+            let n1 = this.nodes[i];
+            let neighbors = this.nodes
+                .map(n => ({node: n, dist: Math.hypot(n.x-n1.x, n.y-n1.y)}))
+                .filter(n => n.node.id !== n1.id)
+                .sort((a,b) => a.dist - b.dist)
+                .slice(0, 3);
+            
+            for(let neigh of neighbors) {
+                if(!this.isIntersectingAny(n1, neigh.node)) {
+                    this.addEdge(n1.id, neigh.node.id);
+                }
+            }
+        }
+
+        this.relaxGraph();
+        this.calculateOptimal();
+        this.updateUI();
+    }
+
+    relaxGraph() {
+        const iterations = 300;
+        const repelK = 100000;
+        const springLen = 150;
+        const springK = 0.02;
+
+        for(let i=0; i<iterations; i++) {
+            for(let a=0; a<this.nodes.length; a++) {
+                for(let b=a+1; b<this.nodes.length; b++) {
+                    let n1 = this.nodes[a], n2 = this.nodes[b];
+                    let dx = n1.x - n2.x, dy = n1.y - n2.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy) + 1;
+                    let force = repelK / (dist * dist);
+                    n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force;
+                    n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
+                }
+            }
+            this.edges.forEach(e => {
+                let n1 = this.nodes[e.u], n2 = this.nodes[e.v];
+                let dx = n2.x - n1.x, dy = n2.y - n1.y;
+                let dist = Math.sqrt(dx*dx + dy*dy) + 1;
+                let force = (dist - springLen) * springK;
+                n1.vx += (dx/dist)*force; n1.vy += (dy/dist)*force;
+                n2.vx -= (dx/dist)*force; n2.vy -= (dy/dist)*force;
+            });
+            this.nodes.forEach(n => {
+                n.x += n.vx; n.y += n.vy;
+                n.vx *= 0.5; n.vy *= 0.5;
+                // Clamp tightly to safe bounds
+                n.x = Math.max(this.safeBounds.minX, Math.min(this.safeBounds.maxX, n.x));
+                n.y = Math.max(this.safeBounds.minY, Math.min(this.safeBounds.maxY, n.y));
+            });
+        }
+    }
+
+    addEdge(u, v) {
+        if(this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) return;
+        this.edges.push({ u, v });
+    }
+
+    isIntersectingAny(n1, n2) {
+        for(let e of this.edges) {
+            let p3 = this.nodes[e.u], p4 = this.nodes[e.v];
+            if(p3.id === n1.id || p3.id === n2.id || p4.id === n1.id || p4.id === n2.id) continue;
+            let det = (p4.x - p3.x) * (n2.y - n1.y) - (p4.y - p3.y) * (n2.x - n1.x);
+            if (det === 0) continue;
+            let lambda = ((n2.y - n1.y) * (n2.x - p3.x) + (n1.x - n2.x) * (n2.y - p3.y)) / det;
+            let gamma = ((p3.y - p4.y) * (n2.x - p3.x) + (p4.x - p3.x) * (n2.y - p3.y)) / det;
+            if((0 < lambda && lambda < 1) && (0 < gamma && gamma < 1)) return true;
+        }
+        return false;
+    }
+
+    calculateOptimal() {
+        const n = this.nodes.length;
+        let minSize = n;
+        let bestMask = (1 << n) - 1; 
+        const totalPerms = 1 << n;
+
+        // Brute force exact optimal vertex cover
+        for(let i=0; i<totalPerms; i++) {
+            let valid = true;
+            for(let e of this.edges) {
+                if(((i & (1 << e.u)) === 0) && ((i & (1 << e.v)) === 0)) { valid = false; break; }
+            }
+            if(valid) {
+                let size = 0;
+                for(let j=0; j<n; j++) if((i & (1 << j)) !== 0) size++;
+                if(size < minSize) {
+                    minSize = size;
+                    bestMask = i;
+                }
+            }
+        }
+        this.optSize = minSize;
+        this.optMask = bestMask;
+        return minSize;
+    }
+
+    showSolution() {
+        if(this.animating) return;
+        this.reset();
+        this.animating = true;
+        
+        let targetNodes = [];
+        for(let i=0; i<this.nodes.length; i++) {
+            if((this.optMask & (1 << i)) !== 0) targetNodes.push(this.nodes[i]);
+        }
+
+        let idx = 0;
+        this.animInterval = setInterval(() => {
+            if(idx < targetNodes.length) {
+                targetNodes[idx].camera = true;
+                this.updateUI();
+                idx++;
+            } else {
+                clearInterval(this.animInterval);
+                this.animating = false;
+                setTimeout(() => this.checkWin(), 500); // Wait a moment then show win
+            }
+        }, 500);
+    }
+
+    handleHover(e) {
+        if(this.animating) return;
+        const mx = e.clientX, my = e.clientY;
+        this.hoverNode = null;
+        for(let n of this.nodes) {
+            if(Math.hypot(n.x - mx, n.y - my) < 25) { this.hoverNode = n; break; }
+        }
+        this.canvas.style.cursor = this.hoverNode ? 'pointer' : 'default';
+    }
+
+    handleClick(e) {
+        if(this.animating) return;
+        if(this.hoverNode) {
+            this.hoverNode.camera = !this.hoverNode.camera;
+            this.updateUI();
+        }
+    }
+
+    reset() {
+        clearInterval(this.animInterval);
+        this.animating = false;
+        this.nodes.forEach(n => n.camera = false);
+        this.updateUI();
+    }
+
+    updateUI() {
+        let cams = this.nodes.filter(n => n.camera).length;
+        let vuln = 0;
+        this.edges.forEach(e => { if(!this.nodes[e.u].camera && !this.nodes[e.v].camera) vuln++; });
+        document.getElementById('camCount').innerText = cams;
+        document.getElementById('vulnCount').innerText = vuln;
+        return vuln;
+    }
+
+    openMathModal() {
+        document.getElementById('mathOptVal').innerText = this.optSize;
+        document.getElementById('mathModal').style.display = 'flex';
+    }
+
+    checkWin() {
+        let vuln = this.updateUI();
+        let cams = this.nodes.filter(n => n.camera).length;
+        const stamp = document.getElementById('stamp');
+        const title = document.getElementById('modalTitle'), msg = document.getElementById('modalMsg');
+
+        if(vuln > 0) {
+            stamp.innerText = "BREACHED"; stamp.style.color = "#ea4335"; stamp.style.borderColor = "#ea4335";
+            title.innerText = "Hallways Vulnerable!";
+            msg.innerText = `You left ${vuln} hallway(s) unmonitored.`;
+        } else if(cams > this.optSize) {
+            stamp.innerText = "OVERBUDGET"; stamp.style.color = "#fbbc04"; stamp.style.borderColor = "#fbbc04";
+            title.innerText = "Secure, but Expensive";
+            msg.innerText = "The museum is safe, but you used too many cameras. Try to cover it with fewer.";
+        } else {
+            stamp.innerText = "SECURE"; stamp.style.color = "#34a853"; stamp.style.borderColor = "#34a853";
+            title.innerText = "Perfect Security";
+            msg.innerText = "You found the Minimum Vertex Cover!";
+        }
+        document.getElementById('endUserCost').innerText = cams;
+        document.getElementById('endOptCost').innerText = this.optSize;
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    loop() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw Hallways
+        this.edges.forEach(e => {
+            const p1 = this.nodes[e.u], p2 = this.nodes[e.v];
+            const isCovered = (p1.camera || p2.camera);
+
+            // Wall outer line
+            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
+            this.ctx.strokeStyle = "#bbb"; this.ctx.lineWidth = 18; this.ctx.stroke();
+
+            // Inner hallway floor
+            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
+            if(isCovered) {
+                this.ctx.strokeStyle = "#a5d6a7"; // Secure Green floor
+                this.ctx.lineWidth = 12;
+            } else {
+                this.ctx.strokeStyle = "#ffcdd2"; // Unsecure Red floor
+                this.ctx.lineWidth = 12;
+            }
+            this.ctx.stroke();
+
+            // Security Laser Line
+            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
+            if(isCovered) {
+                this.ctx.strokeStyle = "#2e7d32"; this.ctx.lineWidth = 2; this.ctx.setLineDash([]);
+            } else {
+                this.ctx.strokeStyle = "#c62828"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 5]);
+            }
+            this.ctx.stroke(); this.ctx.setLineDash([]);
+        });
+
+        // Draw Nodes
+        this.nodes.forEach(n => {
+            if(n.camera) {
+                // Draw Camera Graphics
+                this.ctx.save();
+                this.ctx.translate(n.x, n.y);
+                
+                // Base
+                this.ctx.beginPath(); this.ctx.arc(0, 0, 15, 0, Math.PI*2);
+                this.ctx.fillStyle = "#3c4043"; this.ctx.fill();
+
+                // Rotate slightly for effect
+                this.ctx.rotate(-Math.PI/6);
+                
+                // Camera Body
+                this.ctx.fillStyle = "#e0e0e0"; this.ctx.fillRect(-5, -12, 24, 20);
+                this.ctx.strokeStyle = "#3c4043"; this.ctx.lineWidth = 2; this.ctx.strokeRect(-5, -12, 24, 20);
+                
+                // Lens
+                this.ctx.fillStyle = "#111"; this.ctx.fillRect(19, -8, 6, 12);
+                
+                // Blinking Red Light
+                let blink = Math.floor(Date.now() / 400) % 2 === 0;
+                this.ctx.fillStyle = blink ? "#ff0000" : "#550000";
+                this.ctx.beginPath(); this.ctx.arc(14, -6, 2.5, 0, Math.PI*2); this.ctx.fill();
+                if(blink) {
+                    this.ctx.shadowBlur = 10; this.ctx.shadowColor = "red"; this.ctx.fill(); this.ctx.shadowBlur = 0;
+                }
+                
+                this.ctx.restore();
+            } else {
+                // Empty Pedestal
+                this.ctx.beginPath(); this.ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
+                this.ctx.fillStyle = (n === this.hoverNode && !this.animating) ? "#fff" : "#f1f3f4";
+                this.ctx.fill();
+                this.ctx.strokeStyle = "#9aa0a6"; this.ctx.lineWidth = 3; this.ctx.stroke();
+            }
+        });
+
+        requestAnimationFrame(() => this.loop());
+    }
+}
+const game = new VertexCoverGame();
+</script>
+</body>
+</html>

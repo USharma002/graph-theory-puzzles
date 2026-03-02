@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow City: Dashboard Edition</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --panel-glass: rgba(30, 41, 59, 0.75);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-gold: #fbbf24;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --sidebar-width: 320px;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-deep);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+        }
+
+        canvas { display: block; }
+
+        /* --- PANELS --- */
+        .glass-panel {
+            background: var(--panel-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 20px;
+            pointer-events: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Sidebars */
+        .sidebar-left {
+            position: absolute; top: 24px; left: 24px; width: var(--sidebar-width); bottom: 24px;
+            display: flex; flex-direction: column; pointer-events: none; gap: 16px;
+        }
+        .sidebar-right {
+            position: absolute; top: 24px; right: 24px; width: var(--sidebar-width); bottom: 24px;
+            pointer-events: none; display: flex; flex-direction: column;
+        }
+
+        /* Headers & Tags */
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 4px;
+        }
+        h1, h2 { margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent-blue); font-weight: 800; }
+        .grid-tag { font-size: 0.7rem; background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); padding: 4px 8px; border-radius: 6px; font-weight: 700; }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-box { display: flex; flex-direction: column; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
+        .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+        .stat-val { font-size: 1.2rem; font-weight: 700; color: white; }
+
+        /* Progress */
+        .prog-track { background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+        .prog-fill { background: var(--accent-green); height: 100%; width: 0%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
+
+        /* --- NEW CUSTOM DROPDOWN --- */
+        .select-wrapper {
+            position: relative;
+            margin-bottom: 5px;
+        }
+        /* Custom Arrow SVG */
+        .select-wrapper::after {
+            content: "";
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 6px;
+            background-color: var(--accent-blue);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        select {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--text-main);
+            border: 1px solid var(--border-glass);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        select:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+        }
+        select:focus {
+            border-color: var(--accent-blue);
+        }
+        /* Dark options for dropdown */
+        option { background-color: #0f172a; color: white; padding: 10px; }
+
+        /* Buttons */
+        button {
+            border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;
+            transition: 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-primary { background: var(--accent-blue); color: #0f172a; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+        
+        .btn-icon { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-active { background: var(--accent-gold); color: #0f172a; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
+
+        /* Math Panel */
+        #math-panel { display: none; border-left: 3px solid var(--accent-gold); pointer-events: auto; margin-top: auto; }
+        .math-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; margin: 0 0 12px 0; }
+        .highlight { color: #f1f5f9; font-weight: 700; }
+        .math-legend { font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; color: var(--text-muted); }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
+        /* Leaderboard */
+        .leaderboard-content { overflow-y: auto; flex-grow: 1; scrollbar-width: thin; scrollbar-color: var(--border-glass) transparent; }
+        .leaderboard-content::-webkit-scrollbar { width: 4px; }
+        .leaderboard-content::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border-glass); position: sticky; top: 0; background: rgba(15, 23, 42, 0.95); z-index: 2; }
+        td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-main); }
+        .rank-1 { color: var(--accent-gold); font-weight: 700; }
+        .rank-2 { color: #e2e8f0; font-weight: 600; }
+        .rank-3 { color: #b45309; font-weight: 600; }
+
+        /* Alert Box */
+        #alert-box {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--accent-gold); color: var(--accent-gold);
+            padding: 12px 24px; border-radius: 50px; font-weight: 700; display: none;
+            backdrop-filter: blur(8px); box-shadow: 0 0 25px rgba(251, 191, 36, 0.2);
+            animation: pulse 2s infinite; z-index: 50;
+        }
+        @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
+
+        /* Game Over Modal */
+        #modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 15, 26, 0.95); z-index: 100;
+            justify-content: center; align-items: center;
+        }
+        .modal-card {
+            background: #1e293b; width: 380px; padding: 40px; border-radius: 24px;
+            border: 1px solid var(--border-glass); text-align: center;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8);
+        }
+        .score-big { font-size: 4.5rem; font-weight: 900; color: var(--accent-green); line-height: 1; margin: 10px 0; text-shadow: 0 0 30px rgba(74, 222, 128, 0.2); }
+        input[type="text"] {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass);
+            color: white; padding: 14px; width: 100%; text-align: center; border-radius: 10px;
+            margin: 20px 0 10px 0; font-weight: bold; box-sizing: border-box; font-size: 1rem;
+        }
+        input:focus { border-color: var(--accent-blue); outline: none; background: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-left">
+        <div class="glass-panel">
+            <div class="panel-header">
+                <h1>Grid Ops</h1>
+                <span class="grid-tag" id="gridTag">4x4</span>
+            </div>
+            
+            <div class="prog-track"><div class="prog-fill" id="progBar"></div></div>
+
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-label">Moves</span>
+                    <span class="stat-val" id="movesDisp">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Efficiency</span>
+                    <span class="stat-val" id="effDisp">100%</span>
+                </div>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="levelSelect">
+                    <option value="2">2x2 Sector</option>
+                    <option value="3">3x3 Sector</option>
+                    <option value="4" selected>4x4 Sector</option>
+                    <option value="5">5x5 Sector</option>
+                    <option value="6">6x6 Sector</option>
+                    <option value="8">8x8 Sector</option>
+                    <option value="10">10x10 Sector</option>
+                </select>
+            </div>
+
+            <button class="btn-primary" onclick="game.resetCurrentProgress()">
+                ↺ Retry Sector
+            </button>
+            <button class="btn-icon" id="mathBtn" onclick="game.toggleMathMode()">
+                ? &nbsp; Graph Theory Viz
+            </button>
+        </div>
+
+        <div class="glass-panel" id="math-panel">
+            <div style="color:var(--accent-gold); font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">The Euler Path</div>
+            <p class="math-text">
+                To solve this efficiently, every intersection must have an <span class="highlight">even number</span> of roads.
+            </p>
+            <p class="math-text">
+                Red nodes are <strong>Odd</strong>. You get stuck there. To fix them, you must walk the path between them <span class="highlight">twice</span>.
+            </p>
+            <div class="math-legend">
+                <div><span class="dot" style="background:var(--accent-green)"></span> Even Node (Safe)</div>
+                <div><span class="dot" style="background:var(--accent-red)"></span> Odd Node (Stuck)</div>
+                <div><span class="dot" style="border:1px dashed var(--accent-gold)"></span> Optimal Retrace</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-right">
+        <div class="glass-panel" style="height:100%; pointer-events:auto;">
+            <div class="panel-header">
+                <h2>Top Operators</h2>
+                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:700;">GLOBAL</span>
+            </div>
+            
+            <div class="leaderboard-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Pilot</th>
+                            <th>Moves</th>
+                            <th>Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-box">⚠️ RETURN TO BASE TO FINISH!</div>
+
+    <div id="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size:2.5rem; margin-bottom:10px;" id="endStars">⭐⭐⭐</div>
+            <div style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;">Sector Cleared</div>
+            <div class="score-big" id="endScore">0</div>
+            
+            <div id="inputGroup">
+                <input type="text" id="playerName" placeholder="ENTER PILOT NAME" maxlength="10">
+                <button class="btn-primary" onclick="game.submitScore()">SUBMIT RECORD</button>
+            </div>
+            
+            <div id="successMsg" style="display:none; margin:20px 0; color:var(--accent-green); font-weight:800; font-size:1.1rem;">
+                ✓ RECORD UPLOADED
+            </div>
+            
+            <button class="btn-icon" style="margin-top:20px; background:transparent;" onclick="game.closeModal()">Close & Retry</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+class SnowCityGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Config
+        this.gridSize = 4;
+        this.spacing = 80;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        
+        // State
+        this.nodes = [];
+        this.edges = [];
+        this.playerNode = 0;
+        this.startNodeIndex = 0;
+        this.moves = 0;
+        this.gameActive = true;
+        this.showMath = false;
+        this.isSubmitted = false;
+        
+        // Data
+        this.allScores = JSON.parse(localStorage.getItem('snowCityEliteScores')) || {};
+
+        // Assets
+        this.playerPos = {x:0, y:0};
+        this.targetPos = {x:0, y:0};
+        this.isMoving = false;
+        this.playerImg = new Image();
+        this.playerImg.src = 'excavator.png'; 
+
+        // Init
+        this.resize();
+        this.setupEventListeners();
+        
+        // Initial Render
+        this.generateLevel();
+        this.renderLeaderboard();
+        this.loop();
+    }
+
+    setupEventListeners() {
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('keydown', (e) => this.handleInput(e));
+        
+        const sel = document.getElementById('levelSelect');
+        sel.addEventListener('change', (e) => {
+            this.changeLevelSize(e.target.value);
+            sel.blur(); // Remove focus so arrow keys work for game immediately
+        });
+        
+        // KEY FIX: Prevent Arrow Keys from scrolling options in dropdown
+        sel.addEventListener('keydown', (e) => {
+            if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        // Dynamic centering
+        const sidebarSpace = 360; 
+        let availableWidth = this.canvas.width;
+        let leftOffset = 0;
+
+        if(this.canvas.width > 1000) {
+            availableWidth = this.canvas.width - (sidebarSpace * 2);
+            leftOffset = sidebarSpace;
+        }
+
+        const dim = Math.min(availableWidth, this.canvas.height) * 0.8;
+        this.spacing = dim / Math.max(this.gridSize, 2);
+        
+        this.offsetX = leftOffset + (availableWidth - ((this.gridSize-1) * this.spacing)) / 2;
+        this.offsetY = (this.canvas.height - ((this.gridSize-1) * this.spacing)) / 2;
+        
+        if(this.nodes.length > 0) this.snapVisuals();
+    }
+
+    snapVisuals() {
+        if(!this.nodes[this.playerNode]) return;
+        const n = this.nodes[this.playerNode];
+        this.playerPos.x = this.offsetX + n.x * this.spacing;
+        this.playerPos.y = this.offsetY + n.y * this.spacing;
+        this.targetPos.x = this.playerPos.x;
+        this.targetPos.y = this.playerPos.y;
+    }
+
+    changeLevelSize(val) {
+        this.gridSize = parseInt(val);
+        document.getElementById('gridTag').innerText = `${this.gridSize}x${this.gridSize}`;
+        this.generateLevel();
+        this.renderLeaderboard();
+    }
+
+    generateLevel() {
+        this.nodes = [];
+        this.edges = [];
+        this.moves = 0;
+        this.gameActive = true;
+        this.isSubmitted = false;
+
+        // Create Grid
+        for(let y=0; y<this.gridSize; y++) {
+            for(let x=0; x<this.gridSize; x++) {
+                this.nodes.push({ id: y*this.gridSize+x, x: x, y: y });
+            }
+        }
+        for(let y=0; y<this.gridSize; y++) {
+            for(let x=0; x<this.gridSize-1; x++) this.addEdge(y*this.gridSize+x, y*this.gridSize+x+1);
+        }
+        for(let x=0; x<this.gridSize; x++) {
+            for(let y=0; y<this.gridSize-1; y++) this.addEdge(y*this.gridSize+x, (y+1)*this.gridSize+x);
+        }
+
+        this.startNodeIndex = this.nodes.length - 1;
+        this.playerNode = this.startNodeIndex;
+
+        this.resize();
+        this.updateUI();
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('alert-box').style.display = 'none';
+        
+        if(this.showMath) this.toggleMathMode();
+    }
+
+    resetCurrentProgress() {
+        this.edges.forEach(e => e.visited = false);
+        this.playerNode = this.startNodeIndex;
+        this.moves = 0;
+        this.gameActive = true;
+        this.isSubmitted = false;
+        this.snapVisuals();
+        this.updateUI();
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('alert-box').style.display = 'none';
+    }
+
+    addEdge(u, v) {
+        if(!this.edges.some(e => (e.u===u && e.v===v) || (e.u===v && e.v===u))) {
+            this.edges.push({ u, v, visited: false });
+        }
+    }
+    
+    getDegree(id) { return this.edges.filter(e => e.u === id || e.v === id).length; }
+
+    toggleMathMode() {
+        this.showMath = !this.showMath;
+        const p = document.getElementById('math-panel');
+        const b = document.getElementById('mathBtn');
+        if(this.showMath) { p.style.display = 'block'; b.classList.add('btn-active'); }
+        else { p.style.display = 'none'; b.classList.remove('btn-active'); }
+    }
+
+    handleInput(e) {
+        if(this.isMoving || !this.gameActive) return;
+        
+        let dx = 0, dy = 0;
+        if(e.key === 'ArrowUp') dy = -1;
+        if(e.key === 'ArrowDown') dy = 1;
+        if(e.key === 'ArrowLeft') dx = -1;
+        if(e.key === 'ArrowRight') dx = 1;
+        if(dx === 0 && dy === 0) return;
+
+        let curr = this.nodes[this.playerNode];
+        let targetId = this.nodes.find(n => n.x === curr.x + dx && n.y === curr.y + dy)?.id;
+
+        if(targetId !== undefined) {
+            let edge = this.edges.find(e => ((e.u === this.playerNode && e.v === targetId) || (e.u === targetId && e.v === this.playerNode)));
+            if(edge) {
+                this.moves++;
+                edge.visited = true;
+                this.playerNode = targetId;
+                
+                const tNode = this.nodes[targetId];
+                this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
+                this.isMoving = true;
+                
+                this.updateUI();
+                this.checkState();
+            }
+        }
+    }
+
+    checkState() {
+        const cleared = this.edges.filter(e => e.visited).length;
+        const total = this.edges.length;
+        const atHome = this.playerNode === this.startNodeIndex;
+        const alert = document.getElementById('alert-box');
+
+        if(cleared === total && atHome) {
+            this.gameActive = false;
+            alert.style.display = 'none';
+            setTimeout(() => this.openWinModal(), 400);
+        } else if (cleared === total && !atHome) {
+            alert.style.display = 'block';
+        } else {
+            alert.style.display = 'none';
+        }
+    }
+
+    getStarRating() {
+        const totalEdges = this.edges.length;
+        const efficiency = (totalEdges / this.moves);
+        if (efficiency >= 0.90) return 3;
+        if (efficiency >= 0.75) return 2;
+        return 1;
+    }
+
+    updateUI() {
+        const cleared = this.edges.filter(e => e.visited).length;
+        const total = this.edges.length;
+        const pct = total > 0 ? (cleared/total)*100 : 0;
+        
+        document.getElementById('progBar').style.width = pct + "%";
+        document.getElementById('movesDisp').innerText = this.moves;
+        
+        let eff = 100;
+        if (this.moves > 0) eff = Math.floor((this.edges.length / this.moves) * 100);
+        document.getElementById('effDisp').innerText = eff + "%";
+    }
+
+    openWinModal() {
+        const stars = this.getStarRating();
+        const starStr = "⭐".repeat(stars);
+        
+        document.getElementById('endScore').innerText = this.moves;
+        document.getElementById('endStars').innerText = starStr;
+        
+        document.getElementById('inputGroup').style.display = 'block';
+        document.getElementById('successMsg').style.display = 'none';
+        document.getElementById('playerName').value = "";
+        
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    submitScore() {
+        if(this.isSubmitted) return;
+        
+        const name = document.getElementById('playerName').value.trim() || "Anonymous";
+        const stars = this.getStarRating();
+        const key = this.gridSize.toString();
+        
+        if(!this.allScores[key]) this.allScores[key] = [];
+        
+        this.allScores[key].push({
+            name: name,
+            score: this.moves,
+            stars: stars
+        });
+        
+        this.allScores[key].sort((a,b) => a.score - b.score);
+        localStorage.setItem('snowCityEliteScores', JSON.stringify(this.allScores));
+        
+        this.isSubmitted = true;
+        document.getElementById('inputGroup').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+        
+        this.renderLeaderboard();
+    }
+
+    renderLeaderboard() {
+        const tbody = document.getElementById('leaderboardBody');
+        tbody.innerHTML = "";
+        
+        const key = this.gridSize.toString();
+        const data = this.allScores[key] || [];
+        
+        if(data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px; color:#64748b'>No records. Be the first!</td></tr>";
+            return;
+        }
+
+        data.slice(0, 20).forEach((item, i) => {
+            const tr = document.createElement('tr');
+            let rankClass = "";
+            if(i===0) rankClass = "rank-1";
+            else if(i===1) rankClass = "rank-2";
+            else if(i===2) rankClass = "rank-3";
+            
+            tr.innerHTML = `
+                <td class="${rankClass}">#${i+1}</td>
+                <td style="font-weight:600; color:white;">${item.name}</td>
+                <td style="font-family:monospace;">${item.score}</td>
+                <td>${"⭐".repeat(item.stars)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        this.resetCurrentProgress();
+    }
+
+    // --- DRAW ---
+    loop() {
+        if(this.isMoving) {
+            let dx = this.targetPos.x - this.playerPos.x;
+            let dy = this.targetPos.y - this.playerPos.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            const speed = 15;
+            if(dist < speed) {
+                this.playerPos.x = this.targetPos.x;
+                this.playerPos.y = this.targetPos.y;
+                this.isMoving = false;
+            } else {
+                this.playerPos.x += (dx/dist) * speed;
+                this.playerPos.y += (dy/dist) * speed;
+            }
+        }
+
+        this.ctx.fillStyle = "#0f172a";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.edges.forEach(e => {
+            let n1 = this.nodes[e.u]; let n2 = this.nodes[e.v];
+            let x1 = this.offsetX + n1.x * this.spacing; let y1 = this.offsetY + n1.y * this.spacing;
+            let x2 = this.offsetX + n2.x * this.spacing; let y2 = this.offsetY + n2.y * this.spacing;
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2);
+            this.ctx.strokeStyle = e.visited ? "#334155" : "#38bdf8";
+            this.ctx.lineWidth = e.visited ? 10 : 16;
+            this.ctx.lineCap = 'round';
+            if(!e.visited) { this.ctx.shadowBlur=15; this.ctx.shadowColor="rgba(56,189,248,0.5)"; }
+            this.ctx.stroke();
+            this.ctx.shadowBlur=0;
+            
+            if(e.visited) {
+                this.ctx.beginPath(); this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2);
+                this.ctx.strokeStyle = "#475569"; this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([6, 12]); this.ctx.stroke(); this.ctx.setLineDash([]);
+            }
+        });
+
+        if(this.showMath) this.drawOptimalPaths();
+
+        this.nodes.forEach(n => {
+            let x = this.offsetX + n.x * this.spacing; let y = this.offsetY + n.y * this.spacing;
+            if(this.showMath) {
+                let d = this.getDegree(n.id);
+                this.ctx.beginPath(); this.ctx.arc(x, y, 10, 0, Math.PI*2);
+                this.ctx.fillStyle = (d%2!==0) ? "#f87171" : "#4ade80";
+                this.ctx.fill();
+            } else {
+                this.ctx.beginPath(); this.ctx.arc(x, y, 5, 0, Math.PI*2);
+                this.ctx.fillStyle = (n.id === this.startNodeIndex) ? "#fbbf24" : "#94a3b8";
+                this.ctx.fill();
+            }
+        });
+
+        let px = this.playerPos.x; let py = this.playerPos.y;
+        if(this.playerImg.complete && this.playerImg.naturalWidth > 0) this.ctx.drawImage(this.playerImg, px-20, py-20, 40, 40);
+        else { this.ctx.fillStyle = "#fbbf24"; this.ctx.fillRect(px-12, py-12, 24, 24); }
+
+        requestAnimationFrame(() => this.loop());
+    }
+
+    drawOptimalPaths() {
+        this.ctx.strokeStyle = "#fbbf24"; this.ctx.lineWidth = 3; this.ctx.setLineDash([8, 8]); this.ctx.globalAlpha = 0.6;
+        for(let y=0; y<this.gridSize; y++) {
+            if(y===0 || y===this.gridSize-1) {
+                for(let x=0; x<this.gridSize-1; x+=2) this.dashLine(x, y, x+1, y);
+            }
+        }
+        for(let x=0; x<this.gridSize; x++) {
+            if(x===0 || x===this.gridSize-1) {
+                for(let y=0; y<this.gridSize-1; y+=2) this.dashLine(x, y, x, y+1);
+            }
+        }
+        this.ctx.globalAlpha = 1.0; this.ctx.setLineDash([]);
+    }
+    dashLine(x1, y1, x2, y2) {
+        let n1 = this.nodes.find(n => n.x===x1 && n.y===y1);
+        let n2 = this.nodes.find(n => n.x===x2 && n.y===y2);
+        if(n1 && n2) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.offsetX+n1.x*this.spacing, this.offsetY+n1.y*this.spacing);
+            this.ctx.lineTo(this.offsetX+n2.x*this.spacing, this.offsetY+n2.y*this.spacing);
+            this.ctx.stroke();
+        }
+    }
+}
+const game = new SnowCityGame();
+</script>
+</body>
+</html>

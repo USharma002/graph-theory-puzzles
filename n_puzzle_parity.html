@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Puzzle Visualizer</title>
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --panel-bg: #ffffff;
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --danger: #ff7675;
+            --success: #00b894;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- MAIN STAGE --- */
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            /* Shift slightly left to balance the sidebar */
+            align-items: center; 
+            justify-content: center;
+            padding-right: 10%; 
+            transition: all 0.4s ease;
+        }
+
+        .controls-island {
+            background: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            z-index: 10;
+        }
+
+        select, button {
+            padding: 12px 24px;
+            border: 1px solid #dfe6e9;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+        select:focus, button:focus { outline: none; border-color: var(--primary); }
+        
+        button.primary-btn { background: var(--primary); color: white; border: none; }
+        button.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3); }
+        
+        button.danger-btn { background: var(--danger); color: white; border: none; }
+        button.danger-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 118, 117, 0.3); }
+
+        button.help-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button.help-btn:hover { background: var(--primary); color: white; }
+
+        /* --- BOARD --- */
+        .board-container {
+            background: #2d3436;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+            /* Make board bigger */
+            transform: scale(1.1); 
+        }
+        .board {
+            display: grid;
+            gap: 10px;
+            position: relative;
+        }
+        .tile {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            box-shadow: inset 0 -6px 0 rgba(0,0,0,0.1);
+            /* GPU acceleration for smooth sliding */
+            will-change: transform; 
+            transition: transform 0.2s ease-out;
+        }
+        .tile:hover:not(.empty) { filter: brightness(0.95); }
+        .tile.correct { background: #55efc4; color: #006266; }
+        .tile.empty { background: transparent; box-shadow: none; cursor: default; }
+
+        /* Goal Text */
+        .goal-text {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 400px;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 500px;
+            background: white;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #dfe6e9;
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-content {
+            padding: 30px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .viz-card {
+            background: white;
+            border: 1px solid #dfe6e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        h3 { 
+            margin: 0 0 15px 0; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: var(--text-muted);
+            border-bottom: 2px solid #f1f2f6;
+            padding-bottom: 10px;
+        }
+
+        /* --- FORMULA BAR --- */
+        .formula-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            background: #f1f2f6;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; }
+        .bg-ok { background: var(--success); }
+        .bg-no { background: var(--danger); }
+
+        /* --- LINEAR ARC VIZ --- */
+        .linear-wrapper {
+            position: relative;
+            margin-top: 70px; /* More space for arcs */
+            padding-bottom: 10px;
+        }
+        .array-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .mini-tile {
+            width: 34px; height: 34px;
+            background: #f1f2f6;
+            border: 1px solid #dfe6e9;
+            border-radius: 6px;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 5; /* Lower than canvas */
+        }
+        .mini-tile.highlight { background: var(--primary); color: white; transform: scale(1.2); border-color: var(--primary); z-index: 6; }
+        
+        canvas {
+            position: absolute;
+            top: -105px; left: 0; /* Cover the area above */
+            width: 100%; height: 110px;
+            z-index: 20; /* Canvas ON TOP of tiles */
+            pointer-events: none; /* Let clicks pass through */
+        }
+
+        /* --- DROPDOWN EXPLANATION --- */
+        .explanation-section {
+            background: #fff8e1;
+            border-left: 4px solid #ffeaa7;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .dropdown-header {
+            padding: 15px;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-header:hover { background: rgba(0,0,0,0.02); }
+        .dropdown-body {
+            display: none;
+            padding: 0 15px 15px 15px;
+            color: #636e72;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            animation: fadeIn 0.3s;
+        }
+        .dropdown-body.show { display: block; }
+        .arrow { transition: transform 0.3s; }
+        .arrow.rotate { transform: rotate(180deg); }
+
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+
+        /* --- MATRIX --- */
+        .matrix-container { display: grid; gap: 2px; margin: 0 auto; width: fit-content; }
+        .m-cell { width: 14px; height: 14px; background: #f1f2f6; }
+        .m-cell.inv { background: var(--danger); }
+        .m-cell.ok { background: #dfe6e9; }
+
+        .close-btn { display: none; margin-bottom: 20px; width: 100%; }
+        @media (max-width: 900px) {
+            .sidebar { width: 100%; }
+            .close-btn { display: block; }
+            .stage { padding-right: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+    
+    <button class="help-btn" onclick="toggleSidebar()">
+        📊 Analyze Math
+    </button>
+
+    <div class="controls-island">
+        <select id="gridSize">
+            <option value="3,3" selected>3 x 3 (Odd Width)</option>
+            <option value="4,4">4 x 4 (Even Width)</option>
+            <option value="2,3">2 x 3 (Odd Width)</option>
+        </select>
+        <button class="primary-btn" onclick="game.shuffle(true)">Shuffle Solvable</button>
+        <button class="danger-btn" onclick="game.shuffle(false)">Shuffle Impossible</button>
+    </div>
+
+    <div class="board-container">
+        <div id="board" class="board"></div>
+    </div>
+    
+    <div class="goal-text">
+        <strong>Goal:</strong> Slide the tiles to order numbers sequentially (1, 2, 3...) from left-to-right, top-to-bottom. <br>The empty space must end up in the bottom-right corner.
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-content">
+        <button class="primary-btn close-btn" onclick="toggleSidebar()">Close Panel</button>
+        
+        <h2>Solvability Analysis</h2>
+        
+        <!-- 1. FORMULA -->
+        <div class="viz-card">
+            <h3>The Math Rule</h3>
+            <div class="formula-row">
+                <span id="invPart">Inv(<b id="invVal">0</b>)</span>
+                <span id="distPart" style="display:none"> + Dist(<b id="distVal">0</b>)</span>
+                <span> = </span>
+                <span class="badge bg-neutral" id="statusBadge">SOLVABLE</span>
+            </div>
+            
+            <div class="explanation-section">
+                <div class="dropdown-header" onclick="toggleExplanation()">
+                    <span>❓ Why does Grid Width matter?</span>
+                    <span class="arrow" id="expArrow">▼</span>
+                </div>
+                <div class="dropdown-body" id="expBody">
+                    <strong>The "Taxicab" Jump:</strong>
+                    <br><br>
+                    1. Moving the empty tile <b>Left/Right</b> does not change the order of the numbers.
+                    <br><br>
+                    2. Moving it <b>Up/Down</b> makes it "jump" over (Width-1) numbers in the linear list.
+                    <br><br>
+                    • If Width is <b>Odd</b> (e.g. 3), it jumps 2 numbers. Jumping an even amount doesn't change Parity.
+                    <br>
+                    • If Width is <b>Even</b> (e.g. 4), it jumps 3 numbers. Jumping an odd amount <b>flips Parity!</b>
+                    <br><br>
+                    That's why Even width grids need to add the Row Distance to the calculation.
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SNAKE ARCS -->
+        <div class="viz-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Inversion Arcs</h3>
+                <span style="font-size:0.75rem; color:var(--danger)">Red = Bad Order</span>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 5px;">
+                The grid unrolled into a line. Arcs show numbers that are out of sequence.
+            </p>
+            
+            <div class="linear-wrapper" id="linearWrapper">
+                <canvas id="arcCanvas"></canvas>
+                <div id="linearArray" class="array-row"></div>
+            </div>
+        </div>
+
+        <!-- 3. MATRIX -->
+        <div class="viz-card">
+            <h3>Complexity Heatmap</h3>
+            <div style="display:flex; gap:15px; align-items: flex-start;">
+                <div id="matrixGrid" class="matrix-container"></div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">
+                    <div style="margin-bottom:5px;"><span class="m-cell inv" style="display:inline-block; vertical-align:middle;"></span> Inversion</div>
+                    <div><span class="m-cell ok" style="display:inline-block; vertical-align:middle;"></span> Correct</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        sb.classList.toggle('open');
+        // Redraw arcs when sidebar opens animation settles
+        setTimeout(() => game.drawArcs(), 400);
+    }
+
+    function toggleExplanation() {
+        const body = document.getElementById('expBody');
+        const arrow = document.getElementById('expArrow');
+        body.classList.toggle('show');
+        arrow.classList.toggle('rotate');
+    }
+
+    class GameEngine {
+        constructor() {
+            this.boardEl = document.getElementById('board');
+            this.linearEl = document.getElementById('linearArray');
+            this.canvas = document.getElementById('arcCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            
+            this.rows = 3;
+            this.cols = 3;
+            this.tiles = [];
+            this.isAnimating = false; // Block clicks during animation
+            
+            this.resize(3, 3);
+
+            document.getElementById('gridSize').addEventListener('change', (e) => {
+                const [r, c] = e.target.value.split(',').map(Number);
+                this.resize(r, c);
+            });
+
+            window.addEventListener('resize', () => {
+                if(document.getElementById('sidebar').classList.contains('open')) {
+                    this.drawArcs();
+                }
+            });
+        }
+
+        resize(r, c) {
+            this.rows = r;
+            this.cols = c;
+            this.total = r * c;
+
+            // Update Board CSS Grid
+            this.boardEl.style.gridTemplateColumns = `repeat(${c}, 100px)`;
+            // Adjust width to fit tiles + gaps
+            this.boardEl.style.width = `${c * 100 + (c-1)*10}px`;
+
+            // Reset: Solved state
+            this.tiles = Array.from({length: this.total}, (_, i) => (i + 1) % this.total);
+            
+            this.renderAll();
+        }
+
+        renderAll() {
+            this.renderBoard();
+            this.renderLinear();
+            this.renderMatrix();
+            this.updateMath();
+            requestAnimationFrame(() => this.drawArcs());
+        }
+
+        renderBoard() {
+            this.boardEl.innerHTML = '';
+            this.tiles.forEach((val, idx) => {
+                const tile = document.createElement('div');
+                tile.className = val === 0 ? 'tile empty' : 'tile';
+                tile.id = `tile-${idx}`; // ID for animation
+                tile.textContent = val === 0 ? '' : val;
+                
+                const correctIdx = (val === 0) ? this.total - 1 : val - 1;
+                if (val !== 0 && idx === correctIdx) tile.classList.add('correct');
+
+                if (val !== 0) {
+                    tile.onclick = () => this.move(idx);
+                    tile.onmouseenter = () => this.highlight(val, true);
+                    tile.onmouseleave = () => this.highlight(val, false);
+                }
+                this.boardEl.appendChild(tile);
+            });
+        }
+
+        renderLinear() {
+            this.linearEl.innerHTML = '';
+            this.tiles.forEach(val => {
+                const div = document.createElement('div');
+                div.className = 'mini-tile';
+                if(val === 0) {
+                    div.style.background = 'repeating-linear-gradient(45deg, #eee, #eee 5px, #fff 5px, #fff 10px)';
+                } else {
+                    div.innerText = val;
+                    div.id = `mini-${val}`;
+                }
+                this.linearEl.appendChild(div);
+            });
+        }
+
+        highlight(val, isOn) {
+            const el = document.getElementById(`mini-${val}`);
+            if(el) {
+                if(isOn) el.classList.add('highlight');
+                else el.classList.remove('highlight');
+            }
+        }
+
+        async move(idx) {
+            if (this.isAnimating) return;
+
+            const emptyIdx = this.tiles.indexOf(0);
+            const [r1, c1] = [Math.floor(idx / this.cols), idx % this.cols];
+            const [r2, c2] = [Math.floor(emptyIdx / this.cols), emptyIdx % this.cols];
+
+            // Check if adjacent
+            if (Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1) {
+                this.isAnimating = true;
+
+                // 1. Get DOM elements
+                const tileEl = document.getElementById(`tile-${idx}`);
+                
+                // 2. Calculate Slide Direction (pixels)
+                // Tiles are 100px + 10px gap = 110px stride
+                const stride = 110; 
+                const dx = (c2 - c1) * stride;
+                const dy = (r2 - r1) * stride;
+
+                // 3. Apply Transform
+                tileEl.style.transform = `translate(${dx}px, ${dy}px)`;
+
+                // 4. Wait for animation
+                await new Promise(r => setTimeout(r, 200));
+
+                // 5. Swap Logic & Re-render
+                [this.tiles[idx], this.tiles[emptyIdx]] = [this.tiles[emptyIdx], this.tiles[idx]];
+                this.renderAll();
+                
+                this.isAnimating = false;
+            }
+        }
+
+        renderMatrix() {
+            const container = document.getElementById('matrixGrid');
+            container.innerHTML = '';
+            const nums = this.tiles.filter(x => x !== 0);
+            const size = nums.length;
+            container.style.gridTemplateColumns = `repeat(${size}, 14px)`;
+
+            for(let i=0; i<size; i++) {
+                for(let j=0; j<size; j++) {
+                    const d = document.createElement('div');
+                    d.className = 'm-cell';
+                    if(i === j) d.style.background = '#2d3436'; 
+                    else if (i < j && nums[i] > nums[j]) d.className += ' inv';
+                    else d.className += ' ok';
+                    container.appendChild(d);
+                }
+            }
+        }
+
+        drawArcs() {
+            const container = document.getElementById('linearWrapper');
+            const miniTiles = Array.from(this.linearEl.children);
+            const rect = container.getBoundingClientRect();
+            
+            // Set canvas size to match container perfectly
+            this.canvas.width = rect.width;
+            this.canvas.height = 110; 
+            this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
+            this.ctx.lineWidth = 2;
+            
+            const nums = this.tiles;
+            for(let i=0; i<nums.length; i++) {
+                if(nums[i] === 0) continue;
+                for(let j=i+1; j<nums.length; j++) {
+                    if(nums[j] === 0) continue;
+                    
+                    if(nums[i] > nums[j]) {
+                        // Coordinates relative to the wrapper
+                        const el1 = miniTiles[i];
+                        const el2 = miniTiles[j];
+                        
+                        // Use offsetLeft relative to parent
+                        const x1 = el1.offsetLeft + el1.offsetWidth/2;
+                        const x2 = el2.offsetLeft + el2.offsetWidth/2;
+                        const y = this.canvas.height - 5; 
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x1, y);
+                        
+                        const dist = Math.abs(x2 - x1);
+                        const h = Math.min(80, dist * 0.5);
+                        const midX = (x1 + x2) / 2;
+
+                        this.ctx.quadraticCurveTo(midX, y - h*2, x2, y);
+                        
+                        this.ctx.strokeStyle = 'rgba(255, 118, 117, 0.8)'; 
+                        this.ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        getStats() {
+            let inv = 0;
+            const flat = this.tiles.filter(x => x !== 0);
+            for(let i=0; i<flat.length; i++) {
+                for(let j=i+1; j<flat.length; j++) {
+                    if(flat[i] > flat[j]) inv++;
+                }
+            }
+            const emptyIdx = this.tiles.indexOf(0);
+            const rowFromTop = Math.floor(emptyIdx / this.cols);
+            const rowFromBottom = this.rows - rowFromTop;
+            return { inv, rowFromBottom };
+        }
+
+        updateMath() {
+            const { inv, rowFromBottom } = this.getStats();
+            const isOddWidth = (this.cols % 2 !== 0);
+            
+            document.getElementById('invVal').innerText = inv;
+            document.getElementById('distVal').innerText = rowFromBottom;
+            const distPart = document.getElementById('distPart');
+            const badge = document.getElementById('statusBadge');
+            
+            let solvable = false;
+            if(isOddWidth) {
+                distPart.style.display = 'none';
+                solvable = (inv % 2 === 0);
+            } else {
+                distPart.style.display = 'inline';
+                solvable = ((inv + rowFromBottom) % 2 !== 0);
+            }
+
+            if(solvable) {
+                badge.className = 'badge bg-ok';
+                badge.innerText = "SOLVABLE";
+            } else {
+                badge.className = 'badge bg-no';
+                badge.innerText = "IMPOSSIBLE";
+            }
+        }
+
+        shuffle(forceSolvable) {
+            // Fisher-Yates
+            for (let i = this.tiles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.tiles[i], this.tiles[j]] = [this.tiles[j], this.tiles[i]];
+            }
+            
+            const { inv, rowFromBottom } = this.getStats();
+            const isOddWidth = (this.cols % 2 !== 0);
+            
+            let currentSolvable = false;
+            if (isOddWidth) currentSolvable = (inv % 2 === 0);
+            else currentSolvable = ((inv + rowFromBottom) % 2 !== 0);
+            
+            if (currentSolvable !== forceSolvable) {
+                // Fix parity by swapping first two non-zero
+                let i1 = 0; while(this.tiles[i1]===0) i1++;
+                let i2 = i1+1; while(this.tiles[i2]===0) i2++;
+                [this.tiles[i1], this.tiles[i2]] = [this.tiles[i2], this.tiles[i1]];
+            }
+            this.renderAll();
+        }
+    }
+
+    const game = new GameEngine();
+</script>
+
+</body>
+</html>
