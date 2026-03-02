@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinematic Lightning Pathfinder (Enhanced Settings)</title>
+    <title>Cinematic Lightning Pathfinder (Sparks & Themes)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -38,6 +38,53 @@
             --input-bdr:  rgba(160, 90, 0, 0.30);
         }
 
+        /* LIGHTNING COLOR THEMES (CSS Variables) */
+        body {
+            --strike-base: rgba(255, 100, 0, 0.7);
+            --strike-mid: rgba(255, 150, 0, 0.8);
+            --strike-mid-shadow: #ffaa00;
+            --strike-core: #fffb00;
+            --strike-core-shadow: #ffff00;
+            --strike-core-end: #ff8800;
+            --strike-core-end-shadow: #ffaa00;
+        }
+        body[data-path-color="cyan"] {
+            --strike-base: rgba(0, 100, 255, 0.7);
+            --strike-mid: rgba(0, 200, 255, 0.8);
+            --strike-mid-shadow: #00ccff;
+            --strike-core: #e0ffff;
+            --strike-core-shadow: #00ffff;
+            --strike-core-end: #0088ff;
+            --strike-core-end-shadow: #00ccff;
+        }
+        body[data-path-color="magenta"] {
+            --strike-base: rgba(170, 0, 255, 0.7);
+            --strike-mid: rgba(255, 0, 170, 0.8);
+            --strike-mid-shadow: #ff00aa;
+            --strike-core: #ffddff;
+            --strike-core-shadow: #ff44cc;
+            --strike-core-end: #cc00ff;
+            --strike-core-end-shadow: #aa00ff;
+        }
+        body[data-path-color="emerald"] {
+            --strike-base: rgba(0, 170, 0, 0.7);
+            --strike-mid: rgba(0, 255, 68, 0.8);
+            --strike-mid-shadow: #00ff44;
+            --strike-core: #ddffdd;
+            --strike-core-shadow: #88ffaa;
+            --strike-core-end: #00aa00;
+            --strike-core-end-shadow: #008800;
+        }
+        body[data-path-color="crimson"] {
+            --strike-base: rgba(170, 0, 0, 0.7);
+            --strike-mid: rgba(255, 0, 0, 0.8);
+            --strike-mid-shadow: #ff0000;
+            --strike-core: #ffdddd;
+            --strike-core-shadow: #ff4444;
+            --strike-core-end: #aa0000;
+            --strike-core-end-shadow: #880000;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: var(--bg); transition: background 0.3s; }
 
@@ -46,17 +93,14 @@
         ───────────────────────────────────────────── */
         #map { width: 100%; height: 100%; background-color: var(--bg); z-index: 1; }
 
-        .map-tiles {
-            filter: sepia(1) hue-rotate(-45deg) saturate(2.5) brightness(1.45) contrast(1.3) !important;
-            transition: filter 0.5s ease-out; 
-        }
+        .map-tiles { filter: sepia(1) hue-rotate(-45deg) saturate(2.5) brightness(1.45) contrast(1.3) !important; transition: filter 0.5s ease-out; }
         body.day .map-tiles { filter: none !important; }
 
         .found-night .map-tiles { filter: sepia(1) hue-rotate(240deg) saturate(1.8) brightness(1.25) contrast(1.2) !important; }
         body.day .found-day .map-tiles { filter: saturate(1.35) brightness(0.93) !important; }
 
         /* ─────────────────────────────────────────────
-           UI PANEL (ORIGINAL LOOK + DAY SUPPORT)
+           UI PANEL
         ───────────────────────────────────────────── */
         #ui-container {
             position: absolute; bottom: 30px; left: 30px; z-index: 10;
@@ -64,15 +108,11 @@
             padding: 20px; border-radius: 12px; border: 1px solid var(--ui-border);
             box-shadow: 0 10px 40px rgba(0,0,0,0.9); color: var(--text);
             display: flex; flex-direction: column; gap: 12px; width: 340px;
-            max-width: calc(100% - 60px);
-            transition: background 0.3s, border-color 0.3s, color 0.3s;
+            max-width: calc(100% - 60px); transition: background 0.3s, border-color 0.3s, color 0.3s;
         }
 
         @media (max-width: 768px) {
-            #ui-container {
-                left: 15px; right: 15px; bottom: 15px; width: auto; max-width: none;
-                padding: 15px; gap: 10px;
-            }
+            #ui-container { left: 15px; right: 15px; bottom: 15px; width: auto; max-width: none; padding: 15px; gap: 10px; }
             .title { font-size: 1rem !important; }
             .instructions { font-size: 0.8rem; }
             select, button { padding: 10px; font-size: 0.85rem; }
@@ -82,71 +122,54 @@
 
         .title { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--primary); transition: color 0.3s; }
         .instructions { font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; transition: color 0.3s; }
-        
         .row { display: flex; gap: 10px; align-items: center; }
         
         select, button {
             width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: 600;
             font-size: 0.9rem; cursor: pointer; transition: all 0.3s;
-            background: var(--input-bg); color: var(--text); border: 1px solid var(--input-bdr);
-            outline: none;
+            background: var(--input-bg); color: var(--text); border: 1px solid var(--input-bdr); outline: none;
         }
         select:focus, button:focus { border-color: var(--accent); }
         
-        button.action-btn {
-            background: linear-gradient(90deg, #bb3300, #ff8800); color: #fff; 
-            text-transform: uppercase; letter-spacing: 2px;
-            box-shadow: 0 0 15px rgba(255, 80, 0, 0.4); border: none;
-        }
+        button.action-btn { background: linear-gradient(90deg, #bb3300, #ff8800); color: #fff; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px rgba(255, 80, 0, 0.4); border: none; }
         button.action-btn:hover { background: linear-gradient(90deg, #dd4400, #ffaa00); box-shadow: 0 0 25px rgba(255, 170, 0, 0.6); transform: translateY(-2px); }
         button.clear-btn { background: transparent; border: 1px solid var(--sep); color: var(--muted); }
         button.clear-btn:hover { border-color: #ff3333; color: #ff3333; }
 
         .slider-label { font-size: 0.8rem; color: var(--primary); font-weight: bold; width: 60px; transition: color 0.3s; }
+        
+        /* Updated Deep Orange Slider */
         input[type=range] { width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
-             height: 16px; width: 16px; border-radius: 50%;
-            background: #ffea00; cursor: pointer; margin-top: -6px;
-            box-shadow: 0 0 10px #ffaa00; appearance: none;
+            height: 16px; width: 16px; border-radius: 50%;
+            background: #ff8800; cursor: pointer; margin-top: -6px;
+            box-shadow: 0 0 12px #ff6600; appearance: none; transition: transform 0.1s;
         }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer;
-            background: rgba(255, 120, 0, 0.3); border-radius: 2px;
-        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 120, 0, 0.3); border-radius: 2px; }
         input[type=range]:focus { outline: none; }
 
         /* ─────────────────────────────────────────────
-           OVERLAY EFFECTS (FROM UPDATED CODE)
+           OVERLAY EFFECTS
         ───────────────────────────────────────────── */
-        #effect-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 40; opacity: 0; pointer-events: none; 
-            will-change: opacity, transform; 
-        }
-
-        .fx-flash #effect-overlay { background-color: #ffaa00; }
+        #effect-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 40; opacity: 0; pointer-events: none; will-change: opacity, transform; }
+        .fx-flash #effect-overlay { background-color: var(--strike-mid-shadow); }
         .fx-flash .run-fx { animation: screenFlash 2.5s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; }
-        @keyframes screenFlash { 0% { opacity: 0; } 1% { opacity: 1; } 8% { opacity: 0.8; } 25% { opacity: 0.3; } 100% { opacity: 0; } }
-
+        @keyframes screenFlash { 0% { opacity: 0; } 1% { opacity: 0.8; } 8% { opacity: 0.6; } 25% { opacity: 0.2; } 100% { opacity: 0; } }
         .fx-scan #effect-overlay { background: repeating-linear-gradient(to bottom, rgba(255,180,0,0.20) 0px, rgba(255,180,0,0.20) 1px, transparent 1px, transparent 5px); }
         .fx-scan .run-fx { animation: anim-scan 2.0s ease-out forwards; }
         @keyframes anim-scan { 0%{opacity:0} 5%{opacity:.75} 40%{opacity:.55} 100%{opacity:0} }
-
         .fx-ripple #effect-overlay { background: radial-gradient(circle at 50% 50%, rgba(255,200,0,0.70) 0%, rgba(255,80,0,0.25) 45%, transparent 72%); }
         .fx-ripple .run-fx { animation: anim-ripple 2.2s cubic-bezier(0.2,0.8,0.3,1) forwards; }
         @keyframes anim-ripple { 0%{opacity:0;transform:scale(.4)} 12%{opacity:.85;transform:scale(1)} 100%{opacity:0;transform:scale(2.6)} }
-
         .fx-vignette #effect-overlay { background: radial-gradient(ellipse at 50% 50%, transparent 25%, rgba(255,80,0,0.55) 100%); }
         .fx-vignette .run-fx { animation: anim-vignette 2.5s ease-out forwards; }
         @keyframes anim-vignette { 0%{opacity:0} 8%{opacity:1} 100%{opacity:0} }
 
         /* ─────────────────────────────────────────────
-           MASSIVE BLOOM STRIKE & DYNAMIC SHRINKING (ORIGINAL)
+           MASSIVE BLOOM STRIKE & SPARKS
         ───────────────────────────────────────────── */
-        .path-flash {
-            stroke-dasharray: 20000; stroke-dashoffset: 20000; pointer-events: none;
-            stroke-linecap: round; stroke-linejoin: round;
-        }
+        .path-flash { stroke-dasharray: 20000; stroke-dashoffset: 20000; pointer-events: none; stroke-linecap: round; stroke-linejoin: round; }
 
         .path-glow-base.path-flash { animation: strikeDraw 0.85s cubic-bezier(0.1, 0.8, 0.2, 1) forwards, shrinkBase 2.5s cubic-bezier(0.1, 0.8, 0.2, 1) 0.4s forwards; }
         .path-glow-mid.path-flash  { animation: strikeDraw 0.85s cubic-bezier(0.1, 0.8, 0.2, 1) forwards, shrinkMid 2.5s cubic-bezier(0.1, 0.8, 0.2, 1) 0.4s forwards; }
@@ -156,59 +179,39 @@
         @keyframes strikeDraw { to { stroke-dashoffset: 0; } }
         @keyframes shrinkBase { 0% { stroke-width: 80px; opacity: 0.7; } 100% { stroke-width: 0px; opacity: 0; } }
         @keyframes shrinkMid { 0% { stroke-width: 40px; opacity: 0.8; } 100% { stroke-width: 0px; opacity: 0; } }
-        @keyframes shrinkCore { 0% { stroke-width: 12px; filter: drop-shadow(0 0 12px #ffff00); stroke: #fffb00; } 100% { stroke-width: 6px; filter: drop-shadow(0 0 4px #ffaa00); stroke: #ff8800; opacity: 0.9; } }
         @keyframes shrinkCenter { 0% { stroke-width: 4px; opacity: 1; } 100% { stroke-width: 2px; opacity: 0.9; filter: drop-shadow(0 0 2px #ffffff); } }
 
-        .path-glow-base { stroke: rgba(255, 100, 0, 0.7); stroke-width: 80px; filter: blur(25px); }
-        .path-glow-mid  { stroke: rgba(255, 150, 0, 0.8); stroke-width: 40px; filter: blur(12px) drop-shadow(0 0 15px #ffaa00); }
-        .path-glow-core { stroke: #fffb00; stroke-width: 12px; filter: drop-shadow(0 0 12px #ffff00); }
+        /* Themed core shrinking animation */
+        @keyframes shrinkCore { 
+            0% { stroke-width: 12px; filter: drop-shadow(0 0 12px var(--strike-core-shadow)); stroke: var(--strike-core); } 
+            100% { stroke-width: 6px; filter: drop-shadow(0 0 4px var(--strike-core-end-shadow)); stroke: var(--strike-core-end); opacity: 0.9; } 
+        }
+
+        .path-glow-base { stroke: var(--strike-base); stroke-width: 80px; filter: blur(25px); }
+        .path-glow-mid  { stroke: var(--strike-mid); stroke-width: 40px; filter: blur(12px) drop-shadow(0 0 15px var(--strike-mid-shadow)); }
+        .path-glow-core { stroke: var(--strike-core); stroke-width: 12px; filter: drop-shadow(0 0 12px var(--strike-core-shadow)); }
         .path-center    { stroke: #ffffff; stroke-width: 4px; filter: drop-shadow(0 0 5px #ffffff); }
 
+        .spark-head { filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px var(--strike-core)); }
+
         /* ─────────────────────────────────────────────
-           MARKERS & MISC
+           MARKERS & SETTINGS PANEL
         ───────────────────────────────────────────── */
         .glow-marker { background: #fff; border-radius: 50%; box-shadow: 0 0 15px 4px #ff8800; }
         .start-marker { background: #fff; box-shadow: 0 0 15px 4px #00ffff; }
         .fixed-start-pin { background: #00ffcc; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 12px 3px #00ffcc; }
 
-        #loading {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050101; z-index: 1000; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--primary); transition: opacity 0.5s;
-        }
-        .spinner {
-            width: 60px; height: 60px; border: 3px solid rgba(255, 120, 0, 0.1); border-top-color: var(--primary); 
-            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px; box-shadow: 0 0 20px rgba(255, 120, 0, 0.5);
-        }
+        #loading { position: absolute; inset: 0; background: #050101; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--primary); transition: opacity 0.5s; }
+        .spinner { width: 60px; height: 60px; border: 3px solid rgba(255, 120, 0, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px; box-shadow: 0 0 20px rgba(255, 120, 0, 0.5); }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ─────────────────────────────────────────────
-           SETTINGS BUTTON & OVERLAY (FROM UPDATED CODE)
-        ───────────────────────────────────────────── */
-        #settings-btn {
-            position: absolute; top: 16px; right: 16px; z-index: 20;
-            width: 42px; height: 42px; border-radius: 50%;
-            background: var(--ui-bg); border: 1px solid var(--ui-border);
-            color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(12px); box-shadow: 0 4px 18px rgba(0,0,0,.55);
-            transition: transform .35s, background .3s, border-color .3s, color .3s;
-        }
+        #settings-btn { position: absolute; top: 16px; right: 16px; z-index: 20; width: 42px; height: 42px; border-radius: 50%; background: var(--ui-bg); border: 1px solid var(--ui-border); color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); box-shadow: 0 4px 18px rgba(0,0,0,.55); transition: transform .35s, background .3s, border-color .3s, color .3s; }
         #settings-btn:hover { transform: rotate(55deg); }
         #settings-btn svg { width: 20px; height: 20px; fill: currentColor; pointer-events: none; }
 
-        #settings-overlay {
-            position: absolute; inset: 0; z-index: 100;
-            background: rgba(0,0,0,.58); backdrop-filter: blur(5px);
-            display: none; align-items: center; justify-content: center;
-        }
+        #settings-overlay { position: absolute; inset: 0; z-index: 100; background: rgba(0,0,0,.58); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; }
         #settings-overlay.open { display: flex; }
-
-        #settings-panel {
-            width: 380px; max-width: calc(100vw - 28px); max-height: 88vh; overflow-y: auto;
-            background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 14px; padding: 24px;
-            color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.85);
-            display: flex; flex-direction: column; gap: 18px; backdrop-filter: blur(18px);
-            transition: background .3s, border-color .3s, color .3s;
-        }
+        #settings-panel { width: 380px; max-width: calc(100vw - 28px); max-height: 88vh; overflow-y: auto; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 14px; padding: 24px; color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.85); display: flex; flex-direction: column; gap: 18px; backdrop-filter: blur(18px); }
 
         .sp-head { display: flex; align-items: center; justify-content: space-between; }
         .sp-title { font-size: .88rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2.5px; color: var(--primary); }
@@ -220,50 +223,29 @@
         .sp-note { font-size: .72rem; color: var(--muted); line-height: 1.5; }
 
         .pill-row { display: flex; gap: 7px; flex-wrap: wrap; }
-        .pill {
-            padding: 7px 13px; border-radius: 6px; font-size: .77rem; font-weight: 700; cursor: pointer;
-            border: 1px solid var(--ui-border); background: var(--input-bg); color: var(--text);
-            transition: background .18s, color .18s, border-color .18s;
-        }
+        .pill { padding: 7px 13px; border-radius: 6px; font-size: .77rem; font-weight: 700; cursor: pointer; border: 1px solid var(--ui-border); background: var(--input-bg); color: var(--text); transition: background .18s, color .18s, border-color .18s; }
         .pill:hover, .pill.on { background: var(--primary); color: #000; border-color: var(--primary); }
 
         .tog-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .tog-desc { font-size: .82rem; }
         .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .sw-track {
-            position: absolute; inset: 0; border-radius: 12px; cursor: pointer;
-            background: rgba(255,255,255,.10); border: 1px solid var(--ui-border); transition: background .2s, border-color .3s;
-        }
+        .sw-track { position: absolute; inset: 0; border-radius: 12px; cursor: pointer; background: rgba(255,255,255,.10); border: 1px solid var(--ui-border); transition: background .2s, border-color .3s; }
         .switch input:checked + .sw-track { background: var(--primary); }
-        .sw-track::after {
-            content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
-            border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .2s;
-        }
+        .sw-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .2s; }
         .switch input:checked + .sw-track::after { transform: translateX(18px); }
 
         .coord-pair { display: flex; gap: 8px; }
         .coord-pair label { display: flex; align-items: center; gap: 5px; flex: 1; font-size: .74rem; color: var(--muted); }
-        .coord-pair input {
-            flex: 1; padding: 7px 9px; border-radius: 5px; font-size: .78rem; background: var(--input-bg);
-            color: var(--text); border: 1px solid var(--input-bdr); outline: none; transition: border-color .2s;
-        }
+        .coord-pair input { flex: 1; padding: 7px 9px; border-radius: 5px; font-size: .78rem; background: var(--input-bg); color: var(--text); border: 1px solid var(--input-bdr); outline: none; }
         .coord-pair input:focus { border-color: var(--accent); }
 
-        #bbox-rect {
-            position: absolute; display: none; pointer-events: none; z-index: 8;
-            border: 2px dashed var(--primary); background: rgba(255, 170, 0, 0.07);
-        }
-        #bbox-hint {
-            position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 20;
-            background: var(--ui-bg); border: 1px solid var(--ui-border); color: var(--text);
-            font-size: .78rem; letter-spacing: .4px; padding: 7px 18px; border-radius: 20px;
-            backdrop-filter: blur(10px); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .35s;
-        }
+        #bbox-rect { position: absolute; display: none; pointer-events: none; z-index: 8; border: 2px dashed var(--primary); background: rgba(255, 170, 0, 0.07); }
+        #bbox-hint { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 20; background: var(--ui-bg); border: 1px solid var(--ui-border); color: var(--text); font-size: .78rem; letter-spacing: .4px; padding: 7px 18px; border-radius: 20px; backdrop-filter: blur(10px); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .35s; }
         #bbox-hint.show { opacity: 1; }
     </style>
 </head>
-<body class="fx-flash">
+<body class="fx-flash" data-path-color="amber">
 
     <div id="effect-overlay"></div>
 
@@ -275,19 +257,16 @@
     <div id="bbox-rect"></div>
     <div id="bbox-hint">Right-click + drag to load a new area</div>
 
-    <!-- SETTINGS BUTTON -->
     <button id="settings-btn" onclick="openSettings()" title="Settings">
         <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.36.07-.73.07-1.08s-.03-.71-.07-1.08l2.33-1.82c.21-.16.27-.46.13-.7l-2.2-3.82c-.14-.24-.42-.32-.67-.24l-2.75 1.1c-.57-.44-1.18-.81-1.85-1.08l-.42-2.93A.55.55 0 0014 2h-4c-.28 0-.51.2-.55.47l-.42 2.93C8.36 5.67 7.75 6.04 7.18 6.48l-2.75-1.1c-.25-.08-.53 0-.67.24L1.56 9.44c-.14.24-.08.54.13.7l2.33 1.82c-.04.37-.07.74-.07 1.08s.03.71.07 1.08L1.69 15.94c-.21.16-.27.46-.13.7l2.2 3.82c.14.24.42.32.67.24l2.75-1.1c.57.44 1.18.81 1.85 1.08l.42 2.93c.04.27.27.47.55.47h4c.28 0 .51-.2.55-.47l.42-2.93c.67-.27 1.28-.64 1.85-1.08l2.75 1.1c.25.08.53 0 .67-.24l2.2-3.82c.14-.24.08-.54-.13-.7l-2.33-1.82z"/></svg>
     </button>
 
-    <!-- SETTINGS OVERLAY -->
     <div id="settings-overlay">
         <div id="settings-panel">
             <div class="sp-head">
                 <span class="sp-title">Settings</span>
                 <button class="sp-close" onclick="closeSettings()">×</button>
             </div>
-            <!-- Theme -->
             <div class="sp-grp">
                 <div class="sp-lbl">Map Theme</div>
                 <div class="pill-row">
@@ -296,23 +275,32 @@
                 </div>
             </div>
             <div class="sp-sep"></div>
-            <!-- Overlay effect -->
+            <!-- Path Color Settings -->
+            <div class="sp-grp">
+                <div class="sp-lbl">Path Color (Themes)</div>
+                <div class="pill-row">
+                    <div class="pill on" data-pcolor="amber" onclick="setPathColor('amber')">Amber</div>
+                    <div class="pill" data-pcolor="cyan" onclick="setPathColor('cyan')">Cyan</div>
+                    <div class="pill" data-pcolor="magenta" onclick="setPathColor('magenta')">Magenta</div>
+                    <div class="pill" data-pcolor="emerald" onclick="setPathColor('emerald')">Emerald</div>
+                    <div class="pill" data-pcolor="crimson" onclick="setPathColor('crimson')">Crimson</div>
+                </div>
+            </div>
+            <div class="sp-sep"></div>
             <div class="sp-grp">
                 <div class="sp-lbl">Strike Overlay Effect</div>
-                <div class="sp-note">Changes the full-screen flash style.</div>
                 <div class="pill-row">
-                    <div class="pill on" data-fx="flash" onclick="setEffect('flash')">Amber Flash</div>
+                    <div class="pill on" data-fx="flash" onclick="setEffect('flash')">Flash</div>
                     <div class="pill" data-fx="scan" onclick="setEffect('scan')">Scanlines</div>
                     <div class="pill" data-fx="ripple" onclick="setEffect('ripple')">Ripple</div>
                     <div class="pill" data-fx="vignette" onclick="setEffect('vignette')">Vignette</div>
                 </div>
             </div>
             <div class="sp-sep"></div>
-            <!-- Graph overlay -->
             <div class="sp-grp">
                 <div class="sp-lbl">Graph Overlay</div>
                 <div class="tog-row">
-                    <span class="tog-desc">Show road graph edges</span>
+                    <span class="tog-desc">Show road edges</span>
                     <label class="switch"><input type="checkbox" onchange="setGraphVis('edges', this.checked)"><div class="sw-track"></div></label>
                 </div>
                 <div class="tog-row">
@@ -321,7 +309,6 @@
                 </div>
             </div>
             <div class="sp-sep"></div>
-            <!-- Area Selection -->
             <div class="sp-grp">
                 <div class="sp-lbl">Area Selection</div>
                 <div class="tog-row">
@@ -330,11 +317,10 @@
                 </div>
             </div>
             <div class="sp-sep"></div>
-            <!-- Fixed start -->
             <div class="sp-grp">
                 <div class="sp-lbl">Fixed Start Point</div>
                 <div class="tog-row" style="margin-bottom:4px">
-                    <span class="tog-desc">Lock a permanent start location</span>
+                    <span class="tog-desc">Lock start location</span>
                     <label class="switch"><input type="checkbox" id="tog-fixed" onchange="setFixedStart(this.checked)"><div class="sw-track"></div></label>
                 </div>
                 <div class="coord-pair">
@@ -346,7 +332,6 @@
         </div>
     </div>
 
-    <!-- UI PANEL -->
     <div id="ui-container">
         <div class="title">Neon Trace</div>
         <div class="instructions" id="status-text">Click anywhere to place START point.</div>
@@ -439,7 +424,7 @@
                 const dpr = window.devicePixelRatio || 1;
 
                 for (let [id, node] of graph.entries()) {
-                    const [px, py] = this._ll2px(node.lat, node.lon);
+                    const[px, py] = this._ll2px(node.lat, node.lon);
                     if (this._showEdges) {
                         ctx.strokeStyle = eColor; ctx.lineWidth = 1 * dpr; ctx.globalAlpha = 1;
                         for (let e of node.edges) {
@@ -500,7 +485,16 @@
             day:   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
         };
 
-        const MAP_CENTER = [13.0198, 77.5673]; 
+        const ColorThemes = {
+            amber: { emberBase: '#ff4400', emberCore: '#ff8800', frontBase: '#ff5500', frontMid: '#ffcc00', spark: '#ffffff' },
+            cyan: { emberBase: '#0066ff', emberCore: '#00ccff', frontBase: '#0088ff', frontMid: '#00ffff', spark: '#ffffff' },
+            magenta: { emberBase: '#aa00ff', emberCore: '#ff00aa', frontBase: '#cc00ff', frontMid: '#ff44cc', spark: '#ffffff' },
+            emerald: { emberBase: '#008800', emberCore: '#00ff44', frontBase: '#00aa00', frontMid: '#44ff88', spark: '#ffffff' },
+            crimson: { emberBase: '#880000', emberCore: '#ff0000', frontBase: '#aa0000', frontMid: '#ff4444', spark: '#ffffff' }
+        };
+        let currentPathColor = 'amber';
+
+        const MAP_CENTER =[13.0198, 77.5673]; 
         const map = L.map('map', { zoomControl: false, preferCanvas: true }).setView(MAP_CENTER, 15.5);
 
         let currentTileLayer = L.tileLayer(TILE_URLS.night, { maxZoom: 19, attribution: '&copy; OpenStreetMap', className: 'map-tiles' }).addTo(map);
@@ -516,7 +510,7 @@
         let pathLayers = L.layerGroup().addTo(map);   
         let activeFrontLayer = L.layerGroup().addTo(map);
         let isAnimating = false;
-        let basePolylines =[]; // Keep a reference to redraw on theme change
+        let basePolylines =[]; 
 
         let currentTheme = 'night';
         let fixedStartEnabled = false;
@@ -531,7 +525,6 @@
             fetchOSMData(bbox);
         });
 
-        // Show BBox Hint
         setTimeout(() => document.getElementById('bbox-hint').classList.add('show'), 500);
         setTimeout(() => document.getElementById('bbox-hint').classList.remove('show'), 3700);
 
@@ -552,11 +545,14 @@
             currentTileLayer = L.tileLayer(TILE_URLS[t], { maxZoom: 19, attribution: '© OpenStreetMap', className: 'map-tiles' }).addTo(map);
 
             baseRoadLayer.clearLayers();
-            L.polyline(basePolylines, {
-                color: t === 'day' ? 'rgba(90,45,0,0.18)' : 'rgba(255,100,50,0.1)',
-                weight: t === 'day' ? 1.5 : 1, smoothFactor: 2
-            }).addTo(baseRoadLayer);
+            L.polyline(basePolylines, { color: t === 'day' ? 'rgba(90,45,0,0.18)' : 'rgba(255,100,50,0.1)', weight: t === 'day' ? 1.5 : 1, smoothFactor: 2 }).addTo(baseRoadLayer);
             graphOverlay.draw();
+        }
+
+        function setPathColor(colorId) {
+            currentPathColor = colorId;
+            document.body.setAttribute('data-path-color', colorId);
+            document.querySelectorAll('[data-pcolor]').forEach(el => el.classList.toggle('on', el.dataset.pcolor === colorId));
         }
 
         function setEffect(fx) {
@@ -628,17 +624,14 @@
         }
 
         function buildGraph(elements) {
-            graph.clear(); nodesData = {}; basePolylines = [];
-            baseRoadLayer.clearLayers();
+            graph.clear(); nodesData = {}; basePolylines = []; baseRoadLayer.clearLayers();
 
             const ways =[];
             elements.forEach(el => {
                 if (el.type === 'node') {
                     nodesData[el.id] = { lat: el.lat, lon: el.lon };
                     graph.set(el.id, { lat: el.lat, lon: el.lon, edges:[] });
-                } else if (el.type === 'way' && el.nodes) {
-                    ways.push(el);
-                }
+                } else if (el.type === 'way' && el.nodes) { ways.push(el); }
             });
 
             ways.forEach(way => {
@@ -657,26 +650,19 @@
                         const p2 =[node.lat, node.lon];
                         
                         graph.get(prevNodeId).edges.push({ targetId: nodeId, dist: dist, coords: [p1, p2] });
-                        graph.get(nodeId).edges.push({ targetId: prevNodeId, dist: dist, coords: [p2, p1] });
+                        graph.get(nodeId).edges.push({ targetId: prevNodeId, dist: dist, coords:[p2, p1] });
                     }
                 }
                 if(coords.length > 0) basePolylines.push(coords);
             });
 
             compressGraph();
-
-            L.polyline(basePolylines, {
-                color: currentTheme === 'day' ? 'rgba(90,45,0,0.18)' : 'rgba(255,100,50,0.1)',
-                weight: currentTheme === 'day' ? 1.5 : 1, smoothFactor: 2
-            }).addTo(baseRoadLayer);
-            
+            L.polyline(basePolylines, { color: currentTheme === 'day' ? 'rgba(90,45,0,0.18)' : 'rgba(255,100,50,0.1)', weight: currentTheme === 'day' ? 1.5 : 1, smoothFactor: 2 }).addTo(baseRoadLayer);
             graphOverlay.draw();
 
             if (fixedStartEnabled) applyFixed();
-
             const loader = document.getElementById('loading');
-            loader.style.opacity = '0';
-            setTimeout(() => loader.style.display = 'none', 500);
+            loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 500);
         }
 
         function compressGraph() {
@@ -707,8 +693,7 @@
         map.on('click', (e) => {
             if(isAnimating || graph.size === 0) return;
             document.getElementById('map').classList.remove('found-night', 'found-day'); 
-            visualLayers.clearLayers(); 
-            pathLayers.clearLayers();
+            visualLayers.clearLayers(); pathLayers.clearLayers();
 
             const nearestId = findNearestNode(e.latlng.lat, e.latlng.lng);
 
@@ -717,15 +702,13 @@
                 if (endMarker) map.removeLayer(endMarker);
                 const n = graph.get(endNodeId);
                 endMarker = L.marker([n.lat, n.lon], { icon: L.divIcon({ className: 'glow-marker', iconSize:[8, 8] }) }).addTo(map);
-                updateStatusText("Ready to initiate trace.");
-                return;
+                updateStatusText("Ready to initiate trace."); return;
             }
 
             if (!startNodeId || (startNodeId && endNodeId)) {
                 startNodeId = nearestId; endNodeId = null;
                 if(startMarker) map.removeLayer(startMarker);
                 if(endMarker) map.removeLayer(endMarker);
-
                 const n = graph.get(startNodeId);
                 startMarker = L.marker([n.lat, n.lon], { icon: L.divIcon({ className: 'glow-marker start-marker', iconSize:[8, 8] }) }).addTo(map);
                 updateStatusText("Click to place the TARGET point.");
@@ -742,15 +725,13 @@
             if (!startNodeId || !endNodeId || isAnimating) return;
             isAnimating = true;
             document.getElementById('map').classList.remove('found-night', 'found-day');
-            visualLayers.clearLayers();
-            pathLayers.clearLayers();
+            visualLayers.clearLayers(); pathLayers.clearLayers();
             updateStatusText("Searching network...");
 
             await new Promise(r => setTimeout(r, 10)); 
 
             const algo = document.getElementById('algo-select').value;
             let result;
-            
             if (algo === 'astar') result = aStar(startNodeId, endNodeId);
             else if (algo === 'dijkstra') result = dijkstra(startNodeId, endNodeId);
             else if (algo === 'bfs') result = bfs(startNodeId, endNodeId);
@@ -770,11 +751,9 @@
         function dijkstra(start, target) {
             let pq = new PriorityQueue(); pq.enqueue(start, 0);
             let cameFrom = new Map(), gScore = new Map(), visitedEdges =[]; gScore.set(start, 0);
-
             while (!pq.isEmpty()) {
                 let current = pq.dequeue().val;
                 if (current === target) return reconstructPath(cameFrom, current, visitedEdges);
-
                 for (let edge of graph.get(current).edges) {
                     let tentative_gScore = gScore.get(current) + edge.dist;
                     if (!gScore.has(edge.targetId) || tentative_gScore < gScore.get(edge.targetId)) {
@@ -782,29 +761,24 @@
                         visitedEdges.push(edge.coords); pq.enqueue(edge.targetId, tentative_gScore);
                     }
                 }
-            }
-            return { visitedEdges: [], continuousCoords:[] };
+            } return { visitedEdges: [], continuousCoords:[] };
         }
 
         function aStar(start, target) {
             let pq = new PriorityQueue(); pq.enqueue(start, 0);
             let cameFrom = new Map(), gScore = new Map(), visitedEdges =[]; gScore.set(start, 0);
-
             while (!pq.isEmpty()) {
                 let current = pq.dequeue().val;
                 if (current === target) return reconstructPath(cameFrom, current, visitedEdges);
-
                 for (let edge of graph.get(current).edges) {
                     let tentative_gScore = gScore.get(current) + edge.dist;
                     if (!gScore.has(edge.targetId) || tentative_gScore < gScore.get(edge.targetId)) {
                         cameFrom.set(edge.targetId, current); gScore.set(edge.targetId, tentative_gScore);
                         visitedEdges.push(edge.coords);
-                        let fScore = tentative_gScore + heuristic(edge.targetId, target);
-                        pq.enqueue(edge.targetId, fScore);
+                        pq.enqueue(edge.targetId, tentative_gScore + heuristic(edge.targetId, target));
                     }
                 }
-            }
-            return { visitedEdges: [], continuousCoords:[] };
+            } return { visitedEdges: [], continuousCoords:[] };
         }
 
         function bfs(start, target) {
@@ -812,54 +786,44 @@
             while (queue.length > 0) {
                 let current = queue.shift();
                 if (current === target) return reconstructPath(cameFrom, current, visitedEdges);
-
                 for (let edge of graph.get(current).edges) {
                     if (!visited.has(edge.targetId)) {
                         visited.add(edge.targetId); cameFrom.set(edge.targetId, current);
                         visitedEdges.push(edge.coords); queue.push(edge.targetId);
                     }
                 }
-            }
-            return { visitedEdges: [], continuousCoords:[] };
+            } return { visitedEdges: [], continuousCoords:[] };
         }
 
         function dfs(start, target) {
-            let stack = [{ id: start, parent: null }], visited = new Set(), cameFrom = new Map(), visitedEdges =[];
+            let stack =[{ id: start, parent: null }], visited = new Set(), cameFrom = new Map(), visitedEdges =[];
             while (stack.length > 0) {
                 let { id: current, parent } = stack.pop();
                 if (visited.has(current)) continue;
                 visited.add(current);
-                
                 if (parent !== null) {
                     cameFrom.set(current, parent);
-                    let edge = graph.get(parent).edges.find(e => e.targetId === current);
-                    visitedEdges.push(edge.coords);
+                    visitedEdges.push(graph.get(parent).edges.find(e => e.targetId === current).coords);
                 }
                 if (current === target) return reconstructPath(cameFrom, current, visitedEdges);
-
                 for (let edge of graph.get(current).edges) {
                     if (!visited.has(edge.targetId)) stack.push({ id: edge.targetId, parent: current });
                 }
-            }
-            return { visitedEdges: [], continuousCoords:[] };
+            } return { visitedEdges:[], continuousCoords:[] };
         }
 
         function reconstructPath(cameFrom, current, visitedEdges) {
             let pathCoords =[]; let curr = current;
             while (cameFrom.has(curr)) {
                 let parent = cameFrom.get(curr);
-                let edge = graph.get(parent).edges.find(e => e.targetId === curr);
-                let coordsToAdd = [...edge.coords];
+                let coordsToAdd =[...graph.get(parent).edges.find(e => e.targetId === curr).coords];
                 if (pathCoords.length > 0) coordsToAdd.pop(); 
-                pathCoords = coordsToAdd.concat(pathCoords);
-                curr = parent;
-            }
-            return { visitedEdges, continuousCoords: pathCoords };
+                pathCoords = coordsToAdd.concat(pathCoords); curr = parent;
+            } return { visitedEdges, continuousCoords: pathCoords };
         }
 
         function heuristic(n1, n2) {
-            const latDiff = graph.get(n1).lat - graph.get(n2).lat;
-            const lonDiff = graph.get(n1).lon - graph.get(n2).lon;
+            const latDiff = graph.get(n1).lat - graph.get(n2).lat, lonDiff = graph.get(n1).lon - graph.get(n2).lon;
             return Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111000; 
         }
 
@@ -874,19 +838,15 @@
             graph.forEach((data, id) => {
                 const dist = getDistance(lat, lon, data.lat, data.lon);
                 if (dist < minDist) { minDist = dist; nearestId = id; }
-            });
-            return nearestId;
+            }); return nearestId;
         }
 
         /* ─────────────────────────────────────────────────────────────
-           VISUALIZATION & EFFECTS (ORIGINAL ANIMATION LOGIC)
+           VISUALIZATION & EFFECTS (FRACTIONAL SPARK ANIMATION)
         ───────────────────────────────────────────────────────────── */
         function triggerLightningStrike(continuousCoords) {
             const effectDiv = document.getElementById('effect-overlay');
-            effectDiv.classList.remove('run-fx'); 
-            void effectDiv.offsetWidth; // Force Reflow
-            effectDiv.classList.add('run-fx');
-
+            effectDiv.classList.remove('run-fx'); void effectDiv.offsetWidth; effectDiv.classList.add('run-fx');
             document.getElementById('map').classList.add(currentTheme === 'day' ? 'found-day' : 'found-night');
 
             L.polyline(continuousCoords, { renderer: svgRenderer, smoothFactor: 5.0, className: 'path-glow-base path-flash' }).addTo(pathLayers);
@@ -895,85 +855,121 @@
             L.polyline(continuousCoords, { renderer: svgRenderer, smoothFactor: 0.5, className: 'path-center path-flash' }).addTo(pathLayers);
         }
 
-        function animateVisualization(visitedEdges, continuousCoords) {
-            return new Promise((resolve) => {
-                let currentIndex = 0;
-                const totalEdges = visitedEdges.length;
-                let historyBuffer = [];
-        const maxHistory = 16; 
-
-        function drawNextFrame() {
-            const sliderVal = parseInt(document.getElementById('speed-slider').value);
-            
-            if (sliderVal === 100 || currentIndex >= totalEdges) {
-                if (currentIndex < totalEdges) {
-                    const remaining = visitedEdges.slice(currentIndex);
-                    // Draw the settled path with a faint wider glow to act like glowing embers
-                    L.polyline(remaining, { color: '#ff4400', weight: 6, opacity: 0.15, smoothFactor: 2.0 }).addTo(visualLayers);
-                    L.polyline(remaining, { color: '#ff8800', weight: 1.5, opacity: 0.45, smoothFactor: 2.0 }).addTo(visualLayers);
-                }
-                
-                activeFrontLayer.clearLayers(); 
-                
-                // NO requestAnimationFrame DELAY HERE. Flash and Strike sync perfectly.
-                triggerLightningStrike(continuousCoords);
-                resolve();
-                return;
-            }
-
-            let batchSize = Math.max(1, Math.floor(Math.pow(sliderVal / 12, 3)));
-            const batch = visitedEdges.slice(currentIndex, currentIndex + batchSize);
-            
-            historyBuffer.unshift(batch);
-            if (historyBuffer.length > maxHistory) {
-                historyBuffer.pop(); 
-            }
-
-            activeFrontLayer.clearLayers();
-            
-            historyBuffer.forEach((histBatch, idx) => {
-                let intensity = Math.pow(1 - (idx / maxHistory), 1.5);
-                
-                L.polyline(histBatch, { 
-                    color: '#ff5500', weight: 16 * intensity, opacity: 0.15 * intensity 
-                }).addTo(activeFrontLayer);
-                
-                L.polyline(histBatch, { 
-                    color: '#ffcc00', weight: 8 * intensity, opacity: 0.4 * intensity 
-                }).addTo(activeFrontLayer);
-                
-                if (idx < 2) { 
-                    L.polyline(histBatch, { 
-                        color: '#ffffff', weight: 3 * intensity, opacity: 0.9 * intensity 
-                    }).addTo(activeFrontLayer);
-                }
-            });
-            
-            // Draw the Settled Path with the dual-layer glowing embers effect
-            L.polyline(batch, { color: '#ff4400', weight: 6, opacity: 0.15, smoothFactor: 2.0 }).addTo(visualLayers);
-            L.polyline(batch, { color: '#ff8800', weight: 1.5, opacity: 0.45, smoothFactor: 2.0 }).addTo(visualLayers);
-            
-            currentIndex += batchSize;
-            requestAnimationFrame(drawNextFrame); 
+        function drawSettledBatch(batch) {
+            let t = ColorThemes[currentPathColor];
+            L.polyline(batch, { color: t.emberBase, weight: 6, opacity: 0.15, smoothFactor: 2.0 }).addTo(visualLayers);
+            L.polyline(batch, { color: t.emberCore, weight: 1.5, opacity: 0.45, smoothFactor: 2.0 }).addTo(visualLayers);
         }
 
-        requestAnimationFrame(drawNextFrame);
-    });
-}
+        function drawFrontBatch(batch, intensity) {
+            let t = ColorThemes[currentPathColor];
+            L.polyline(batch, { color: t.frontBase, weight: 16 * intensity, opacity: 0.15 * intensity }).addTo(activeFrontLayer);
+            L.polyline(batch, { color: t.frontMid, weight: 8 * intensity, opacity: 0.4 * intensity }).addTo(activeFrontLayer);
+            if (intensity > 0.8) {
+                L.polyline(batch, { color: t.spark, weight: 3 * intensity, opacity: 0.9 * intensity }).addTo(activeFrontLayer);
+            }
+        }
 
-function clearVisuals() {
-    if(isAnimating) return;
-    visualLayers.clearLayers();
-    activeFrontLayer.clearLayers(); 
-    pathLayers.clearLayers();
-    document.getElementById('map').classList.remove('map-found-state');
-    startNodeId = null; endNodeId = null;
-    if(startMarker) map.removeLayer(startMarker);
-    if(endMarker) map.removeLayer(endMarker);
-    document.getElementById('status-text').innerText = "Click to place the START point.";
-}
+        // Interpolate an edge array for smooth "growing spark" effect
+        function getPartialEdge(coords, progress) {
+            if (progress >= 1) return coords;
+            if (progress <= 0) return [coords[0]];
+            let totalLen = 0; let lengths =[];
+            for(let i = 0; i < coords.length - 1; i++) {
+                let d = getDistance(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
+                lengths.push(d); totalLen += d;
+            }
+            if (totalLen === 0) return coords;
+            
+            let targetLen = totalLen * progress; let currentLen = 0; let result = [coords[0]];
+            for(let i = 0; i < coords.length - 1; i++) {
+                if (currentLen + lengths[i] >= targetLen) {
+                    let segProgress = (targetLen - currentLen) / lengths[i];
+                    let lat = coords[i][0] + (coords[i+1][0] - coords[i][0]) * segProgress;
+                    let lon = coords[i][1] + (coords[i+1][1] - coords[i][1]) * segProgress;
+                    result.push([lat, lon]); break;
+                } else { currentLen += lengths[i]; result.push(coords[i+1]); }
+            } return result;
+        }
 
-fetchOSMData();
+        function animateVisualization(visitedEdges, continuousCoords) {
+            return new Promise((resolve) => {
+                let currentEdgeIdx = 0; // Floating point index
+                let lastSettledIdx = 0; // Integer
+                const totalEdges = visitedEdges.length;
+                let historyBuffer =[]; 
+                const maxHistory = 16; 
+
+                function drawNextFrame() {
+                    const sliderVal = parseInt(document.getElementById('speed-slider').value);
+                    
+                    if (sliderVal === 100) { // Instant Complete
+                        drawSettledBatch(visitedEdges.slice(lastSettledIdx));
+                        activeFrontLayer.clearLayers();
+                        triggerLightningStrike(continuousCoords);
+                        resolve(); return;
+                    }
+
+                    // Calculate jump size based on slider (0.02 to ~37 edges per frame)
+                    let edgesPerFrame = Math.pow(sliderVal / 30, 3) + 0.02;
+                    let nextEdgeIdx = Math.min(totalEdges, currentEdgeIdx + edgesPerFrame);
+                    let settledEnd = Math.floor(nextEdgeIdx);
+                    
+                    if (settledEnd > lastSettledIdx) {
+                        let newlySettled = visitedEdges.slice(lastSettledIdx, settledEnd);
+                        historyBuffer.unshift(newlySettled);
+                        if (historyBuffer.length > maxHistory) historyBuffer.pop();
+                        drawSettledBatch(newlySettled);
+                        lastSettledIdx = settledEnd;
+                    }
+
+                    activeFrontLayer.clearLayers();
+                    
+                    historyBuffer.forEach((histBatch, idx) => {
+                        let intensity = Math.pow(1 - (idx / maxHistory), 1.5);
+                        drawFrontBatch(histBatch, intensity);
+                    });
+                    
+                    // Draw the currently expanding partial edge (The Spark)
+                    if (nextEdgeIdx < totalEdges) {
+                        let progress = nextEdgeIdx - settledEnd;
+                        let partialCoords = getPartialEdge(visitedEdges[settledEnd], progress);
+                        
+                        drawFrontBatch([partialCoords], 1.2); 
+                        
+                        let tip = partialCoords[partialCoords.length - 1];
+                        L.circleMarker(tip, {
+                            radius: 4, color: '#ffffff', fillColor: '#ffffff', fillOpacity: 1,
+                            weight: 2, opacity: 1, className: 'spark-head'
+                        }).addTo(activeFrontLayer);
+                    }
+                    
+                    currentEdgeIdx = nextEdgeIdx;
+                    
+                    if (currentEdgeIdx >= totalEdges) {
+                        activeFrontLayer.clearLayers();
+                        triggerLightningStrike(continuousCoords);
+                        resolve();
+                    } else {
+                        requestAnimationFrame(drawNextFrame); 
+                    }
+                }
+                requestAnimationFrame(drawNextFrame);
+            });
+        }
+
+        function clearVisuals() {
+            if(isAnimating) return;
+            visualLayers.clearLayers(); activeFrontLayer.clearLayers(); pathLayers.clearLayers();
+            document.getElementById('map').classList.remove('found-night', 'found-day');
+            if(startMarker) { map.removeLayer(startMarker); startMarker=null; }
+            if(endMarker) { map.removeLayer(endMarker); endMarker=null; }
+            startNodeId = null; endNodeId = null;
+            if (fixedStartEnabled) applyFixed();
+            else updateStatusText("Click to place the START point.");
+        }
+
+        fetchOSMData();
     </script>
 </body>
 </html>
