@@ -252,9 +252,9 @@
     <div class="header-text">
       <div class="eyebrow">Interactive · Educational</div>
       <h1>Graph Theory <span>Demos</span></h1>
-      <p class="header-desc">Ten playable explorations of graph algorithms, NP-Hard puzzles, and combinatorial theory — each rendered live in the browser.</p>
+      <p class="header-desc">Ten playable explorations of graph algorithms, NP-Hard puzzles, and combinatorial theory - each rendered live in the browser.</p>
       <div class="stats">
-        <div class="stat"><span class="stat-n">10</span><span class="stat-l">Demos</span></div>
+        <div class="stat"><span class="stat-n">12</span><span class="stat-l">Demos</span></div>
         <div class="stat"><span class="stat-n r">3</span><span class="stat-l">NP-Hard</span></div>
         <div class="stat"><span class="stat-n b">4</span><span class="stat-l">Theory</span></div>
       </div>
@@ -287,14 +287,16 @@
 const projects =[
   { title:"IISc Path Finder",         desc:"Dijkstra's algorithm carves shortest paths through real IISc campus map data.",                        url:"IISc_path_finder.html",              tags:[["Dijkstra","k"],["Mapping","k"]],          cat:"path", lbl:"Pathfinding", i:1 },
   { title:"Grid Path Finder",          desc:"A*, BFS, and DFS race through procedurally generated mazes side-by-side.",                           url:"Grid_path_finder.html",              tags:[["A* Search","k"],["BFS","k"],["DFS","k"]], cat:"path", lbl:"Pathfinding", i:2 },
-  { title:"Server Room Untangled",     desc:"Drag server racks until no cables cross. Kuratowski's Planarity Theorem made tangible.",              url:"server_room_planarity.html",         tags:[["Planarity","b"],["Math","b"]],            cat:"math", lbl:"Math Theory",  i:3 },
-  { title:"Robber Blockade",           desc:"Place roadblocks to cut every escape route. Live demo of Max-Flow Min-Cut theorem.",                  url:"robber_cops_maxflow.html",           tags:[["Max-Flow","k"],["Min-Cut","k"]],          cat:"opt",  lbl:"Optimization", i:4 },
-  { title:"Road Repair",               desc:"Connect cities to the power grid at minimum cost. Kruskal's MST builds in front of you.",             url:"road_repair_mst.html",               tags:[["MST","k"],["Kruskal","k"]],               cat:"opt",  lbl:"Optimization", i:5 },
-  { title:"Postman's Route",           desc:"Find the shortest tour visiting every house. Confront NP-Hard TSP complexity first-hand.",            url:"postman_euclidean_tsp.html",         tags:[["TSP","r"],["NP-Hard","r"]],               cat:"hard", lbl:"NP-Hard",      i:6 },
-  { title:"N-Puzzle Parity",           desc:"Discover why half of sliding-tile configs are unsolvable. Permutation parity is the answer.",         url:"n_puzzle_parity.html",               tags:[["Parity","b"],["Permutations","b"]],       cat:"math", lbl:"Math Theory",  i:7 },
-  { title:"Museum Security",           desc:"Fewest cameras to cover every hallway. A direct encounter with NP-Complete Vertex Cover.",            url:"museum_security_vertex_cover.html",  tags:[["Vertex Cover","r"],["NP-Complete","r"]], cat:"hard", lbl:"NP-Complete",  i:8 },
-  { title:"Knight Swap",               desc:"Swap white and black knights on a 3×3 board. Every legal knight move is a graph edge.",               url:"knight_swap.html",                   tags:[["BFS","k"],["Graph","k"]],                 cat:"path", lbl:"Traversal",    i:9 },
-  { title:"Graph Coloring Map",        desc:"Color every region so no neighbours match. Prove the Four Color Theorem yourself.",                   url:"graph_coloring_map.html",            tags:[["4-Coloring","b"],["NP-Hard","r"]],        cat:"hard", lbl:"NP-Hard",      i:10 },
+  { title:"Ice Excavator",     desc:"Clean the ice from all the roads and reach the initial point.",              url:"euler_excavator.html",         tags:[["Euler Cycle","k"],["Math","k"]],            cat:"math", lbl:"Graph Theory",  i:3 },
+    { title:"Euler Drawing",     desc:"Draw the polygon without overlapping the egdes",              url:"euler_drawing.html",         tags:[["Euler Cycle","k"],["Math","k"]],            cat:"math", lbl:"Graph Theory",  i:4 },
+  { title:"Server Room Untangled",     desc:"Drag server racks until no cables cross. Kuratowski's Planarity Theorem made tangible.",              url:"server_room_planarity.html",         tags:[["Planarity","b"],["Math","b"]],            cat:"math", lbl:"Math Theory",  i:5 },
+  { title:"Robber Blockade",           desc:"Place roadblocks to cut every escape route. Live demo of Max-Flow Min-Cut theorem.",                  url:"robber_cops_maxflow.html",           tags:[["Max-Flow","k"],["Min-Cut","k"]],          cat:"opt",  lbl:"Optimization", i:6 },
+  { title:"Road Repair",               desc:"Connect cities to the power grid at minimum cost. Kruskal's MST builds in front of you.",             url:"road_repair_mst.html",               tags:[["MST","k"],["Kruskal","k"]],               cat:"opt",  lbl:"Optimization", i:7 },
+  { title:"Postman's Route",           desc:"Find the shortest tour visiting every house. Confront NP-Hard TSP complexity first-hand.",            url:"postman_euclidean_tsp.html",         tags:[["TSP","r"],["NP-Hard","r"]],               cat:"hard", lbl:"NP-Hard",      i:8 },
+  { title:"N-Puzzle Parity",           desc:"Discover why half of sliding-tile configs are unsolvable. Permutation parity is the answer.",         url:"n_puzzle_parity.html",               tags:[["Parity","b"],["Permutations","b"]],       cat:"math", lbl:"Math Theory",  i:9 },
+  { title:"Museum Security",           desc:"Fewest cameras to cover every hallway. A direct encounter with NP-Complete Vertex Cover.",            url:"museum_security_vertex_cover.html",  tags:[["Vertex Cover","r"],["NP-Complete","r"]], cat:"hard", lbl:"NP-Complete",  i:10 },
+  { title:"Knight Swap",               desc:"Swap white and black knights on a 3×3 board. Every legal knight move is a graph edge.",               url:"knight_swap.html",                   tags:[["BFS","k"],["Graph","k"]],                 cat:"path", lbl:"Traversal",    i:11 },
+  { title:"Graph Coloring Map",        desc:"Color every region so no neighbours match. Prove the Four Color Theorem yourself.",                   url:"graph_coloring_map.html",            tags:[["4-Coloring","b"],["NP-Hard","r"]],        cat:"hard", lbl:"NP-Hard",      i:12 },
 ];
 
 const sC = { hard:'hard', math:'math', path:'path', opt:'opt' };
