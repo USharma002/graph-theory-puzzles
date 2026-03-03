@@ -23,6 +23,7 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
+        
         /* dot-grid background */
         body::before {
             content: '';
@@ -31,6 +32,18 @@
             background-size: 28px 28px;
             pointer-events: none;
             z-index: 0;
+        }
+
+        /* Fullscreen Animated Background Canvas */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* Above background color/dots, below content */
+            pointer-events: none;
+            opacity: 0.6; /* Keeps it subtle */
         }
 
         /* ── HEADER ── */
@@ -81,11 +94,11 @@
         /* decorative graph SVG in header */
         .deco-svg {
             flex-shrink: 0; 
-            width: 170px;         /* Made bigger (was 110px) */
-            height: 130px;        /* Made bigger (was 85px) */
-            opacity: 0.35;        /* More transparent (was 0.85) */
-            margin-top: -10px;    /* Adjusted so it stays aligned with the text */
-            overflow: visible;    /* Prevents clipping as nodes hit edges */
+            width: 170px;         
+            height: 130px;        
+            opacity: 0.35;        
+            margin-top: -10px;    
+            overflow: visible;    
         }
 
         /* ── MAIN ── */
@@ -102,6 +115,8 @@
             font-family: 'Roboto Mono', monospace;
             font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
             color: var(--muted); white-space: nowrap;
+            background: var(--off); /* hides bg line */
+            padding-right: 10px;
         }
         .section-line { flex: 1; height: 1px; background: var(--border); }
 
@@ -122,6 +137,8 @@
             display: flex; flex-direction: column;
             box-shadow: 4px 4px 0 var(--black);
             transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
+            position: relative;
+            z-index: 10;
         }
         .card:hover {
             transform: translate(-2px,-3px);
@@ -140,7 +157,6 @@
             transform: scale(0.25); transform-origin: top left;
             border: none; pointer-events: none;
         }
-        /* bottom fade on thumb */
         .thumb::after {
             content: ''; position: absolute; inset: 0;
             background: linear-gradient(to bottom, transparent 55%, rgba(255,255,255,0.55) 100%);
@@ -159,7 +175,6 @@
         .stamp.path { color: var(--black); border-color: #888; }
         .stamp.opt  { color: #555;         border-color: #aaa; }
 
-        /* node index badge */
         .nbadge {
             position: absolute; bottom: 9px; left: 9px; z-index: 2;
             width: 24px; height: 24px; border-radius: 50%;
@@ -203,6 +218,7 @@
         /* ── FOOTER ── */
         footer {
             position: relative; z-index: 10;
+            background: var(--white);
             border-top: 2px solid var(--border);
             padding: 16px 48px;
             display: flex; align-items: center; justify-content: space-between;
@@ -227,6 +243,9 @@
     </style>
 </head>
 <body>
+
+<!-- Background Animated Canvas -->
+<canvas id="bg-canvas"></canvas>
 
 <header>
   <div class="header-inner">
@@ -303,13 +322,98 @@ projects.forEach(p => {
   g.appendChild(a);
 });
 
-// --- Animated Graph Logic ---
+
+// --- Fullscreen Background Graph Animation ---
+(function() {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    // Keep canvas sized to the window
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const bgNodes =[];
+    
+    // 1. INCREASED CONNECTION DISTANCE (Makes graph look denser with more lines)
+    const connectionDistance = 200; 
+    
+    // 2. INCREASED DENSITY (Dividing by 8000 instead of 18000 more than doubles the node count)
+    const numNodes = Math.max(50, Math.floor((width * height) / 8000)); 
+    
+    const colors =["#111111", "#e53935", "#1565c0", "#888888", "#cccccc"];
+
+    // Initialize random nodes
+    for (let i = 0; i < numNodes; i++) {
+        bgNodes.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.4, 
+            vy: (Math.random() - 0.5) * 0.4, 
+            
+            // 3. LARGER NODES (Increased base size and variance)
+            r: Math.random() * 3.5 + 2.5,      
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
+    }
+
+    // Animation Loop
+    function animateBg() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw connecting lines
+        for (let i = 0; i < bgNodes.length; i++) {
+            for (let j = i + 1; j < bgNodes.length; j++) {
+                const dx = bgNodes[i].x - bgNodes[j].x;
+                const dy = bgNodes[i].y - bgNodes[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < connectionDistance) {
+                    ctx.beginPath();
+                    ctx.moveTo(bgNodes[i].x, bgNodes[i].y);
+                    ctx.lineTo(bgNodes[j].x, bgNodes[j].y);
+                    
+                    const alpha = 1 - (dist / connectionDistance);
+                    ctx.strokeStyle = `rgba(150, 150, 150, ${alpha * 0.5})`;
+                    
+                    // 4. THICKER LINES (Matches the larger nodes)
+                    ctx.lineWidth = 1.5; 
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Update and draw nodes
+        bgNodes.forEach(n => {
+            n.x += n.vx;
+            n.y += n.vy;
+            
+            if (n.x < 0 || n.x > width) n.vx *= -1;
+            if (n.y < 0 || n.y > height) n.vy *= -1;
+
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+            ctx.fillStyle = n.color;
+            ctx.fill();
+        });
+
+        requestAnimationFrame(animateBg);
+    }
+    
+    animateBg();
+})();
+
+
+// --- Header Decorative SVG Animation ---
 (function() {
     const svg = document.querySelector('.deco-svg');
     if (!svg) return;
     const svgNS = "http://www.w3.org/2000/svg";
 
-    // Define the nodes with their starting positions, colors, and velocities (vx, vy)
     const nodes =[
         { id: 0, x: 18, y: 18, vx:  0.12, vy:  0.18, r: 7, fill: "#fff", stroke: "#111" },
         { id: 1, x: 55, y: 8,  vx: -0.15, vy:  0.10, r: 7, fill: "#e53935", stroke: "#111" },
@@ -319,12 +423,10 @@ projects.forEach(p => {
         { id: 5, x: 22, y: 72, vx: -0.12, vy: -0.15, r: 7, fill: "#e53935", stroke: "#111" }
     ];
 
-    // Define which nodes connect to which
     const edges = [
-        [0, 1], [1, 2],[2, 3], [3, 4], [4, 5], [5, 0],[1, 4], [0, 3]
+        [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [1, 4], [0, 3]
     ];
 
-    // 1. Create and attach lines (Edges)
     const lineEls = edges.map(edge => {
         const line = document.createElementNS(svgNS, "line");
         line.setAttribute("stroke", "#111");
@@ -333,7 +435,6 @@ projects.forEach(p => {
         return { edge, el: line };
     });
 
-    // 2. Create and attach circles (Nodes)
     nodes.forEach(n => {
         const circle = document.createElementNS(svgNS, "circle");
         circle.setAttribute("r", n.r);
@@ -344,26 +445,18 @@ projects.forEach(p => {
         n.el = circle;
     });
 
-    // Boundaries for the nodes to bounce off (keeping them inside the SVG viewBox)
-    const minX = 7, maxX = 103;
-    const minY = 7, maxY = 78;
+    const minX = 7, maxX = 103, minY = 7, maxY = 78;
 
-    // 3. Animation Loop
     function animate() {
-        // Update nodes
         nodes.forEach(n => {
             n.x += n.vx;
             n.y += n.vy;
-
-            // Reverse direction if hitting a wall (bounce)
             if (n.x <= minX || n.x >= maxX) n.vx *= -1;
             if (n.y <= minY || n.y >= maxY) n.vy *= -1;
-
             n.el.setAttribute("cx", n.x);
             n.el.setAttribute("cy", n.y);
         });
 
-        // Update lines so they stick to the moving nodes
         lineEls.forEach(l => {
             const n1 = nodes[l.edge[0]];
             const n2 = nodes[l.edge[1]];
@@ -372,11 +465,9 @@ projects.forEach(p => {
             l.el.setAttribute("x2", n2.x);
             l.el.setAttribute("y2", n2.y);
         });
-
-        requestAnimationFrame(animate); // Loop the animation smoothly
+        requestAnimationFrame(animate);
     }
-
-    animate(); // Start the loop
+    animate();
 })();
 </script>
 </body>
