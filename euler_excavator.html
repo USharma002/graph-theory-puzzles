@@ -497,6 +497,8 @@ class SnowCityGame {
         this.startNodeIndex = this.nodes.length - 1;
         this.playerNode = this.startNodeIndex;
 
+        this.optimalMoves = this.computeOptimalMoves();
+
         this.resize();
         this.updateUI();
         document.getElementById('modal-overlay').style.display = 'none';
@@ -505,103 +507,167 @@ class SnowCityGame {
         if(this.showMath) this.toggleMathMode();
     }
 
+    // --- Compute the minimum possible moves (edges + min re-traversals via odd-node matching) ---
+    computeOptimalMoves() {
+        let oddNodes = this.nodes.filter(n => this.getDegree(n.id) % 2 !== 0).map(n => n.id);
+        let extra = 0;
+        let unmatched = [...oddNodes];
+        while(unmatched.length >= 2) {
+            let bd = Infinity, bi = 0, bj = 1, bp = null;
+            for(let i = 0; i < unmatched.length; i++) {
+                for(let j = i+1; j < unmatched.length; j++) {
+                    let p = this.bfsPath(unmatched[i], unmatched[j], this.edges);
+                    let d = p ? p.length : Infinity;
+                    if(d < bd) { bd = d; bi = i; bj = j; bp = p; }
+                }
+            }
+            if(!bp) break;
+            extra += bp.length;
+            unmatched.splice(bj, 1);
+            unmatched.splice(bi, 1);
+        }
+        return this.edges.length + extra;
+    }
+
+    // --- BFS shortest path between two nodes (returns node-id array including dest, excl. src) ---
+    bfsPath(src, dst, edgeList) {
+        if(src === dst) return [];
+        let queue = [{ node: src, path: [] }];
+        let seen = new Set([src]);
+        while(queue.length > 0) {
+            let { node, path } = queue.shift();
+            let connected = edgeList.filter(e => e.u === node || e.v === node);
+            for(let e of connected) {
+                let nb = e.u === node ? e.v : e.u;
+                let newPath = [...path, nb];
+                if(nb === dst) return newPath;
+                if(!seen.has(nb)) { seen.add(nb); queue.push({ node: nb, path: newPath }); }
+            }
+        }
+        return null;
+    }
+
+    // --- BFS distance between two nodes ---
+    bfsDist(src, dst, edgeList) {
+        let p = this.bfsPath(src, dst, edgeList);
+        return p ? p.length : Infinity;
+    }
+
+    // --- Minimum-weight perfect matching of odd-degree nodes (greedy nearest-neighbour) ---
+    // Returns array of {u, v, path} pseudo-edge descriptors
+    minMatchOddNodes() {
+        let oddNodes = this.nodes.filter(n => this.getDegree(n.id) % 2 !== 0).map(n => n.id);
+        let pseudoEdges = [];
+        let unmatched = [...oddNodes];
+
+        // Precompute distances between all odd node pairs
+        while(unmatched.length >= 2) {
+            let bestDist = Infinity, bestI = 0, bestJ = 1, bestPath = null;
+            for(let i = 0; i < unmatched.length; i++) {
+                for(let j = i+1; j < unmatched.length; j++) {
+                    let p = this.bfsPath(unmatched[i], unmatched[j], this.edges);
+                    let d = p ? p.length : Infinity;
+                    if(d < bestDist) { bestDist = d; bestI = i; bestJ = j; bestPath = p; }
+                }
+            }
+            if(!bestPath) break;
+            pseudoEdges.push({ u: unmatched[bestI], v: unmatched[bestJ], path: bestPath });
+            unmatched.splice(bestJ, 1);
+            unmatched.splice(bestI, 1);
+        }
+        return pseudoEdges;
+    }
+
+    // --- Build Eulerian multigraph and find circuit via Hierholzer's algorithm ---
+    // edgesMulti: array of {u, v, id, isPseudo}
+    hierholzer(startNode, edgesMulti) {
+        // Build adjacency list
+        let adj = {};
+        this.nodes.forEach(n => adj[n.id] = []);
+        edgesMulti.forEach((e, i) => {
+            adj[e.u].push({ to: e.v, idx: i });
+            adj[e.v].push({ to: e.u, idx: i });
+        });
+
+        let usedEdge = new Array(edgesMulti.length).fill(false);
+        let ptr = {};
+        this.nodes.forEach(n => ptr[n.id] = 0);
+
+        let circuit = [];
+        let stack = [startNode];
+
+        while(stack.length > 0) {
+            let v = stack[stack.length - 1];
+            let found = false;
+            while(ptr[v] < adj[v].length) {
+                let { to, idx } = adj[v][ptr[v]];
+                ptr[v]++;
+                if(!usedEdge[idx]) {
+                    usedEdge[idx] = true;
+                    stack.push(to);
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) circuit.push(stack.pop());
+        }
+        circuit.reverse();
+        return circuit; // array of node ids forming the circuit
+    }
+
     async animateSolution() {
         if(this.isAnimating || !this.gameActive) return;
         this.isAnimating = true;
 
         const delay = ms => new Promise(r => setTimeout(r, ms));
 
-        while(this.isAnimating && this.edges.some(e => !e.visited)) {
-            // Find shortest path to an unvisited edge using BFS
-            let queue = [{ node: this.playerNode, path: [] }];
-            let visitedNodes = new Set();
-            visitedNodes.add(this.playerNode);
-            let targetEdge = null;
-            let pathToEdge = null;
+        // 1. Find odd-degree nodes and compute minimum matching pseudo-edges
+        const pseudoEdgeDefs = this.minMatchOddNodes();
 
-            // First check if any connected edge is unvisited (Immediate greedy choice)
-            let immediateEdges = this.edges.filter(e => !e.visited && (e.u === this.playerNode || e.v === this.playerNode));
-            if (immediateEdges.length > 0) {
-                targetEdge = immediateEdges[0];
-                pathToEdge = [targetEdge.u === this.playerNode ? targetEdge.v : targetEdge.u];
-            } else {
-                // BFS to find closest unvisited edge
-                bfsLoop:
-                while(queue.length > 0) {
-                    let { node, path } = queue.shift();
-                    let connectedEdges = this.edges.filter(e => e.u === node || e.v === node);
-                    
-                    for(let e of connectedEdges) {
-                        let neighbor = (e.u === node) ? e.v : e.u;
-                        if(!e.visited) {
-                            targetEdge = e;
-                            pathToEdge = [...path, neighbor];
-                            break bfsLoop;
-                        } else if(!visitedNodes.has(neighbor)) {
-                            visitedNodes.add(neighbor);
-                            queue.push({ node: neighbor, path: [...path, neighbor] });
-                        }
-                    }
-                }
+        // 2. Build multigraph: real edges + pseudo edges (expanded to their paths)
+        //    Pseudo edges are expanded into their individual hop-edges so Hierholzer works on
+        //    actual grid connections only.
+        let multiEdges = [];
+        // Add all real edges
+        this.edges.forEach((e, i) => {
+            multiEdges.push({ u: e.u, v: e.v, realIdx: i, isPseudo: false });
+        });
+        // Expand each pseudo-edge path into individual hop-edges (repeated traversals)
+        pseudoEdgeDefs.forEach(pe => {
+            let path = [pe.u, ...pe.path]; // full path node sequence
+            for(let k = 0; k < path.length - 1; k++) {
+                let a = path[k], b = path[k+1];
+                // Find the real edge index for this hop
+                let ri = this.edges.findIndex(e => (e.u===a && e.v===b)||(e.u===b && e.v===a));
+                multiEdges.push({ u: a, v: b, realIdx: ri, isPseudo: true });
             }
+        });
 
-            if(!pathToEdge) break; // Trapped or solved
+        // 3. Run Hierholzer from startNodeIndex to get an Euler circuit
+        let circuit = this.hierholzer(this.startNodeIndex, multiEdges);
 
-            // Move along the path
-            for(let nextNode of pathToEdge) {
-                if(!this.isAnimating) break;
-                
-                let edge = this.edges.find(e => (e.u === this.playerNode && e.v === nextNode) || (e.u === nextNode && e.v === this.playerNode));
-                if(edge) {
-                    this.moves++;
-                    edge.visited = true;
-                    this.playerNode = nextNode;
-                    
-                    const tNode = this.nodes[nextNode];
-                    this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
-                    this.isMoving = true;
-                    
-                    this.updateUI();
-                    
-                    // Wait for physical movement to complete
-                    while(this.isMoving) { await delay(20); }
-                }
-            }
-        }
-        
-        // Final check if home
-        if(this.playerNode !== this.startNodeIndex) {
-            // Pathfind home
-            let queue = [{ node: this.playerNode, path: [] }];
-            let seen = new Set([this.playerNode]);
-            let homePath = null;
-            
-            while(queue.length > 0) {
-                let { node, path } = queue.shift();
-                if(node === this.startNodeIndex) { homePath = path; break; }
-                
-                let connected = this.edges.filter(e => e.u === node || e.v === node);
-                for(let e of connected) {
-                    let nbor = e.u === node ? e.v : e.u;
-                    if(!seen.has(nbor)) {
-                        seen.add(nbor);
-                        queue.push({ node: nbor, path: [...path, nbor] });
-                    }
-                }
-            }
-            
-            if(homePath) {
-                for(let nextNode of homePath) {
-                    if(!this.isAnimating) break;
-                    this.moves++;
-                    this.playerNode = nextNode;
-                    const tNode = this.nodes[nextNode];
-                    this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
-                    this.isMoving = true;
-                    this.updateUI();
-                    while(this.isMoving) { await delay(20); }
-                }
-            }
+        // 4. Animate the circuit
+        for(let step = 1; step < circuit.length; step++) {
+            if(!this.isAnimating) break;
+
+            let fromNode = circuit[step - 1];
+            let toNode = circuit[step];
+
+            // Find the real edge being traversed
+            let edge = this.edges.find(e =>
+                (e.u === fromNode && e.v === toNode) ||
+                (e.u === toNode && e.v === fromNode)
+            );
+
+            this.moves++;
+            if(edge) edge.visited = true;
+            this.playerNode = toNode;
+
+            const tNode = this.nodes[toNode];
+            this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
+            this.isMoving = true;
+            this.updateUI();
+            while(this.isMoving) { await delay(20); }
         }
 
         this.isAnimating = false;
@@ -686,10 +752,9 @@ class SnowCityGame {
     }
 
     getStarRating() {
-        const totalEdges = this.edges.length;
-        const efficiency = (totalEdges / this.moves);
-        if (efficiency >= 0.90) return 3;
-        if (efficiency >= 0.75) return 2;
+        const efficiency = this.optimalMoves / this.moves;
+        if (efficiency >= 0.99) return 3;
+        if (efficiency >= 0.85) return 2;
         return 1;
     }
 
@@ -705,7 +770,7 @@ class SnowCityGame {
         document.getElementById('mobileMovesDisp').innerText = this.moves;
         
         let eff = 100;
-        if (this.moves > 0) eff = Math.floor((this.edges.length / this.moves) * 100);
+        if (this.moves > 0) eff = Math.min(100, Math.floor((this.optimalMoves / this.moves) * 100));
         document.getElementById('effDisp').innerText = eff + "%";
         document.getElementById('mobileEffDisp').innerText = eff + "%";
     }
