@@ -569,14 +569,20 @@ class FlowGame {
                 this.ctx.restore();
             }
 
-            // Capacity Label
-            if (!e.blocked || this.showSolution) {
+            // Capacity Label — always visible so you can read blocked edges before undoing
+            {
                 this.ctx.beginPath(); this.ctx.arc(e.labelX, e.labelY, 14, 0, Math.PI*2);
-                this.ctx.fillStyle = "#fff"; this.ctx.fill();
-                this.ctx.strokeStyle = (isHover && !this.showSolution) ? "#1a73e8" : "#5f6368";
-                this.ctx.lineWidth = 2; this.ctx.setLineDash([]); this.ctx.stroke();
-                this.ctx.fillStyle = "#000"; this.ctx.font = "bold 14px 'Architects Daughter'";
-                this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle"; this.ctx.fillText(e.capacity, e.labelX, e.labelY);
+                // Red-tinted background when blocked so it reads as "this is what I crossed out"
+                this.ctx.fillStyle = (e.blocked && !this.showSolution) ? "#fff0f0" : "#fff";
+                this.ctx.fill();
+                this.ctx.strokeStyle = (e.blocked && !this.showSolution) ? "#ea4335"
+                                      : (isHover && !this.showSolution) ? "#1a73e8" : "#5f6368";
+                this.ctx.lineWidth = (e.blocked && !this.showSolution) ? 2.5 : 2;
+                this.ctx.setLineDash([]); this.ctx.stroke();
+                this.ctx.fillStyle = (e.blocked && !this.showSolution) ? "#ea4335" : "#000";
+                this.ctx.font = "bold 14px 'Architects Daughter'";
+                this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
+                this.ctx.fillText(e.capacity, e.labelX, e.labelY);
             }
         });
 

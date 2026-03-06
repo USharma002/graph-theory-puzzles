@@ -276,7 +276,56 @@ class VertexCoverGame {
             for(let neigh of neighbors) if(!this.isIntersectingAny(n1, neigh.node)) this.addEdge(n1.id, neigh.node.id);
         }
 
-        this.relaxGraph(); this.calculateOptimal(); this.updateUI();
+        this.relaxGraph(); this.computeEdgeCurves(); this.calculateOptimal(); this.updateUI();
+    }
+
+    computeEdgeCurves() {
+        // For every pair of edges that are visually near-collinear (share the same
+        // straight-line corridor), bow each one as a quadratic bezier in opposite
+        // directions so both are always visible.
+        const OVERLAP_DIST = 14; // px — how close two edge mid-lines must be to count
+        const BOW = 28;          // px — how far the control point is pushed perpendicular
+
+        // Reset all curves
+        this.edges.forEach(e => { e.cpx = null; e.cpy = null; });
+
+        for (let i = 0; i < this.edges.length; i++) {
+            for (let j = i + 1; j < this.edges.length; j++) {
+                const a = this.edges[i], b = this.edges[j];
+                const a1 = this.nodes[a.u], a2 = this.nodes[a.v];
+                const b1 = this.nodes[b.u], b2 = this.nodes[b.v];
+
+                // Mid-points of each edge
+                const amx = (a1.x + a2.x) / 2, amy = (a1.y + a2.y) / 2;
+                const bmx = (b1.x + b2.x) / 2, bmy = (b1.y + b2.y) / 2;
+
+                // Direction vectors
+                const adx = a2.x - a1.x, ady = a2.y - a1.y;
+                const bdx = b2.x - b1.x, bdy = b2.y - b1.y;
+                const aLen = Math.hypot(adx, ady) + 0.001;
+                const bLen = Math.hypot(bdx, bdy) + 0.001;
+
+                // Are they roughly parallel? (|cos θ| near 1)
+                const dot = Math.abs((adx * bdx + ady * bdy) / (aLen * bLen));
+                if (dot < 0.92) continue; // not parallel enough
+
+                // Are their mid-points close to the same line?
+                const midDist = Math.hypot(amx - bmx, amy - bmy);
+                if (midDist > OVERLAP_DIST) continue;
+
+                // They overlap — bow them in opposite perpendicular directions
+                const nx = -ady / aLen, ny = adx / aLen; // unit normal of edge a
+
+                if (a.cpx === null) {
+                    a.cpx = amx + nx * BOW;
+                    a.cpy = amy + ny * BOW;
+                }
+                if (b.cpx === null) {
+                    b.cpx = bmx - nx * BOW;
+                    b.cpy = bmy - ny * BOW;
+                }
+            }
+        }
     }
 
     relaxGraph() {
@@ -384,15 +433,20 @@ class VertexCoverGame {
 
         this.edges.forEach(e => {
             const p1 = this.nodes[e.u], p2 = this.nodes[e.v], isCovered = (p1.camera || p2.camera);
-            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
-            this.ctx.strokeStyle = "#bbb"; this.ctx.lineWidth = 18; this.ctx.stroke();
+            const curved = e.cpx !== null && e.cpx !== undefined;
 
-            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
-            this.ctx.strokeStyle = isCovered ? "#a5d6a7" : "#ffcdd2"; this.ctx.lineWidth = 12; this.ctx.stroke();
+            const drawEdgePath = () => {
+                this.ctx.beginPath();
+                this.ctx.moveTo(p1.x, p1.y);
+                if (curved) this.ctx.quadraticCurveTo(e.cpx, e.cpy, p2.x, p2.y);
+                else        this.ctx.lineTo(p2.x, p2.y);
+            };
 
-            this.ctx.beginPath(); this.ctx.moveTo(p1.x, p1.y); this.ctx.lineTo(p2.x, p2.y);
-            if(isCovered) { this.ctx.strokeStyle = "#2e7d32"; this.ctx.lineWidth = 2; this.ctx.setLineDash([]); } 
-            else { this.ctx.strokeStyle = "#c62828"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 5]); }
+            drawEdgePath(); this.ctx.strokeStyle = "#bbb"; this.ctx.lineWidth = 18; this.ctx.stroke();
+            drawEdgePath(); this.ctx.strokeStyle = isCovered ? "#a5d6a7" : "#ffcdd2"; this.ctx.lineWidth = 12; this.ctx.stroke();
+            drawEdgePath();
+            if(isCovered) { this.ctx.strokeStyle = "#2e7d32"; this.ctx.lineWidth = 2; this.ctx.setLineDash([]); }
+            else           { this.ctx.strokeStyle = "#c62828"; this.ctx.lineWidth = 2; this.ctx.setLineDash([10, 5]); }
             this.ctx.stroke(); this.ctx.setLineDash([]);
         });
 
