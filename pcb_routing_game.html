@@ -135,9 +135,10 @@ canvas{position:absolute;top:0;left:0;z-index:1;touch-action:none;cursor:crossha
   <div class="panel">
     <div class="ptit">How to Route</div>
     <div class="instr">
-      <div><span class="k">Click S pad</span> — begin trace</div>
-      <div><span class="k">Click Grid</span> — add corner via</div>
-      <div><span class="k">Click E pad</span> — finish trace</div>
+      <div><span class="k">Touch S pad</span> — begin trace</div>
+      <div><span class="k">Drag finger</span> — draw trace</div>
+      <div><span class="k">Lift on E pad</span> — finish trace</div>
+      <div><span class="k">Click Grid</span> — add waypoint</div>
       <div><span class="k">Right-click / ESC</span> — cancel</div>
       <div><span class="k">Ctrl+Z / DEL</span> — undo</div>
     </div>
@@ -280,7 +281,7 @@ function generateLevel(lvl) {
   };
 }
 
-const TOTAL = 15;
+const TOTAL = 5;
 const LEVELS = [];
 for (let i = 0; i < TOTAL; i++) {
   LEVELS.push(generateLevel(i));
@@ -389,8 +390,99 @@ class Game{
         this.routing=null;
       }
     });
-    this.cv.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];this.click({clientX:t.clientX,clientY:t.clientY});},{passive:false});
-    this.cv.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];this.move({clientX:t.clientX,clientY:t.clientY});},{passive:false});
+    // ── TOUCH: drag-to-route ──────────────────────────────────────────────────
+    // touchstart on a pad   → begin routing that net (clears existing)
+    // drag across grid      → waypoints added automatically each new grid cell
+    // touchend near end pad → completes the trace
+    // touchend elsewhere    → cancels / keeps partial (same as ESC)
+    this._touchLastSnap = null; // last grid cell committed during a drag
+
+    this.cv.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const {x, y} = this.pos({clientX: t.clientX, clientY: t.clientY});
+      this._touchLastSnap = null;
+
+      if (this.mode === 'erase') {
+        this.erase(x, y);
+        return;
+      }
+
+      const hit = this.nearPad(x, y, 26); // slightly larger hit target for fingers
+      if (hit && hit.idx === 0) {
+        // Start routing from S pad only
+        this.push();
+        const net = hit.net;
+        net.segments = []; net.routed = false;
+        this.chkShorts(); this.hud();
+        this.routing = {nid: net.id, pts: [{x: hit.pad.x, y: hit.pad.y}], snap: null};
+        this._touchLastSnap = this.snap(hit.pad.x, hit.pad.y);
+        this.addRipple(hit.pad.x, hit.pad.y, net.color);
+      } else if (this.routing) {
+        // Touch outside pad while routing → cancel
+        this.routing = null;
+        this._touchLastSnap = null;
+      } else {
+        // Touch on a trace → erase that net (erase mode already handled above)
+        for (const net of this.board.nets) {
+          for (const seg of net.segments) {
+            if (nearSeg(x, y, seg.x1, seg.y1, seg.x2, seg.y2, 18)) {
+              this.eraseNet(net.id, x, y);
+              return;
+            }
+          }
+        }
+      }
+    }, {passive: false});
+
+    this.cv.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (!this.routing) return;
+      const t = e.touches[0];
+      const {x, y} = this.pos({clientX: t.clientX, clientY: t.clientY});
+      const sn = this.snap(x, y);
+      this.routing.snap = sn;
+
+      // Check if finger is directly over the E pad — complete immediately
+      // Use raw finger position, not snapped, for pad detection
+      const ePadHit = this.nearPad(x, y, 34);
+      if (ePadHit && ePadHit.net.id === this.routing.nid && ePadHit.idx === 1) {
+        this._completeRoute(ePadHit);
+        return;
+      }
+
+      // Auto-add waypoint whenever finger crosses into a new grid cell
+      const last = this._touchLastSnap;
+      if (last && (Math.abs(sn.x - last.x) > 2 || Math.abs(sn.y - last.y) > 2)) {
+        const prev = this.routing.pts[this.routing.pts.length - 1];
+        if (Math.abs(prev.x - sn.x) > 2 || Math.abs(prev.y - sn.y) > 2) {
+          this.routing.pts.push({x: sn.x, y: sn.y});
+        }
+        this._touchLastSnap = sn;
+      }
+    }, {passive: false});
+
+    this.cv.addEventListener('touchend', e => {
+      e.preventDefault();
+      if (!this.routing) return;
+      const t = e.changedTouches[0];
+      const {x, y} = this.pos({clientX: t.clientX, clientY: t.clientY});
+
+      // Try raw lift position first, then last snapped cell, then last committed pt
+      const lastPt = this.routing.pts[this.routing.pts.length - 1];
+      const candidates = [{x, y}, this._touchLastSnap, lastPt].filter(Boolean);
+
+      let hit = null;
+      for (const c of candidates) {
+        const h = this.nearPad(c.x, c.y, 36);
+        if (h && h.net.id === this.routing.nid && h.idx === 1) { hit = h; break; }
+      }
+
+      if (hit) this._completeRoute(hit);
+
+      this.routing = null;
+      this._touchLastSnap = null;
+    }, {passive: false});
     window.addEventListener('keydown',e=>this.key(e));
 
     document.getElementById('newLvlBtn').onclick =()=>{this.lvl=(this.lvl+1)%TOTAL;this.startLvl();};
@@ -488,6 +580,28 @@ class Game{
     this.ripples.push({x, y, col, life: 1});
   }
 
+  _completeRoute(hit) {
+    // Shared logic: commit routing pts → net segments, mark routed, fire effects
+    const net = this.board.nets[this.routing.nid];
+    const endPt = {x: hit.pad.x, y: hit.pad.y};
+    const allPts = [...this.routing.pts];
+    // Strip any trailing pt already sitting on the E pad (from auto-waypoint during drag)
+    while (allPts.length > 1 &&
+           Math.abs(allPts[allPts.length-1].x - endPt.x) < 2 &&
+           Math.abs(allPts[allPts.length-1].y - endPt.y) < 2) {
+      allPts.pop();
+    }
+    allPts.push(endPt);
+    for (let i = 0; i < allPts.length - 1; i++)
+      net.segments.push({x1: allPts[i].x, y1: allPts[i].y, x2: allPts[i+1].x, y2: allPts[i+1].y});
+    net.routed = true;
+    this.routing = null;
+    this._touchLastSnap = null;
+    this.addRipple(hit.pad.x, hit.pad.y, net.color);
+    this.burst(hit.pad.x, hit.pad.y, net.color);
+    this.chkShorts(); this.hud(); this.chkWin();
+  }
+
   click(e){
     const{x,y}=this.pos(e);
     if(this.mode==='erase'){this.erase(x,y);return;}
@@ -498,15 +612,8 @@ class Game{
       const net=this.board.nets[this.routing.nid];
       if(hit){
         if(hit.net.id===this.routing.nid&&hit.idx===1){
-          // Connected correctly
           this.push();
-          const pts=[...this.routing.pts,{x:hit.pad.x,y:hit.pad.y}];
-          for(let i=0;i<pts.length-1;i++)
-            net.segments.push({x1:pts[i].x,y1:pts[i].y,x2:pts[i+1].x,y2:pts[i+1].y});
-          net.routed=true;this.routing=null;
-          this.addRipple(hit.pad.x, hit.pad.y, net.color);
-          this.burst(hit.pad.x,hit.pad.y,net.color);
-          this.chkShorts();this.hud();this.chkWin();
+          this._completeRoute(hit);
         } else if(hit.net.id!==this.routing.nid){
           this.routing=null; // wrong net cancel
         }
@@ -520,21 +627,13 @@ class Game{
       }
     } else {
       if(hit&&hit.idx===0){
-        // Start routing
+        // Start routing from S pad only
         this.push();
         const net=hit.net;
         net.segments=[];net.routed=false;
         this.chkShorts();this.hud();
         this.routing={nid:net.id,pts:[{x:hit.pad.x,y:hit.pad.y}],snap:null};
         this.addRipple(hit.pad.x, hit.pad.y, net.color);
-      } else if(hit&&hit.idx===1){
-        // Swap route direction
-        this.push();
-        const net=hit.net;
-        net.segments=[];net.routed=false;
-        this.chkShorts();this.hud();
-        this.routing={nid:net.id,pts:[{x:net.pads[0].x,y:net.pads[0].y}],snap:null};
-        this.addRipple(net.pads[0].x, net.pads[0].y, net.color);
       } else if (this.hoverSeg) {
         // Delete trace on click
         this.eraseNet(this.hoverSeg.nid, x, y);

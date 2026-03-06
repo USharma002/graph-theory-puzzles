@@ -417,6 +417,113 @@ class SnowCityGame {
         };
         sel.addEventListener('keydown', preventScroll);
         mSel.addEventListener('keydown', preventScroll);
+
+        // --- TOUCH CONTROLS ---
+        // Two modes:
+        //   DRAG MODE: Touch starts on/near the excavator → finger drags and excavator
+        //              follows to each new adjacent node it crosses in real-time.
+        //   SWIPE MODE: Touch starts anywhere else → quick swipe moves one step in that direction.
+
+        this._touchStart = null;
+        this._isDragMode = false;       // true when holding the excavator
+        this._lastDragNode = null;      // last node visited during a drag
+        const GRAB_RADIUS = 48;         // px — how close finger must be to excavator to grab it
+        const SWIPE_THRESHOLD = 35;     // px — minimum travel for a swipe
+
+        const getCanvasXY = (clientX, clientY) => {
+            const rect = this.canvas.getBoundingClientRect();
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const nearestNode = (cx, cy) => {
+            let best = null, bestD = Infinity;
+            this.nodes.forEach(n => {
+                const nx = this.offsetX + n.x * this.spacing;
+                const ny = this.offsetY + n.y * this.spacing;
+                const d = Math.hypot(cx - nx, cy - ny);
+                if(d < bestD) { bestD = d; best = n; }
+            });
+            return { node: best, dist: bestD };
+        };
+
+        this.canvas.addEventListener('touchstart', (e) => {
+            if(e.touches.length !== 1) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            const { x, y } = getCanvasXY(t.clientX, t.clientY);
+            this._touchStart = { x: t.clientX, y: t.clientY };
+
+            // Check if finger is on the excavator sprite
+            const px = this.playerPos.x, py = this.playerPos.y;
+            const distToExcavator = Math.hypot(x - px, y - py);
+            this._isDragMode = distToExcavator < GRAB_RADIUS;
+            this._lastDragNode = this._isDragMode ? this.playerNode : null;
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            if(!this._touchStart || e.touches.length !== 1) return;
+            e.preventDefault();
+            if(!this._isDragMode) return; // swipe is handled on touchend
+
+            const t = e.touches[0];
+            const { x, y } = getCanvasXY(t.clientX, t.clientY);
+
+            // Find nearest node to the finger
+            const snapRadius = Math.max(this.spacing * 0.45, 30);
+            const { node, dist } = nearestNode(x, y);
+            if(!node || dist > snapRadius) return;
+            if(node.id === this._lastDragNode) return; // still on same node
+
+            // Try to move from current node to this new node
+            const curr = this.nodes[this._lastDragNode];
+            const tdx = node.x - curr.x;
+            const tdy = node.y - curr.y;
+            if(Math.abs(tdx) + Math.abs(tdy) === 1) {
+                // It's adjacent — move there
+                if(!this.isMoving && this.gameActive) {
+                    const edge = this.edges.find(e =>
+                        (e.u === this._lastDragNode && e.v === node.id) ||
+                        (e.u === node.id && e.v === this._lastDragNode)
+                    );
+                    if(edge) {
+                        this.moves++;
+                        edge.visited = true;
+                        this.playerNode = node.id;
+                        this._lastDragNode = node.id;
+                        this.targetPos = {
+                            x: this.offsetX + node.x * this.spacing,
+                            y: this.offsetY + node.y * this.spacing
+                        };
+                        this.isMoving = true;
+                        this.updateUI();
+                        this.checkState();
+                    }
+                }
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            if(!this._touchStart) return;
+            e.preventDefault();
+
+            if(!this._isDragMode) {
+                // --- SWIPE MODE ---
+                const changedTouch = e.changedTouches[0];
+                const dx = changedTouch.clientX - this._touchStart.x;
+                const dy = changedTouch.clientY - this._touchStart.y;
+                const absDx = Math.abs(dx), absDy = Math.abs(dy);
+                if(absDx > SWIPE_THRESHOLD || absDy > SWIPE_THRESHOLD) {
+                    let moveDx = 0, moveDy = 0;
+                    if(absDx > absDy) moveDx = dx > 0 ? 1 : -1;
+                    else moveDy = dy > 0 ? 1 : -1;
+                    this.handleMove(moveDx, moveDy);
+                }
+            }
+
+            this._touchStart = null;
+            this._isDragMode = false;
+            this._lastDragNode = null;
+        }, { passive: false });
     }
 
     resize() {
@@ -705,29 +812,28 @@ class SnowCityGame {
     }
 
     handleInput(e) {
-        if(this.isMoving || !this.gameActive) return;
-        
         let dx = 0, dy = 0;
         if(e.key === 'ArrowUp') dy = -1;
         if(e.key === 'ArrowDown') dy = 1;
         if(e.key === 'ArrowLeft') dx = -1;
         if(e.key === 'ArrowRight') dx = 1;
         if(dx === 0 && dy === 0) return;
+        this.handleMove(dx, dy);
+    }
 
-        let curr = this.nodes[this.playerNode];
-        let targetId = this.nodes.find(n => n.x === curr.x + dx && n.y === curr.y + dy)?.id;
-
+    handleMove(dx, dy) {
+        if(this.isMoving || !this.gameActive) return;
+        const curr = this.nodes[this.playerNode];
+        const targetId = this.nodes.find(n => n.x === curr.x + dx && n.y === curr.y + dy)?.id;
         if(targetId !== undefined) {
-            let edge = this.edges.find(e => ((e.u === this.playerNode && e.v === targetId) || (e.u === targetId && e.v === this.playerNode)));
+            const edge = this.edges.find(e => (e.u === this.playerNode && e.v === targetId) || (e.u === targetId && e.v === this.playerNode));
             if(edge) {
                 this.moves++;
                 edge.visited = true;
                 this.playerNode = targetId;
-                
                 const tNode = this.nodes[targetId];
                 this.targetPos = { x: this.offsetX + tNode.x * this.spacing, y: this.offsetY + tNode.y * this.spacing };
                 this.isMoving = true;
-                
                 this.updateUI();
                 this.checkState();
             }
@@ -907,6 +1013,15 @@ class SnowCityGame {
         });
 
         let px = this.playerPos.x; let py = this.playerPos.y;
+        // Draw pulsing grab-ring when player is being dragged
+        if(this._isDragMode) {
+            const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 120);
+            this.ctx.beginPath();
+            this.ctx.arc(px, py, 30 + 6 * pulse, 0, Math.PI * 2);
+            this.ctx.strokeStyle = `rgba(251,192,45,${0.7 * pulse})`;
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+        }
         if(this.playerImg.complete && this.playerImg.naturalWidth > 0) this.ctx.drawImage(this.playerImg, px-20, py-20, 40, 40);
         else { this.ctx.fillStyle = "#fbbf24"; this.ctx.fillRect(px-12, py-12, 24, 24); }
 

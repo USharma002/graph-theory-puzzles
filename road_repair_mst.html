@@ -367,24 +367,34 @@ class RoadGame {
     isTablet() { return window.innerWidth > 640 && window.innerWidth <= 1024; }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        // Physical pixels — canvas bitmap size
+        this.canvas.width  = Math.round(w * dpr);
+        this.canvas.height = Math.round(h * dpr);
+        // CSS size stays at logical pixels so layout is unchanged
+        this.canvas.style.width  = w + 'px';
+        this.canvas.style.height = h + 'px';
+        // Scale the drawing context so all coordinates stay in logical pixels
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     updateSafeBounds() {
+        const W = window.innerWidth, H = window.innerHeight;
         if (this.isMobile()) {
             const topH = document.getElementById('mobileTopbar').offsetHeight || 54;
             const botH = document.getElementById('mobileBar').offsetHeight || 64;
-            this.safeBounds = { minX: 32, maxX: this.canvas.width - 32, minY: topH + 24, maxY: this.canvas.height - botH - 24 };
+            this.safeBounds = { minX: 32, maxX: W - 32, minY: topH + 24, maxY: H - botH - 24 };
         } else if (this.isTablet()) {
             const lRect = document.getElementById('leftPanel').getBoundingClientRect();
-            this.safeBounds = { minX: lRect.right + 40, maxX: this.canvas.width - 30, minY: 40, maxY: this.canvas.height - 40 };
+            this.safeBounds = { minX: lRect.right + 40, maxX: W - 30, minY: 40, maxY: H - 40 };
         } else {
             const lRect = document.getElementById('leftPanel').getBoundingClientRect();
             const rRect = document.getElementById('rightPanel').getBoundingClientRect();
             let minX = lRect.right + 50, maxX = rRect.left - 50;
             if (maxX <= minX) maxX = minX + 200;
-            this.safeBounds = { minX, maxX, minY: 50, maxY: this.canvas.height - 50 };
+            this.safeBounds = { minX, maxX, minY: 50, maxY: H - 50 };
         }
     }
 
@@ -621,7 +631,7 @@ class RoadGame {
         const lF=this.isMobile()?12:16;
         const nF=Math.round(nr*0.68);
 
-        ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
 
         this.edges.forEach(e => {
             const p1=this.nodes[e.u], p2=this.nodes[e.v], isHover=(this.hoverEdge===e);
