@@ -232,28 +232,6 @@
         }
         .challenge-stamp.win { color: var(--neon-green); border-color: var(--neon-green); }
         .challenge-stamp.lose { color: var(--neon-red); border-color: var(--neon-red); }
-        .challenge-prize-box {
-            background: #f0fff4;
-            border: 2px dashed var(--neon-green);
-            border-radius: 8px;
-            padding: 16px;
-            margin: 12px 0;
-            font-size: 1rem;
-            line-height: 1.5;
-        }
-        .challenge-prize-code {
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(1.3rem, 5vw, 2rem);
-            font-weight: 700;
-            color: var(--neon-green);
-            letter-spacing: 4px;
-            background: #e8f5e9;
-            border: 2px solid var(--neon-green);
-            border-radius: 6px;
-            padding: 8px 16px;
-            display: inline-block;
-            margin-top: 8px;
-        }
     </style>
 </head>
 <body>
@@ -357,12 +335,7 @@
             <div style="font-size:2.5rem;">🏆</div>
             <div style="font-size:1.4rem; font-weight:700; color:var(--neon-green); text-transform:uppercase; letter-spacing:2px;">Network Untangled!</div>
             <div class="challenge-stamp win">CLEARED</div>
-            <div class="challenge-prize-box">
-                🎁 <b>You've won a prize!</b><br>
-                Show this code to claim your reward:
-                <div class="challenge-prize-code" id="prize-code">PLAN-4444</div>
-            </div>
-            <p style="color:#888; font-size:0.9rem; margin:8px 0 16px 0;">Time remaining: <b id="time-remaining" style="color:var(--neon-green);">--s</b></p>
+            <p style="color:#888; font-size:1.1rem; margin:8px 0 24px 0;">Time remaining: <b id="time-remaining" style="color:var(--neon-green);">--s</b></p>
             <button id="btn-challenge-play-again" style="background:var(--neon-green); color:#fff; border-color:var(--neon-green); box-shadow:4px 4px 0 #1a6e35; width:100%; margin:0;">Play Again</button>
         </div>
     </div>
@@ -388,7 +361,7 @@ class PlanarityGame {
         this.ctx = this.canvas.getContext('2d');
         
         this.nodes = [];
-        this.edges = [];
+        this.edges =[];
         
         this.draggedNode = null;
         this.isAnimating = false;
@@ -443,7 +416,7 @@ class PlanarityGame {
         this.isAnimating = false;
         this.stopchallengeTimer();
         this.nodes = [];
-        this.edges = [];
+        this.edges =[];
         document.getElementById('modal').style.display = 'none';
         
         const nNodes = 10;
@@ -472,7 +445,7 @@ class PlanarityGame {
         }
 
         // Add random non-crossing internal chords
-        const possibleChords = [];
+        const possibleChords =[];
         for(let i=0; i<nNodes; i++) {
             for(let j=i+2; j<nNodes; j++) {
                 if(i===0 && j===nNodes-1) continue;
@@ -685,7 +658,7 @@ class PlanarityGame {
             this.ctx.fillRect(-14, 12, 28, 10);
 
             // Blinking Lights
-            const slotOffsets = [-17, 0, 17];
+            const slotOffsets =[-17, 0, 17];
             slotOffsets.forEach((y, i) => {
                 let blink = Math.sin(time / 150 + n.id * 3 + i) > 0;
                 this.ctx.fillStyle = blink ? "#00ffcc" : "#003322";
@@ -784,9 +757,6 @@ class PlanarityGame {
         this.stopchallengeTimer();
         const remaining = Math.max(0, this.challengeTimeLeft).toFixed(1);
         document.getElementById('time-remaining').textContent = remaining + 's';
-        // Generate a unique-ish prize code
-        const code = 'PLAN-' + Math.random().toString(36).substring(2,6).toUpperCase();
-        document.getElementById('prize-code').textContent = code;
         document.getElementById('challenge-win').style.display = 'flex';
     }
 
