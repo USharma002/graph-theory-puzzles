@@ -14,6 +14,9 @@
             --visited-color: #5f27cd;
             --path-color: #feca57;
             --carve-color: #ffaa00;
+            --frontier-color: #00b894;
+            --deadend-color: #d63031;
+            --active-color: #fdcb6e;
             --border-color: #34343e;
             --text-color: #f1f2f6;
             --game-color: #2bcbba;
@@ -146,6 +149,45 @@
             z-index: 2;
         }
 
+        /* Node has unexplored neighbors — "frontier" / active wavefront */
+        .node-frontier {
+            background-color: var(--frontier-color);
+            box-shadow: 0 0 8px var(--frontier-color);
+            animation: frontierAnim 0.3s ease-out forwards;
+            z-index: 3;
+        }
+
+        /* Currently being explored (top of stack / queue head) */
+        .node-active {
+            background-color: var(--active-color);
+            box-shadow: 0 0 12px var(--active-color);
+            animation: activeAnim 0.2s ease-out forwards;
+            z-index: 4;
+        }
+
+        /* Dead-end — backtracked through, no path here */
+        .node-deadend {
+            background-color: var(--deadend-color);
+            box-shadow: 0 0 6px var(--deadend-color);
+            animation: deadendAnim 0.25s ease-out forwards;
+            z-index: 2;
+        }
+
+        @keyframes frontierAnim {
+            0% { transform: scale(0.5); }
+            100% { transform: scale(1); background-color: var(--frontier-color); }
+        }
+
+        @keyframes activeAnim {
+            0% { transform: scale(1.3); }
+            100% { transform: scale(1); background-color: var(--active-color); }
+        }
+
+        @keyframes deadendAnim {
+            0% { transform: scale(1.1); background-color: #e17055; }
+            100% { transform: scale(1); background-color: var(--deadend-color); }
+        }
+
         .node-carve {
             animation: carveAnim 0.4s ease-out forwards;
             z-index: 3;
@@ -201,7 +243,10 @@
             <div class="legend-item"><div class="dot" style="background:var(--start-color)"></div> Start</div>
             <div class="legend-item"><div class="dot" style="background:var(--end-color)"></div> Target</div>
             <div class="legend-item"><div class="dot" style="background:var(--wall-color)"></div> Wall</div>
+            <div class="legend-item"><div class="dot" style="background:var(--active-color)"></div> Active</div>
+            <div class="legend-item"><div class="dot" style="background:var(--frontier-color)"></div> Has neighbors</div>
             <div class="legend-item"><div class="dot" style="background:var(--visited-color)"></div> Visited</div>
+            <div class="legend-item"><div class="dot" style="background:var(--deadend-color)"></div> Dead-end</div>
             <div class="legend-item"><div class="dot" style="background:var(--path-color)"></div> Path</div>
         </div>
 
@@ -690,43 +735,61 @@
 
         // --- Visualizer Core ---
         async function startVisualization() {
-            if (isRunning || isGameActive) return; // Block visualizer if game is active
+            if (isRunning || isGameActive) return;
             resetPathLogic();
             isRunning = true;
 
             const algo = document.getElementById('algo-select').value;
-            let visitedNodes = [];
-            
-            if (algo === 'astar') {
-                visitedNodes = aStar();
-            } else if (algo === 'bfs') {
-                visitedNodes = bfs();
-            } else if (algo === 'dfs') {
-                visitedNodes = dfs();
-            }
+            let steps = [];
 
-            const path = getNodesInShortestPathOrder(grid[endNode.r][endNode.c]);
-            
-            await animateAlgorithm(visitedNodes, path);
+            if (algo === 'astar') steps = aStar();
+            else if (algo === 'bfs') steps = bfs();
+            else steps = dfs();
+
+            // Extract the last visited node to reconstruct path
+            const endNodeObj = grid[endNode.r][endNode.c];
+            const path = getNodesInShortestPathOrder(endNodeObj);
+
+            await animateAlgorithm(steps, path);
             isRunning = false;
         }
 
-        async function animateAlgorithm(visitedNodes, path) {
-            for (let i = 0; i < visitedNodes.length; i++) {
-                const node = visitedNodes[i];
-                if (!node.isStart && !node.isEnd) {
-                    document.getElementById(`node-${node.r}-${node.c}`).classList.add('node-visited');
-                }
+        async function animateAlgorithm(steps, path) {
+            const STATE_CLASSES = ['node-visited', 'node-frontier', 'node-active', 'node-deadend'];
 
-                let speedVal = parseInt(document.getElementById('speed-slider').value);
-                
+            function applyState(node, type) {
+                if (node.isStart || node.isEnd) return;
+                const div = document.getElementById(`node-${node.r}-${node.c}`);
+                div.classList.remove(...STATE_CLASSES);
+                if (type === 'active')   div.classList.add('node-active');
+                if (type === 'frontier') div.classList.add('node-frontier');
+                if (type === 'visited')  div.classList.add('node-visited');
+                if (type === 'deadend')  div.classList.add('node-deadend');
+            }
+
+            for (let i = 0; i < steps.length; i++) {
+                const { type, node } = steps[i];
+                applyState(node, type);
+
+                const speedVal = parseInt(document.getElementById('speed-slider').value);
                 if (speedVal === 100) {
                     if (i % 30 === 0) await sleep(0);
                 } else {
-                    let delayMs = 100 - speedVal; 
+                    const delayMs = Math.max(0, 100 - speedVal);
                     if (delayMs > 0) await sleep(delayMs);
                 }
             }
+
+            // Settle all active/frontier nodes to plain visited after animation
+            for (const { node } of steps) {
+                if (node.isStart || node.isEnd) continue;
+                const div = document.getElementById(`node-${node.r}-${node.c}`);
+                if (div.classList.contains('node-active') || div.classList.contains('node-frontier')) {
+                    div.classList.remove('node-active', 'node-frontier');
+                    div.classList.add('node-visited');
+                }
+            }
+
             await animatePath(path);
         }
 
@@ -754,102 +817,130 @@
         function aStar() {
             const start = grid[startNode.r][startNode.c];
             const end = grid[endNode.r][endNode.c];
-            
             start.distance = 0;
             start.totalDistance = 0;
-            
             let openSet = [start];
-            const visitedNodesInOrder = [];
+            const steps = [];
 
             while (openSet.length > 0) {
                 openSet.sort((a, b) => a.totalDistance - b.totalDistance);
-                const closestNode = openSet.shift();
+                const current = openSet.shift();
+                if (current.isWall) continue;
+                current.isVisited = true;
 
-                if (closestNode.isWall) continue;
-                
-                closestNode.isVisited = true;
-                visitedNodesInOrder.push(closestNode);
+                steps.push({ type: 'active', node: current });
 
-                if (closestNode === end) return visitedNodesInOrder;
+                if (current === end) break;
 
-                const neighbors = getNeighbors(closestNode);
-                for (const neighbor of neighbors) {
-                    if (neighbor.isVisited || neighbor.isWall) continue;
-
-                    const tentativeG = closestNode.distance + 1;
-
-                    if (!openSet.includes(neighbor) || tentativeG < neighbor.distance) {
-                        neighbor.distance = tentativeG;
-                        neighbor.heuristic = manhattanDistance(neighbor, end);
-                        neighbor.totalDistance = neighbor.distance + neighbor.heuristic;
-                        neighbor.previousNode = closestNode;
-                        
-                        if (!openSet.includes(neighbor)) {
-                            openSet.push(neighbor);
+                const neighbors = getNeighbors(current).filter(n => !n.isVisited && !n.isWall);
+                if (neighbors.length > 0) {
+                    steps.push({ type: 'frontier', node: current });
+                    for (const nb of neighbors) {
+                        const tentativeG = current.distance + 1;
+                        if (!openSet.includes(nb) || tentativeG < nb.distance) {
+                            nb.distance = tentativeG;
+                            nb.heuristic = manhattanDistance(nb, end);
+                            nb.totalDistance = nb.distance + nb.heuristic;
+                            nb.previousNode = current;
+                            if (!openSet.includes(nb)) openSet.push(nb);
                         }
                     }
+                } else {
+                    steps.push({ type: 'visited', node: current });
                 }
             }
-            return visitedNodesInOrder;
+            return steps;
         }
 
         function bfs() {
             const start = grid[startNode.r][startNode.c];
             const end = grid[endNode.r][endNode.c];
             const queue = [start];
-            const visitedNodesInOrder = [];
-            
+            const steps = [];
             start.isVisited = true;
 
             while (queue.length > 0) {
-                const currentNode = queue.shift();
-                
-                if (currentNode.isWall) continue;
-                visitedNodesInOrder.push(currentNode);
+                const current = queue.shift();
+                if (current.isWall) continue;
 
-                if (currentNode === end) return visitedNodesInOrder;
+                steps.push({ type: 'active', node: current });
 
-                const neighbors = getNeighbors(currentNode);
-                for (const neighbor of neighbors) {
-                    if (!neighbor.isVisited && !neighbor.isWall) {
-                        neighbor.isVisited = true;
-                        neighbor.previousNode = currentNode;
-                        queue.push(neighbor);
+                if (current === end) break;
+
+                const neighbors = getNeighbors(current).filter(n => !n.isVisited && !n.isWall);
+                if (neighbors.length > 0) {
+                    steps.push({ type: 'frontier', node: current });
+                    for (const nb of neighbors) {
+                        nb.isVisited = true;
+                        nb.previousNode = current;
+                        queue.push(nb);
                     }
+                } else {
+                    steps.push({ type: 'visited', node: current });
                 }
             }
-            return visitedNodesInOrder;
+            return steps;
         }
 
         function dfs() {
             const start = grid[startNode.r][startNode.c];
             const end = grid[endNode.r][endNode.c];
-            
-            const stack = [{ node: start, parent: null }];
-            const visitedNodesInOrder = [];
+
+            // Each step is { type: 'active'|'frontier'|'visited'|'deadend', node }
+            const steps = [];
+            const visited = new Set();
+
+            // Iterative DFS with explicit backtracking detection
+            // We track the current DFS path stack to know when we backtrack
+            const stack = [start];
+            const parentMap = new Map();
+            parentMap.set(start, null);
 
             while (stack.length > 0) {
-                const { node: currentNode, parent } = stack.pop();
-                
-                if (currentNode.isWall) continue;
+                const current = stack[stack.length - 1];
 
-                if (!currentNode.isVisited) {
-                    currentNode.isVisited = true;
-                    currentNode.previousNode = parent;
-                    visitedNodesInOrder.push(currentNode);
+                if (current.isWall) { stack.pop(); continue; }
 
-                    if (currentNode === end) return visitedNodesInOrder;
+                if (!visited.has(current)) {
+                    visited.add(current);
+                    current.isVisited = true;
+                    current.previousNode = parentMap.get(current) ?? null;
 
-                    const neighbors = getNeighbors(currentNode);
-                    for (let i = neighbors.length - 1; i >= 0; i--) {
-                        const neighbor = neighbors[i];
-                        if (!neighbor.isVisited && !neighbor.isWall) {
-                            stack.push({ node: neighbor, parent: currentNode });
+                    steps.push({ type: 'active', node: current });
+
+                    if (current === end) break;
+
+                    const unvisitedNeighbors = getNeighbors(current).filter(n => !visited.has(n) && !n.isWall);
+
+                    if (unvisitedNeighbors.length > 0) {
+                        // Has unexplored neighbors → frontier color
+                        steps.push({ type: 'frontier', node: current });
+                        for (let i = unvisitedNeighbors.length - 1; i >= 0; i--) {
+                            const nb = unvisitedNeighbors[i];
+                            if (!parentMap.has(nb)) parentMap.set(nb, current);
+                            stack.push(nb);
                         }
+                    } else {
+                        // No unvisited neighbors → dead-end, will backtrack
+                        steps.push({ type: 'deadend', node: current });
+                        stack.pop();
+                    }
+                } else {
+                    // Already visited — check if all neighbors now exhausted
+                    const unvisited = getNeighbors(current).filter(n => !visited.has(n) && !n.isWall);
+                    if (unvisited.length === 0) {
+                        // All neighbors exhausted — mark as dead-end on backtrack
+                        if (!current.isStart && !current.isEnd) {
+                            steps.push({ type: 'deadend', node: current });
+                        }
+                        stack.pop();
+                    } else {
+                        stack.pop(); // will be re-pushed naturally
                     }
                 }
             }
-            return visitedNodesInOrder;
+
+            return steps;
         }
 
         function getNeighbors(node) {
@@ -898,7 +989,7 @@
                     node.isVisited = false;
                     
                     const div = document.getElementById(`node-${r}-${c}`);
-                    div.classList.remove('node-visited', 'node-path', 'node-carve');
+                    div.classList.remove('node-visited', 'node-path', 'node-carve', 'node-frontier', 'node-active', 'node-deadend');
                 }
             }
         }

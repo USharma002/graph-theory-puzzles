@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Snow City: Dashboard Edition</title>
     <style>
         :root {
@@ -64,9 +64,9 @@
 
         /* Stats */
         .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { display: flex; flex-direction: column; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
+        .stat-box { display: flex; flex-direction: column; background: #f4f6fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
         .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-        .stat-val { font-size: 1.2rem; font-weight: 700; color: white; }
+        .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
 
         /* Progress */
         .prog-track { background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
@@ -188,18 +188,25 @@
             background: var(--panel-glass);
             border-bottom: 2px solid var(--text-main);
             padding: 10px 16px; z-index: 20; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        .mobile-topbar h1 { margin: 0; font-size: 1.1rem; }
+        .mobile-topbar .grid-tag { font-size: 0.75rem; }
+        .mobile-topbar .stat-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin: 0 0 2px 0; }
+        .mobile-topbar .stat-val { font-size: 1.1rem; font-weight: 700; color: var(--text-main); line-height: 1; }
         .mobile-bottombar {
             display: none; position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--panel-glass);
             border-top: 2px solid var(--text-main);
-            padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom));
-            z-index: 20; gap: 10px; flex-wrap: wrap; text-align: center; justify-content: space-between;
+            padding: 8px 10px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+            z-index: 20; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
         }
-        .mobile-bottombar .select-wrapper { margin-bottom: 0; flex-grow: 1; }
-        .mobile-bottombar button { padding: 10px 8px; flex-grow: 1; font-size: 0.75rem; box-shadow: 2px 2px 0 var(--text-main); }
+        .mobile-bottombar .select-wrapper { margin-bottom: 0; flex-grow: 1; max-width: 150px; }
+        .mobile-bottombar select { padding: 8px 12px; font-size: 0.8rem; }
+        .mobile-bottombar button { padding: 10px 8px; flex: 1; margin: 0; font-size: 0.78rem; border-width: 2px; box-shadow: 2px 2px 0 var(--text-main); }
 
-        @media (max-width: 900px) {
+        @media (max-width: 640px) {
             .sidebar-left, .sidebar-right { display: none !important; }
             .mobile-topbar, .mobile-bottombar { display: flex; }
             #math-panel {
@@ -207,7 +214,17 @@
                 background: #ffffff; border: 2px solid var(--text-main);
                 margin: 0; box-shadow: 5px 5px 0 rgba(0,0,0,0.8);
             }
-            #alert-box { bottom: 85px; font-size: 0.8rem; padding: 8px 16px; width: 80%; }
+            #alert-box { bottom: 90px; font-size: 0.8rem; padding: 8px 16px; width: 80%; }
+        }
+        @media (min-width: 641px) and (max-width: 900px) {
+            .sidebar-left, .sidebar-right { display: none !important; }
+            .mobile-topbar, .mobile-bottombar { display: flex; }
+            #math-panel {
+                position: fixed; top: 70px; left: 16px; right: 16px; z-index: 30;
+                background: #ffffff; border: 2px solid var(--text-main);
+                margin: 0; box-shadow: 5px 5px 0 rgba(0,0,0,0.8);
+            }
+            #alert-box { bottom: 90px; font-size: 0.85rem; padding: 10px 20px; }
         }
     </style>
 </head>
@@ -299,19 +316,25 @@
 
     <!-- Mobile Top/Bottom Bars -->
     <div class="mobile-topbar" id="mobileTopbar">
-        <div>
+        <div style="display:flex; align-items:center; gap:10px;">
             <h1>Grid Ops</h1>
             <span class="grid-tag" id="mobileGridTag">4x4</span>
         </div>
-        <div style="text-align: right;">
-            <div class="stat-label">Moves / Eff</div>
-            <div class="stat-val"><span id="mobileMovesDisp">0</span> | <span id="mobileEffDisp">100%</span></div>
+        <div style="display:flex; gap:16px; align-items:center;">
+            <div style="text-align:center;">
+                <div class="stat-label">Moves</div>
+                <div class="stat-val" id="mobileMovesDisp">0</div>
+            </div>
+            <div style="text-align:center;">
+                <div class="stat-label">Eff</div>
+                <div class="stat-val" id="mobileEffDisp">100%</div>
+            </div>
         </div>
     </div>
 
     <div class="mobile-bottombar" id="mobileBottomBar">
-        <div class="prog-track" style="width:100%; margin-bottom: 5px;"><div class="prog-fill" id="mobileProgBar"></div></div>
-        <div class="select-wrapper" style="max-width: 140px;">
+        <div class="prog-track" style="width:100%; margin-bottom: 4px; flex-basis: 100%;"><div class="prog-fill" id="mobileProgBar"></div></div>
+        <div class="select-wrapper" style="max-width: 145px; flex-shrink: 0;">
             <select id="mobileLevelSelect">
                 <option value="2">2x2 Sector</option>
                 <option value="3">3x3 Sector</option>
@@ -324,7 +347,7 @@
         </div>
         <button class="btn-primary" onclick="game.resetCurrentProgress()">↺ Retry</button>
         <button class="btn-icon" id="mobileMathBtn" onclick="game.toggleMathMode()">Theory</button>
-        <button class="btn-icon" onclick="game.animateSolution()" style="background:var(--accent-blue); color:white; border-color:var(--accent-blue);">?</button>
+        <button class="btn-icon" onclick="game.animateSolution()" style="background:var(--accent-blue); color:white; border-color:var(--accent-blue); flex: 0 0 42px; padding: 0; font-size: 1.2rem;" title="Show solution">?</button>
     </div>
 
     <div id="alert-box">⚠️ RETURN TO BASE TO FINISH!</div>

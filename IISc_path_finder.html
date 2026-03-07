@@ -656,7 +656,7 @@
                 if(coords.length > 0) basePolylines.push(coords);
             });
 
-            compressGraph();
+            // compressGraph();
             L.polyline(basePolylines, { color: currentTheme === 'day' ? 'rgba(90,45,0,0.18)' : 'rgba(255,100,50,0.1)', weight: currentTheme === 'day' ? 1.5 : 1, smoothFactor: 2 }).addTo(baseRoadLayer);
             graphOverlay.draw();
 
