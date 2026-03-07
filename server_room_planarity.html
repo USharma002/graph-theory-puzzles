@@ -114,6 +114,146 @@
         }
 
         canvas { position: absolute; top:0; left:0; z-index: 0; touch-action: none; }
+
+        /* ── challenge ── */
+        .btn-challenge {
+            background: #ff4500 !important;
+            color: #fff !important;
+            border-color: #cc3700 !important;
+            box-shadow: 4px 4px 0 #cc3700 !important;
+            animation: challenge-pulse 2s ease-in-out infinite;
+        }
+        .btn-challenge:hover { background: #e03d00 !important; transform: translateY(-3px) !important; }
+        @keyframes challenge-pulse {
+            0%,100% { box-shadow: 4px 4px 0 #cc3700; }
+            50% { box-shadow: 4px 4px 18px #ff6030, 4px 4px 0 #cc3700; }
+        }
+
+        /* Timer bar across the very top */
+        #challenge-timer-bar {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; height: 8px;
+            background: #222; z-index: 200;
+        }
+        #challenge-timer-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, #ff4500, #ffaa00);
+            transition: width 0.1s linear, background 0.5s;
+        }
+
+        /* Big floating countdown */
+        #challenge-hud {
+            display: none;
+            position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+            z-index: 190; pointer-events: none;
+            text-align: center;
+        }
+        #challenge-seconds {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(2.2rem, 7vw, 4rem);
+            font-weight: 700;
+            color: #fff;
+            background: #ff4500;
+            border: 3px solid #cc3700;
+            border-radius: 10px;
+            padding: 4px 24px;
+            box-shadow: 4px 4px 0 #cc3700;
+            line-height: 1.1;
+            letter-spacing: 2px;
+        }
+        #challenge-seconds.urgent { background: #c00; border-color: #900; animation: tick-shake 0.25s ease-in-out infinite; }
+        @keyframes tick-shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+        #challenge-label {
+            font-size: 0.75rem; color: #ff4500; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase; margin-top: 4px;
+            text-shadow: 0 0 8px rgba(255,69,0,0.5);
+        }
+
+        /* 3-2-1 GO overlay */
+        #challenge-countdown-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 300;
+            background: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center; flex-direction: column;
+            gap: 12px;
+        }
+        #challenge-big-num {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(5rem, 25vw, 14rem);
+            font-weight: 700; color: #ff4500;
+            text-shadow: 0 0 60px #ff4500, 0 0 20px #ff4500;
+            animation: big-pop 0.4s ease-out;
+        }
+        @keyframes big-pop {
+            0% { transform: scale(0.4); opacity:0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity:1; }
+        }
+        #challenge-big-label {
+            font-size: clamp(1rem, 4vw, 1.8rem);
+            color: #aaa; letter-spacing: 4px; text-transform: uppercase;
+        }
+
+        /* Result overlays */
+        #challenge-win, #challenge-lose {
+            display: none;
+            position: fixed; inset: 0; z-index: 300;
+            justify-content: center; align-items: center;
+            flex-direction: column; gap: 20px;
+            backdrop-filter: blur(4px);
+            padding: 24px;
+        }
+        #challenge-win { background: rgba(0, 30, 0, 0.92); }
+        #challenge-lose { background: rgba(30, 0, 0, 0.92); }
+        .challenge-result-card {
+            background: #fff;
+            border: 3px solid var(--asphalt);
+            border-radius: 12px;
+            padding: clamp(24px, 6vw, 48px);
+            text-align: center;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+            max-width: min(480px, 95vw);
+            width: 100%;
+        }
+        .challenge-stamp {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-weight: 900;
+            font-family: 'Roboto Mono', monospace;
+            border: 6px solid;
+            display: inline-block;
+            padding: 10px 28px;
+            border-radius: 12px;
+            transform: rotate(-6deg);
+            margin: 16px 0;
+        }
+        .challenge-stamp.win { color: var(--neon-green); border-color: var(--neon-green); }
+        .challenge-stamp.lose { color: var(--neon-red); border-color: var(--neon-red); }
+        .challenge-prize-box {
+            background: #f0fff4;
+            border: 2px dashed var(--neon-green);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .challenge-prize-code {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(1.3rem, 5vw, 2rem);
+            font-weight: 700;
+            color: var(--neon-green);
+            letter-spacing: 4px;
+            background: #e8f5e9;
+            border: 2px solid var(--neon-green);
+            border-radius: 6px;
+            padding: 8px 16px;
+            display: inline-block;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -129,6 +269,7 @@
 
     <div class="mobile-bar" id="mobileBottomBar">
         <button onclick="game.newLevel()">New Network</button>
+        <button id="btn-challenge-start-mobile" class="btn-challenge" style="flex:1; margin:0; padding:8px 4px; font-size:0.8rem; border-width:2px; animation:challenge-pulse 2s ease-in-out infinite;">⚡ challenge</button>
         <button class="info-btn" style="background:var(--math-purple); color:white; border:none;" onclick="game.openMathModal()">Theory</button>
         <button class="btn-circle" style="width: 40px; height: 40px; font-size: 1.2rem; flex: 0 0 auto;" onclick="game.animateSolution()">?</button>
     </div>
@@ -141,6 +282,7 @@
             
             <hr style="border: 1px dashed #555; margin: 15px 0;">
             <button onclick="game.newLevel()">New Network</button>
+            <button id="btn-challenge-start" class="btn-challenge">⚡ challenge MODE</button>
             
             <div class="bottom-controls">
                 <button class="info-btn" onclick="game.openMathModal()">Math Theory</button>
@@ -195,6 +337,50 @@
         </div>
     </div>
 
+    <!-- challenge OVERLAYS -->
+    <div id="challenge-timer-bar"><div id="challenge-timer-fill"></div></div>
+
+    <div id="challenge-hud">
+        <div id="challenge-seconds">20</div>
+        <div id="challenge-label">⚡ challenge</div>
+    </div>
+
+    <!-- 3-2-1 GO Countdown -->
+    <div id="challenge-countdown-overlay" style="display:none; flex-direction:column;">
+        <div id="challenge-big-num">3</div>
+        <div id="challenge-big-label">Untangle the network!</div>
+    </div>
+
+    <!-- WIN -->
+    <div id="challenge-win" style="display:none;">
+        <div class="challenge-result-card">
+            <div style="font-size:2.5rem;">🏆</div>
+            <div style="font-size:1.4rem; font-weight:700; color:var(--neon-green); text-transform:uppercase; letter-spacing:2px;">Network Untangled!</div>
+            <div class="challenge-stamp win">CLEARED</div>
+            <div class="challenge-prize-box">
+                🎁 <b>You've won a prize!</b><br>
+                Show this code to claim your reward:
+                <div class="challenge-prize-code" id="prize-code">PLAN-4444</div>
+            </div>
+            <p style="color:#888; font-size:0.9rem; margin:8px 0 16px 0;">Time remaining: <b id="time-remaining" style="color:var(--neon-green);">--s</b></p>
+            <button id="btn-challenge-play-again" style="background:var(--neon-green); color:#fff; border-color:var(--neon-green); box-shadow:4px 4px 0 #1a6e35; width:100%; margin:0;">Play Again</button>
+        </div>
+    </div>
+
+    <!-- LOSE -->
+    <div id="challenge-lose" style="display:none;">
+        <div class="challenge-result-card">
+            <div style="font-size:2.5rem;">💀</div>
+            <div style="font-size:1.4rem; font-weight:700; color:var(--neon-red); text-transform:uppercase; letter-spacing:2px;">Time's Up!</div>
+            <div class="challenge-stamp lose">FLATLINED</div>
+            <p style="color:#555; font-size:1rem; margin:8px 0 4px 0;">The cables are still crossed.<br>Cables remaining: <b id="lose-cross-count" style="color:var(--neon-red);">?</b></p>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <button id="btn-challenge-retry" style="background:#ff4500; color:#fff; border-color:#cc3700; box-shadow:4px 4px 0 #cc3700; flex:1; margin:0;">⚡ Try Again</button>
+                <button id="btn-challenge-give-up" style="flex:1; margin:0;">Give Up</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 class PlanarityGame {
     constructor() {
@@ -206,6 +392,9 @@ class PlanarityGame {
         
         this.draggedNode = null;
         this.isAnimating = false;
+        this.challengeActive = false;
+        this.challengeTimeLeft = 20;
+        this._challengeInterval = null;
         
         window.addEventListener('resize', () => this.resize());
         this.canvas.addEventListener('mousedown', (e) => this.handleDown(e));
@@ -252,6 +441,7 @@ class PlanarityGame {
 
     newLevel() {
         this.isAnimating = false;
+        this.stopchallengeTimer();
         this.nodes = [];
         this.edges = [];
         document.getElementById('modal').style.display = 'none';
@@ -357,7 +547,11 @@ class PlanarityGame {
         if(crossCount === 0 && !this.isAnimating) {
             countDisplay.classList.add('clean');
             if (mCountDisplay) mCountDisplay.style.color = 'var(--neon-green)';
-            setTimeout(() => { document.getElementById('modal').style.display = 'flex'; }, 300);
+            if (this.challengeActive) {
+                setTimeout(() => this._challengeWin(), 200);
+            } else {
+                setTimeout(() => { document.getElementById('modal').style.display = 'flex'; }, 300);
+            }
         } else {
             countDisplay.classList.remove('clean');
             if (mCountDisplay) mCountDisplay.style.color = 'var(--neon-red)';
@@ -514,8 +708,115 @@ class PlanarityGame {
 
         requestAnimationFrame(() => this.loop());
     }
+    // ── challenge MODE ──────────────────────────────────────────────
+    async startchallenge() {
+        // Close any open modals
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('challenge-win').style.display = 'none';
+        document.getElementById('challenge-lose').style.display = 'none';
+        this.stopchallengeTimer();
+
+        // Fresh scrambled level
+        this.newLevel();
+        await new Promise(r => setTimeout(r, 80)); // let layout settle
+
+        // 3-2-1 GO countdown
+        const overlay = document.getElementById('challenge-countdown-overlay');
+        const bigNum = document.getElementById('challenge-big-num');
+        overlay.style.display = 'flex';
+        for (const label of ['3','2','1','GO!']) {
+            bigNum.textContent = label;
+            bigNum.style.animation = 'none';
+            void bigNum.offsetWidth; // reflow to restart animation
+            bigNum.style.animation = 'big-pop 0.4s ease-out';
+            bigNum.style.color = label === 'GO!' ? '#00cc66' : '#ff4500';
+            bigNum.style.textShadow = label === 'GO!' ? '0 0 60px #00cc66' : '0 0 60px #ff4500';
+            await new Promise(r => setTimeout(r, label === 'GO!' ? 600 : 800));
+        }
+        overlay.style.display = 'none';
+
+        // Start the timed challenge
+        this.challengeActive = true;
+        this.challengeTimeLeft = 20;
+        this._challengeWinFired = false;
+        document.getElementById('challenge-timer-bar').style.display = 'block';
+        document.getElementById('challenge-hud').style.display = 'block';
+        this._updatechallengeHUD();
+
+        this._challengeInterval = setInterval(() => {
+            if (!this.challengeActive) return;
+            this.challengeTimeLeft -= 0.1;
+            if (this.challengeTimeLeft <= 0) {
+                this.challengeTimeLeft = 0;
+                this._updatechallengeHUD();
+                this._challengeFail();
+            } else {
+                this._updatechallengeHUD();
+            }
+        }, 100);
+    }
+
+    _updatechallengeHUD() {
+        const t = Math.max(0, this.challengeTimeLeft);
+        const fill = document.getElementById('challenge-timer-fill');
+        const secs = document.getElementById('challenge-seconds');
+        const pct = (t / 20) * 100;
+        fill.style.width = pct + '%';
+        // Color the bar: green → yellow → red
+        if (pct > 50) fill.style.background = 'linear-gradient(90deg,#ff4500,#ffaa00)';
+        else if (pct > 25) fill.style.background = 'linear-gradient(90deg,#cc3700,#ff4500)';
+        else fill.style.background = '#c00';
+        secs.textContent = Math.ceil(t) + 's';
+        if (t <= 5) secs.classList.add('urgent');
+        else secs.classList.remove('urgent');
+    }
+
+    stopchallengeTimer() {
+        if (this._challengeInterval) { clearInterval(this._challengeInterval); this._challengeInterval = null; }
+        this.challengeActive = false;
+        document.getElementById('challenge-timer-bar').style.display = 'none';
+        document.getElementById('challenge-hud').style.display = 'none';
+    }
+
+    _challengeWin() {
+        if (this._challengeWinFired) return;
+        this._challengeWinFired = true;
+        this.stopchallengeTimer();
+        const remaining = Math.max(0, this.challengeTimeLeft).toFixed(1);
+        document.getElementById('time-remaining').textContent = remaining + 's';
+        // Generate a unique-ish prize code
+        const code = 'PLAN-' + Math.random().toString(36).substring(2,6).toUpperCase();
+        document.getElementById('prize-code').textContent = code;
+        document.getElementById('challenge-win').style.display = 'flex';
+    }
+
+    _challengeFail() {
+        this.stopchallengeTimer();
+        const crossCount = this.edges.filter(e => e.cross).length;
+        document.getElementById('lose-cross-count').textContent = crossCount;
+        document.getElementById('challenge-lose').style.display = 'flex';
+    }
+
+    closechallengeWin() {
+        document.getElementById('challenge-win').style.display = 'none';
+        this.newLevel();
+    }
+
+    closechallengeLose() {
+        document.getElementById('challenge-lose').style.display = 'none';
+        this.newLevel();
+    }
+    // ── END challenge ───────────────────────────────────────────────
+
 }
 const game = new PlanarityGame();
+
+// Wire buttons that need game to exist first
+document.getElementById('btn-challenge-play-again').addEventListener('click', () => game.closechallengeWin());
+document.getElementById('btn-challenge-retry').addEventListener('click', () => game.startchallenge());
+document.getElementById('btn-challenge-give-up').addEventListener('click', () => game.closechallengeLose());
+document.getElementById('btn-challenge-start').addEventListener('click', () => game.startchallenge());
+document.getElementById('btn-challenge-start-mobile').addEventListener('click', () => game.startchallenge());
 </script>
 </body>
 </html>
